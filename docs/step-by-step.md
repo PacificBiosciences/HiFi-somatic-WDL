@@ -183,6 +183,8 @@ The source to change is `src/miniwdl_slurm/__init__.py` in the `miniwdl-slurm` r
     return srun_args
 </details>
 
+After modifying the source, simply run `pip install .` (Under your `miniwdl environment`) in the `miniwdl-slurm` directory to install the modified package.
+
 See [example](../utility_scripts/miniwdl-slurm_init_modified.py) modification (line 93 onwards) to use this with a UGE scheduler that makes use of `-l s_vmem` for memory and `qrsh` for submission. Note that the argument extension cannot have any space, so e.g. `-now no` won't work and you must specify `-now` and `-no` separately in the list to extend.
 
 ### How do I restart the workflow?
