@@ -1,0 +1,45 @@
+{
+  "hifisomatic.cohort": {
+    "patients": [
+      {
+        "patient_names": "patient1",
+        "tumor_bams": [
+          "/path/to/tumor.bam"
+        ],
+        "normal_bams": [
+          "/path/to/normal.bam"
+        ]
+      },
+      {
+        "patient_names": "patient2",
+        "tumor_bams": [
+          "/path/to/first_tumor.bam",
+          "/path/to/second_tumor.bam"
+        ],
+        "normal_bams": [
+          "/path/to/first_normal.bam",
+          "/path/to/second_normal.bam"
+        ]
+      }
+    ]
+  },
+  "hifisomatic.ref_fasta": "/path/to/GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.fasta",
+  "hifisomatic.ref_fasta_index": "/path/to/GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.fasta.fai",
+  "hifisomatic.ref_bed": "/path/to/chr.bed",
+  "hifisomatic.hprc_sniffles_control_vcf": "/path/to/sniffles_all_non_germline.vcf.gz",
+  "hifisomatic.hprc_sniffles_control_vcf_index": "/path/to/sniffles_all_non_germline.vcf.gz.tbi",
+  "hifisomatic.cnvkit_refflat": "/path/to/refFlat.hg38.txt",
+  "hifisomatic.cnvkit_threads": 8,
+  "hifisomatic.pbmm2_threads": 8,
+  "hifisomatic.merge_bam_threads": 8,
+  "hifisomatic.cpg_pileup_threads": 8,
+  "hifisomatic.samtools_threads": 8,
+  "hifisomatic.clairs_threads": 24,
+  "hifisomatic.clairs_platform": "hifi_revio",
+  "hifisomatic.sniffles_threads": 8,
+  "hifisomatic.sniffles_trf_bed": "/path/to/human_GRCh38_no_alt_analysis_set.trf.bed",
+  "hifisomatic.call_small_variants": false,
+  "hifisomatic.strip_kinetics": false,
+  "hifisomatic.vep_cache": "/path/to/homo_sapiens_refseq_vep_110_GRCh38.tar.gz",
+  "hifisomatic.annotsv_cache": "/path/to/annotsv.tar.gz"
+}

@@ -1,0 +1,10 @@
+FROM python:3.10.12-slim
+
+WORKDIR /app
+
+RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+RUN apt-get install -y procps git
+RUN pip install numpy==1.25.1 networkx==3.1 pydot==1.4.2 graphviz==0.20.1 pysam==0.21.0
+RUN git clone https://github.com/KolmogorovLab/Severus.git
+RUN pip cache remove *
