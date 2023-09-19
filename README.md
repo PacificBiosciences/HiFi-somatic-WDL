@@ -9,7 +9,7 @@
   - [Change logs](#change-logs)
   - [DISCLAIMER](#disclaimer)
 
-![Alt text](figures/simple_workflow_diagram.png){width=50%}
+![Alt text](figures/simple_workflow_diagram.png)
 
 Full DAG of the workflow can be found [here](figures/complex_workflow_diagram.png)
 

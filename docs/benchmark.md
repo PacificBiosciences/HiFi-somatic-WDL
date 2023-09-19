@@ -20,7 +20,7 @@ using `truvari` with the parameter of `-p 0 -s 0 -S 0 --sizemax 100000000 --dup-
 | Severus | 60              | 60             | 1      | 57              | 204             | 0.92                | 0.28      |
 
 
-![Alt text](../figures/severus_recall.png){width=30%}
+![Alt text](../figures/severus_recall.png)
 
 There are 4 structural variants that Severus failed to called. `truthset_13` and `truthset_42` did not show any evidence based on manual inspection via IGV. `truthset_32` has just 2 variant reads out of 102 reads, which is 2% VAF. `truthset_51` does not have any coverage in the normal. Finally, `truthset_52` is part of a complex structural variants chain with truthset 19, 20, 53 and 54.
 
@@ -39,4 +39,4 @@ method in ClairS preprint where truth variants that do not have any supporting r
 | 60             | 30              | 1      | SNVs     | 39447       | 38830       | 36249 | 2581 | 3198 | 0.91893 | 0.93353   | 92.62% |
 | 60             | 30              | 1      | records  | 41049       | 40305       | 37352 | 2953 | 3697 | 0.90994 | 0.92673   | 91.83% |
 
-![Alt text](../figures/SNV_INDEL_VAF.png){width=50%}
+![Alt text](../figures/SNV_INDEL_VAF.png)
