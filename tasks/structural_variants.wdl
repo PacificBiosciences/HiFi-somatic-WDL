@@ -172,7 +172,6 @@ task Severus_sv {
       --out-dir ~{pname + "_severus"} \
       -t ~{threads} \
       --vntr-bed /app/Severus/vntrs/human_GRCh38_no_alt_analysis_set.trf.bed \
-      --keep-low-coverage \
       --min-support 2
   >>>
 
@@ -181,7 +180,7 @@ task Severus_sv {
   }
 
   runtime {
-    container: "kpinpb/severus:v0.1"
+    container: "kpinpb/severus:v0.2"
     cpu: threads
     memory: "~{threads * 4} GB"
   }
