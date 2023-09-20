@@ -95,7 +95,7 @@ Following are the references for the tools used in the workflow and should be ci
 | HiPhase      | 0.10.2    | Diploid phasing using germline variants              |
 | Sniffles     | 2.0.7     | Structural variants                                  |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                |
-| Severus      | 21-Aug-23 | Structural variants                                  |
+| Severus      | commit-7453c5e | Structural variants                                  |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary                       |
 </details>
