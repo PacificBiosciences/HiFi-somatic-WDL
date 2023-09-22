@@ -25,11 +25,12 @@ Upon completion the workflow will generate the following (non-exhaustive list) r
 
 | Folder                            | Types of results                                                                  |
 | --------------------------------- | --------------------------------------------------------------------------------- |
-| AnnotatedSeverusSV                | Severus structural variants annotated with AnnotSV (TSV)                          |
+| AnnotatedSeverusSV                | Severus structural variants annotated with AnnotSV (TSV, see [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf))                          |
 | AnnotatedSnifflesSV               | Sniffles structural variants annotated with AnnotSV (TSV)                         |
-| small_variant_vcf_annotated       | ClairS SNV/INDEL annotated with VEP (VCF)                                         |
+| small_variant_vcf_annotated       | ClairS SNV/INDEL annotated with VEP (VCF, single entry per variant with `--pick`, see [VEP documentation](https://asia.ensembl.org/info/docs/tools/vep/script/vep_options.html))                                         |
 | DMR_annotated                     | Differentially methylated region annotated with genes/introns/promoters etc (TSV) |
-| DMR_results                       | Differentially methylated region (Unannotated, TSV)                               |
+| DMR_results                       | Raw differentially methylated region from DSS (Unannotated, TSV)                               |
+| DMR_annotated_CCG                       | Annotated DMR (>100 CpG sites) overlapping with the Compendium of Cancer Genes (IntOGen May 23)                               |
 | mosdepth_normal_summary           | Depth of coverage of normal (TXT)                                                 |
 | mosdepth_tumor_summary            | Depth of coverage of tumor (TXT)                                                  |
 | normal_bams_phased                | Phased normal BAM file                                                            |
@@ -39,7 +40,7 @@ Upon completion the workflow will generate the following (non-exhaustive list) r
 | aligned_RL_summary_(tumor\|normal)| Aligned read length N50, mean and median                     |
 | normal_germline_small_variant_vcf | Germline variants in normal (VCF)                                                 |
 | tumor_germline_small_variant_vcf  | Germline variants in tumor (VCF)                                                  |
-| pileup_normal_bed                 | Summarized 5mC probability  in normal(BED)                                        |
+| pileup_normal_bed                 | Summarized 5mC probability  in normal(BED, see [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools) for format description)                                        |
 | pileup_tumor_bed                  | Summarized 5mC probability in tumor (BED)                                         |
 | cnvkit_output                     | Copy number segments (BED)                                                        |
 | sniffles_somatic_vcf_filterHPRC   | Sniffles structural variants (Unannotated VCF)                                    |
@@ -69,6 +70,8 @@ Following are the references for the tools used in the workflow and should be ci
 8. McLaren, W. et al. The Ensembl Variant Effect Predictor. Genome Biology 17, 122 (2016).
 9. Park, Y. & Wu, H. Differential methylation analysis for BS-seq data under general experimental design. Bioinformatics 32, 1446–1453 (2016).
 10. Talevich, E., Shain, A. H., Botton, T. & Bastian, B. C. CNVkit: Genome-Wide Copy Number Detection and Visualization from Targeted DNA Sequencing. PLoS Comput Biol 12, e1004873 (2016).
+11. Martínez-Jiménez, F. et al. A compendium of mutational cancer driver genes. Nat Rev Cancer 20, 555–572 (2020). <https://www.intogen.org>
+
 
 ## Tools versions
 
@@ -95,9 +98,10 @@ Following are the references for the tools used in the workflow and should be ci
 | HiPhase      | 0.10.2    | Diploid phasing using germline variants              |
 | Sniffles     | 2.0.7     | Structural variants                                  |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                |
-| Severus      | commit-7453c5e | Structural variants                                  |
+| Severus      | commit-7453c5e | Structural variants                             |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               |
-| csvtk        | 0.27.2    | Aligned BAM statistics summary                       |
+| csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation |
+| IntOGen        | May 31 2023    | Compendium of Cancer Genes for annotation |
 </details>
 
 ## Change logs

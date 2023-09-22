@@ -35,6 +35,7 @@ task vep_annotate {
             --refseq \
             --check_existing \
             --vcf \
+            --pick \
             --flag_pick_allele_gene \
             --everything \
             --compress_output bgzip \

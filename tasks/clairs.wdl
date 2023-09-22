@@ -84,9 +84,9 @@ task ClairS {
   }
 
   runtime {
-    docker: "hkubal/clairs:v0.1.5"
+    docker: "hkubal/clairs:v0.1.6"
     cpu: threads
-    memory: "~{threads * 6} GB"
+    memory: "~{threads * 4} GB"
   }
 }
 

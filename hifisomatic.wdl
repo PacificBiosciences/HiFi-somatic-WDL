@@ -9,6 +9,7 @@ import "tasks/structural_variants.wdl" as structural_variants
 import "tasks/phasing.wdl" as phasing
 import "tasks/basemod.wdl" as basemod
 import "tasks/annotation.wdl" as annotation
+import "tasks/prioritization.wdl" as prioritization
 
 workflow hifisomatic {
   input {
@@ -329,6 +330,12 @@ workflow hifisomatic {
           pname = patient,
           threads = samtools_threads
       }
+
+      call prioritization.prioritize_dmr_intogen {
+        input:
+          dmr_files = annotate_DMR.output_DMR_annotated,
+          threads = samtools_threads
+      }
     }
 
     call structural_variants.sniffles as SnifflesNormal {
@@ -470,6 +477,7 @@ workflow hifisomatic {
     Array[Array[File]] pileup_normal_bw = pileup_normal.pileup_bigwigs
     Array[File?] DMR_results = DSS_DMR.output_DMR
     Array[Array[File]+?] DMR_annotated = annotate_DMR.output_DMR_annotated
+    Array[Array[File]+?] DMR_annotated_CCG = prioritize_dmr_intogen.DMR_nCG100_CCG
     Array[File] sniffles_normal_vcf = SnifflesNormal.output_vcf
     Array[File] sniffles_tumor_vcf = SnifflesTumor.output_vcf
     Array[File] sniffles_joint_vcf = SnifflesJoint.output_vcf
