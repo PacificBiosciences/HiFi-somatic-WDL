@@ -1,17 +1,20 @@
-version 1.1
+version 1.0
 
 task prioritize_dmr_intogen {
     input {
         Array[File] dmr_files
+        Int ncg_to_filter = 50
         Int threads
     }
+
+    Float file_size = ceil(size(dmr_files[0], "GB") * length(dmr_files) + 10)
 
     command <<<
     set -euxo pipefail
 
     # Join with intogen CCG genes and filter for at 
     # least 100 CGs
-    for dmr_file in ~{sep(" ", dmr_files)}
+    for dmr_file in ~{sep=" " dmr_files}
     do
     # Annotate only if the file is not *_summary.tsv.gz
         if [[ ! ${dmr_file} == *"_summary.tsv.gz" ]]
@@ -20,15 +23,15 @@ task prioritize_dmr_intogen {
                 ${dmr_file} \
                 /app/Compendium_Cancer_Genes.tsv \
                 -f "annot.symbol;SYMBOL" |\
-            csvtk filter -t -f 'nCG>100' >\
-                $(basename ${dmr_file%%.tsv.gz})_intogen.nCG100.tsv
+            csvtk filter -t -f 'nCG>~{ncg_to_filter}' >\
+                $(basename ${dmr_file%%.tsv.gz})_intogen.nCG~{ncg_to_filter}.tsv
         fi
     done
 
     # Summarize and collapse genes coordinate + metadata for each DMR entries
     # As each DMR can overlap multiple promoters, the summary function here
     # collapse the metadata for all promoters for each DMR.
-    for intogen_file in *_intogen.nCG100.tsv
+    for intogen_file in *_intogen.nCG~{ncg_to_filter}.tsv
     do
         csvtk mutate2 \
             -t -s -n 'promoter_coord' \
@@ -47,16 +50,19 @@ task prioritize_dmr_intogen {
     done
 
     # Clean up
-    rm -f ./*_intogen.nCG100.tsv
+    rm -f ./*_intogen.nCG~{ncg_to_filter}.tsv
     >>>
 
     output {
-        Array[File]+ DMR_nCG100_CCG = glob("*_intogen.nCG100_summary.tsv.gz")
+        Array[File]+ DMR_nCGFilter_CCG = glob("*_intogen.nCG*_summary.tsv.gz")
     }
 
     runtime {
         docker: "kpinpb/general_tools:v0.1"
         cpu: threads
         memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
     }
 }

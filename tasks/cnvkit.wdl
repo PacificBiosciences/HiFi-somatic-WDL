@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 # Call SNV with CNVKit using 10 kbp segmentation window and CBS algorithm
 task cnvkit_tumor {
@@ -13,6 +13,8 @@ task cnvkit_tumor {
     String pname
     Int threads
   }
+
+  Float file_size = ceil(size(tumor_bam, "GB") * 2 + size(normal_bam, "GB") * 2 + size(ref_fasta, "GB") + 20)
 
   command <<<
     set -euxo pipefail
@@ -35,8 +37,11 @@ task cnvkit_tumor {
   }
 
   runtime {
-    container: "quay.io/biocontainers/cnvkit:0.9.10--pyhdfd78af_0"
+    docker: "quay.io/biocontainers/cnvkit:0.9.10--pyhdfd78af_0"
     cpu: threads
     memory: "~{threads * 6} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }

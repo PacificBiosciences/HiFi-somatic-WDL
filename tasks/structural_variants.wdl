@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 
 # Call VCF and SNF with sniffles
@@ -11,6 +11,8 @@ task sniffles {
     File trf_bed
     Int threads
   }
+
+  Float file_size = ceil(size(bam, "GB") * 2 + size(ref_fasta, "GB") + size(trf_bed, "GB") + 10)
 
   command <<<
     set -euxo pipefail
@@ -32,9 +34,12 @@ task sniffles {
   }
 
   runtime {
-    container: "quay.io/biocontainers/sniffles:2.0.7--pyhdfd78af_0"
+    docker: "quay.io/biocontainers/sniffles:2.0.7--pyhdfd78af_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -48,6 +53,8 @@ task sniffles_call_snf {
     File trf_bed
     Int threads
   }
+
+  Float file_size = ceil(size(normal_snf, "GB") + size(tumor_snf, "GB") + size(ref_fasta, "GB") + size(trf_bed, "GB") + 10)
 
   command <<<
     set -euxo pipefail
@@ -69,9 +76,12 @@ task sniffles_call_snf {
   }
 
   runtime {
-    container: "quay.io/biocontainers/sniffles:2.0.7--pyhdfd78af_0"
+    docker: "quay.io/biocontainers/sniffles:2.0.7--pyhdfd78af_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -85,6 +95,8 @@ task slivar_select_somatic {
     String tumor_name
     Int threads
   }
+
+  Float file_size = ceil(size(sniffles_join_vcf, "GB") + 10)
 
   command <<<
     set -euxo pipefail
@@ -102,9 +114,12 @@ task slivar_select_somatic {
   }
 
   runtime {
-    container: "quay.io/biocontainers/slivar:0.3.0--h4e814b3_2"
+    docker: "quay.io/biocontainers/slivar:0.3.0--h4e814b3_2"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -116,6 +131,8 @@ task bcftools_filter {
     String tumor_name
     Int threads
   }
+
+  Float file_size = ceil(size(slivar_join_vcf, "GB") + size(ref_bed, "GB") + 10)
 
   command <<<
     set -euxo pipefail
@@ -143,9 +160,12 @@ task bcftools_filter {
   }
 
   runtime {
-    container: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+    docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -160,6 +180,8 @@ task Severus_sv {
     String pname
     Int threads
   }
+
+  Float file_size = ceil(size(tumor_bam, "GB") + size(normal_bam, "GB") + size(phased_vcf, "GB") + 10)
 
   command <<<
     set -euxo pipefail
@@ -180,8 +202,11 @@ task Severus_sv {
   }
 
   runtime {
-    container: "kpinpb/severus:v0.2"
+    docker: "kpinpb/severus:v0.2"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }

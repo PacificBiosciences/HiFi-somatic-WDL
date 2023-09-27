@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 task hiphase {
     input {
@@ -11,6 +11,8 @@ task hiphase {
         File ref_fasta_index
         Int threads
     }
+
+    Float file_size = ceil(size(bam, "GB") + size(vcf, "GB") + size(ref_fasta, "GB") + 20)
 
     command <<<
         set -euxo pipefail
@@ -34,8 +36,11 @@ task hiphase {
     }
 
     runtime {
-        container: "quay.io/pacbio/hiphase:0.10.2"
+        docker: "quay.io/pacbio/hiphase:0.10.2"
         cpu: threads
         memory: "~{threads * 6} GB"
+        disk: file_size
+        maxRetries: 2
+        preemptible: 1
     }
 }

@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 task tabix_vcf {
   input {
@@ -6,6 +6,8 @@ task tabix_vcf {
     File contig_bed
     Int threads
   }
+
+  Float file_size = ceil(size(vcf, "GB") + size(contig_bed, "GB") + 10)
   
   command <<<
     set -euxo pipefail
@@ -50,9 +52,12 @@ task tabix_vcf {
   }
 
   runtime {
-    container: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+    docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -67,6 +72,8 @@ task truvari_filter {
     Int threads
     String? truvari_arguments
   }
+
+  Float file_size = ceil(size(vcf, "GB") + size(control_vcf, "GB") + 10)
 
   command <<<
     set -euxo pipefail
@@ -86,9 +93,12 @@ task truvari_filter {
   }
 
   runtime {
-    container: "quay.io/biocontainers/truvari:4.0.0--pyhdfd78af_0"
+    docker: "quay.io/biocontainers/truvari:4.0.0--pyhdfd78af_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -99,6 +109,8 @@ task splitContigs {
     Int chunk_size
     Int threads
   }
+
+  Float file_size = ceil(size(ref_fasta_index, "GB") + 10)
 
   command <<<
   set -euxo pipefail
@@ -117,9 +129,12 @@ task splitContigs {
   }
 
   runtime {
-    container: "quay.io/biocontainers/bedtools:2.31.0--hf5e1c6e_2"
+    docker: "quay.io/biocontainers/bedtools:2.31.0--hf5e1c6e_2"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -130,6 +145,8 @@ task mosdepth {
     File bam_index
     Int threads
   }
+
+  Float file_size = ceil(size(bam, "GB") * 2)
 
   command <<<
   set -euxo pipefail
@@ -154,9 +171,12 @@ task mosdepth {
   }
 
   runtime {
-    container: "quay.io/biocontainers/mosdepth:0.3.4--hd299d5a_0"
+    docker: "quay.io/biocontainers/mosdepth:0.3.4--hd299d5a_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -172,22 +192,23 @@ task cpg_pileup {
   }
 
   String output_prefix = pname + ".cpg"
+  Float file_size = ceil(size(bam, "GB") * 2)
 
   command <<<
-    set -euxo pipefail
+  set -euxo pipefail
 
-    echo "Running cpg pileup for ~{pname}"
-    
-    aligned_bam_to_cpg_scores --version
+  echo "Running cpg pileup for ~{pname}"
+  
+  aligned_bam_to_cpg_scores --version
 
-		aligned_bam_to_cpg_scores \
-			--threads ~{threads} \
-			--bam ~{bam} \
-			--ref ~{reference} \
-			--output-prefix ~{output_prefix} \
-			--min-mapq 1 \
-			--min-coverage ~{mincov} \
-			--model "$PILEUP_MODEL_DIR"/pileup_calling_model.v1.tflite
+  aligned_bam_to_cpg_scores \
+    --threads ~{threads} \
+    --bam ~{bam} \
+    --ref ~{reference} \
+    --output-prefix ~{output_prefix} \
+    --min-mapq 1 \
+    --min-coverage ~{mincov} \
+    --model "$PILEUP_MODEL_DIR"/pileup_calling_model.v1.tflite
   >>>
 
   output {
@@ -199,9 +220,12 @@ task cpg_pileup {
   }
 
   runtime {
-    container: "quay.io/pacbio/pb-cpg-tools:v2.3.1"
+    docker: "quay.io/pacbio/pb-cpg-tools:v2.3.1"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -210,6 +234,8 @@ task fgbio_strip {
     File bam
     Int threads
   }
+
+  Float file_size = ceil(size(bam, "GB") * 2)
 
   command <<<
     set -euxo pipefail
@@ -228,6 +254,9 @@ task fgbio_strip {
     container: "quay.io/biocontainers/fgbio:2.1.0--hdfd78af_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -237,6 +266,8 @@ task seqkit_bamstats {
     File bam_index
     Int threads
   }
+
+  Float file_size = ceil(size(bam, "GB") * 2)
 
   command <<<
   set -euxo pipefail
@@ -258,9 +289,12 @@ task seqkit_bamstats {
   }
 
   runtime {
-    container: "quay.io/biocontainers/seqkit:2.5.1--h9ee0642_0"
+    docker: "quay.io/biocontainers/seqkit:2.5.1--h9ee0642_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -269,6 +303,8 @@ task summarize_seqkit_alignment {
     File seqkit_alignment_stats
     Int threads
   }
+
+  Float file_size = ceil(size(seqkit_alignment_stats, "GB") + 10)
 
   command <<<
   set -euo pipefail
@@ -313,9 +349,12 @@ task summarize_seqkit_alignment {
   }
 
   runtime {
-    container: "quay.io/biocontainers/csvtk:0.27.2--h9ee0642_0"
+    docker: "quay.io/biocontainers/csvtk:0.27.2--h9ee0642_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 

@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 # Align using pbmm2
 task Align {
@@ -15,6 +15,7 @@ task Align {
   File ref_to_use = select_first([ref_fasta_mmi, ref_fasta])
   String ofile_name = sub(basename(bam_file), "\\.bam$", ".aligned.bam")
   String ofile_name_index = sub(basename(bam_file), "\\.bam$", ".aligned.bam.bai")
+  Float file_size = ceil(size(bam_file, "GB") * 2 + size(ref_fasta, "GB") + 20)
   
   command <<<
   set -euxo pipefail
@@ -37,9 +38,12 @@ task Align {
   }
 
   runtime {
-    container: "quay.io/biocontainers/pbmm2:1.12.0--h9ee0642_0"
+    docker: "quay.io/biocontainers/pbmm2:1.12.0--h9ee0642_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -50,13 +54,15 @@ task MergeBams {
     Array[File] bam_files
     Int threads
   }
+
+  Float file_size = ceil(size(bam_files[0], "GB") * length(bam_files) + 20)
   
   command <<<
     set -euxo pipefail
-    echo "merging ~{sep(' ', bam_files)} into ~{sample_name + ".aligned.bam"}"
+    echo "merging ~{sep=' ' bam_files} into ~{sample_name + ".aligned.bam"}"
     pbmerge -j ~{threads} \
       -o ~{sample_name + ".aligned.bam"} \
-      ~{sep(' ', bam_files)}
+      ~{sep=' ' bam_files}
   >>>
 
   output {
@@ -65,9 +71,12 @@ task MergeBams {
   }
 
   runtime {
-    container: "quay.io/biocontainers/pbtk:3.1.0--h9ee0642_0"
+    docker: "quay.io/biocontainers/pbtk:3.1.0--h9ee0642_0"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -76,6 +85,8 @@ task IndexBam {
     File bam
     Int threads
   }
+
+  Float file_size = ceil(size(bam, "GB") + 20)
   
   command <<<
     set -euxo pipefail
@@ -89,8 +100,11 @@ task IndexBam {
   }
 
   runtime {
-    container: "quay.io/biocontainers/samtools:1.17--hd87286a_1"
+    docker: "quay.io/biocontainers/samtools:1.17--hd87286a_1"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }

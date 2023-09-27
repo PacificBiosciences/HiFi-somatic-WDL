@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 # Optionally, call SNVs and indels with ClairS
 task ClairS {
@@ -14,6 +14,8 @@ task ClairS {
     String platform
     Int threads
   }
+
+  Float file_size = ceil(size(tumor_bam, "GB") * 2 + size(normal_bam, "GB") * 2 + size(ref_fasta, "GB") + size(contig, "GB") + 20)
   
   command <<<
     set -euxo pipefail
@@ -87,6 +89,9 @@ task ClairS {
     docker: "hkubal/clairs:v0.1.6"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -104,6 +109,8 @@ task gatherClairS {
     Int indel_qual
   }
 
+  Float file_size = ceil(size(snv_vcf, "GB") * 2 + size(indel_vcf, "GB") * 2 + size(ref_fasta_index, "GB") + 10)
+
   command <<<
   set -euxo pipefail
 
@@ -114,7 +121,7 @@ task gatherClairS {
   # the case of test dataset where there's no variants but I
   # want the workflow to complete
   touch ~{pname + ".snv_indel_vcf.txt"}
-  for file in $(echo ~{sep(' ', snv_vcf)} ~{sep(' ', indel_vcf)});\
+  for file in $(echo ~{sep=' ' snv_vcf} ~{sep=' ' indel_vcf});\
     do \
     # If file is not empty, then add to filelist
     if [[ -s ${file} ]]; then echo -e "${file}" >> ~{pname + ".snv_indel_vcf.txt"}; fi; done
@@ -163,9 +170,12 @@ task gatherClairS {
   }
 
   runtime {
-    container: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+    docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }
 
@@ -179,6 +189,8 @@ task gatherClairS_germline {
     Int threads
   }
 
+  Float file_size = ceil(size(tumor_vcf, "GB") * 2 + size(normal_vcf, "GB") * 2 + 10)
+
   command <<<
     set -euxo pipefail
 
@@ -190,12 +202,12 @@ task gatherClairS_germline {
     # want the workflow to complete
     touch ~{pname + ".tumor_germline_vcf.txt"}
     touch ~{pname + ".normal_germline_vcf.txt"}
-    for file in $(echo ~{sep(' ', tumor_vcf)});\
+    for file in $(echo ~{sep=' ' tumor_vcf});\
       do \
       # If file is not empty, then add to filelist
       if [[ -s ${file} ]]; then echo -e "${file}" >> ~{pname + ".tumor_germline_vcf.txt"}; fi; done
 
-    for file in $(echo ~{sep(' ', normal_vcf)});\
+    for file in $(echo ~{sep=' ' normal_vcf});\
       do \
       # If file is not empty, then add to filelist
       if [[ -s ${file} ]]; then echo -e "${file}" >> ~{pname + ".normal_germline_vcf.txt"}; fi; done
@@ -262,8 +274,11 @@ task gatherClairS_germline {
   }
 
   runtime {
-    container: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+    docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
     cpu: threads
     memory: "~{threads * 4} GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
   }
 }

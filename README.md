@@ -30,7 +30,7 @@ Upon completion the workflow will generate the following (non-exhaustive list) r
 | small_variant_vcf_annotated       | ClairS SNV/INDEL annotated with VEP (VCF, single entry per variant with `--pick`, see [VEP documentation](https://asia.ensembl.org/info/docs/tools/vep/script/vep_options.html))                                         |
 | DMR_annotated                     | Differentially methylated region annotated with genes/introns/promoters etc (TSV) |
 | DMR_results                       | Raw differentially methylated region from DSS (Unannotated, TSV)                               |
-| DMR_annotated_CCG                       | Annotated DMR (>100 CpG sites) overlapping with the Compendium of Cancer Genes (IntOGen May 23)                               |
+| DMR_annotated_CCG                       | Annotated DMR (>50 CpG sites) overlapping with the Compendium of Cancer Genes (IntOGen May 23)                               |
 | mosdepth_normal_summary           | Depth of coverage of normal (TXT)                                                 |
 | mosdepth_tumor_summary            | Depth of coverage of tumor (TXT)                                                  |
 | normal_bams_phased                | Phased normal BAM file                                                            |
@@ -109,6 +109,7 @@ Following are the references for the tools used in the workflow and should be ci
 <details>
   <summary>Click to expand changelogs:</summary>
 
+- v0.2: Downgraded to WDL 1.0 for better compatibility. Added run time attribute to tasks for future support on cloud (not tested yet).
 - v0.1: Initial release
 
 </details>

@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 task DSS_DMR {
     input {
@@ -7,6 +7,8 @@ task DSS_DMR {
         String pname
         Int threads
     }
+
+    Float file_size = ceil(size(tumor_bed, "GB") + size(normal_bed, "GB") + 10)
 
     command <<<
         set -euxo pipefail
@@ -31,6 +33,9 @@ task DSS_DMR {
         docker: "kpinpb/dss:v0.1"
         cpu: threads
         memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
     }
 }
 
@@ -40,6 +45,8 @@ task annotate_DMR {
         String pname
         Int threads
     }
+
+    Float file_size = ceil(size(DMR, "GB"))
 
     command <<<
         set -euxo pipefail
@@ -58,5 +65,8 @@ task annotate_DMR {
         docker: "kpinpb/annotatr:v0.1"
         cpu: threads
         memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
     }
 }

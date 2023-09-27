@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 import "structs.wdl"
 import "tasks/alignment.wdl" as alignment
@@ -61,6 +61,8 @@ workflow hifisomatic {
     # VEP cache can be downloaded from https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_refseq_vep_110_GRCh38.tar.gz
     File? vep_cache
     Int vep_threads = 8
+    # Minimum number of CG to prioritize
+    Int ncg_to_filter = 50
   }
 
   call common.splitContigs {
@@ -334,7 +336,8 @@ workflow hifisomatic {
       call prioritization.prioritize_dmr_intogen {
         input:
           dmr_files = annotate_DMR.output_DMR_annotated,
-          threads = samtools_threads
+          threads = samtools_threads,
+          ncg_to_filter = ncg_to_filter
       }
     }
 
@@ -477,7 +480,7 @@ workflow hifisomatic {
     Array[Array[File]] pileup_normal_bw = pileup_normal.pileup_bigwigs
     Array[File?] DMR_results = DSS_DMR.output_DMR
     Array[Array[File]+?] DMR_annotated = annotate_DMR.output_DMR_annotated
-    Array[Array[File]+?] DMR_annotated_CCG = prioritize_dmr_intogen.DMR_nCG100_CCG
+    Array[Array[File]+?] DMR_annotated_CCG = prioritize_dmr_intogen.DMR_nCGFilter_CCG
     Array[File] sniffles_normal_vcf = SnifflesNormal.output_vcf
     Array[File] sniffles_tumor_vcf = SnifflesTumor.output_vcf
     Array[File] sniffles_joint_vcf = SnifflesJoint.output_vcf

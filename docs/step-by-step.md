@@ -42,7 +42,7 @@ pip install miniwdl-slurm
 
 ```bash
 # Download resource bundle needed for the workflow
-curl -LO 'https://zenodo.org/record/8347237/files/hifisomatic_resources.tar.gz?download=1'
+curl -LO 'https://zenodo.org/record/8382325/files/hifisomatic_resources.tar.gz?download=1'
 # Extract the archive
 tar -xzvf hifisomatic_resources.tar.gz
 # Check that you have the following files:
@@ -85,9 +85,9 @@ Or you can download a small demo dataset here that contains the region with trut
 
 ```bash
 # Download tumor demo
-curl -LO 'https://zenodo.org/record/8347237/files/COLO829.30X.SV_region.bam?download=1'
+curl -LO 'https://zenodo.org/record/8382325/files/COLO829.30X.SV_region.bam?download=1'
 # Download matched normal demo
-curl -LO 'https://zenodo.org/record/8347237/files/COLO829BL.30X.SV_region.bam?download=1'
+curl -LO 'https://zenodo.org/record/8382325/files/COLO829BL.30X.SV_region.bam?download=1'
 ```
 
 ## Modify the input json file to point to the downloaded files
@@ -223,3 +223,5 @@ where again by default it'll place the image cache directory in the working dire
 - If `"hifisomatic.call_small_variants"` is true, the workflow will call somatic SNVs and indels with [`ClairS`](https://github.com/HKU-BAL/ClairS). Note that without calling small variants, the workflow will not be able to phase the BAM files.
 
 - The model for `ClairS` can be specified with `"hifisomatic.clairs_platform"`. The default model is for Revio (`hifi_revio`). There is also a Sequel II model available that can be specified with `hifi_sequel2`.
+
+- By default, the pipeline output a set of DMR (differentially methylated region) in the Compendium of Cancer Genes (IntOGen) and filter for at least 50 CpG sites in the DMR region. This can be changed by modifying `hifisomatic.ncg_to_filter`.

@@ -1,4 +1,4 @@
-version 1.1
+version 1.0
 
 task vep_annotate {
     input {
@@ -9,6 +9,8 @@ task vep_annotate {
         String pname
         Int threads
     }
+
+    Float file_size = ceil(size(input_vcf, "GB") + size(vep_cache, "GB") + size(ref_fasta, "GB") + size(ref_fasta_index, "GB"))
 
     command <<<
         set -euxo pipefail
@@ -51,9 +53,12 @@ task vep_annotate {
     }
 
     runtime {
-        container: "ensemblorg/ensembl-vep:release_110.1"
+        docker: "ensemblorg/ensembl-vep:release_110.1"
         cpu: threads
         memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
     }
 }
 
@@ -65,6 +70,8 @@ task annotsv {
         String pname
         Int threads
     }
+
+    Float file_size = ceil(size(sv_vcf, "GB") + size(annotsv_cache, "GB"))
 
     command <<<
         set -euxo pipefail
@@ -95,8 +102,11 @@ task annotsv {
     }
 
     runtime {
-        container: "quay.io/biocontainers/annotsv:3.3.6--py311hdfd78af_0"
+        docker: "quay.io/biocontainers/annotsv:3.3.6--py311hdfd78af_0"
         cpu: threads
         memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
     }
 }
