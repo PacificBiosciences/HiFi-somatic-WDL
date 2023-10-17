@@ -385,3 +385,41 @@ task summarize_seqkit_alignment {
 #     memory: "~{threads * 4} GB"
 #   }
 # }
+
+task mutationalpattern {
+  input {
+    File vcf
+    String pname
+    Float max_delta
+    Int threads
+  }
+
+  Float file_size = ceil(size(vcf, "GB") + 10)
+
+  command <<<
+  set -euxo pipefail
+
+  Rscript --vanilla /app/mutational_pattern.R \
+    ~{vcf} \
+    ~{pname} \
+    ~{max_delta}
+  >>>
+
+  output {
+    File mutsig_tsv = pname + ".mut_sigs.tsv"
+    File recon_sig = pname + ".reconstructed_sigs.tsv"
+    File occurences_tsv = pname + ".type_occurences.tsv"
+    File mutsig_bootstrap = pname + ".mut_sigs_bootstrapped.tsv"
+    File mut_profile = pname + ".mutation_profile.pdf"
+    Array[File] mutsig_output = glob("*.tsv")
+  }
+
+  runtime {
+      docker: "kpinpb/dss:v0.2"
+      cpu: threads
+      memory: "~{threads * 4} GB"
+      disk: file_size + " GB"
+      maxRetries: 2
+      preemptible: 1
+  }
+}

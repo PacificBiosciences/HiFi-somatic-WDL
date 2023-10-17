@@ -37,6 +37,8 @@ workflow hifisomatic {
     Int clairs_threads = 16
     Int clairs_snv_qual = 2
     Int clairs_indel_qual = 11
+    # Mutational signature max delta for MutationalPattern fitting
+    Float mutsig_max_delta = 0.004
     # Sniffles
     File sniffles_trf_bed
     Int sniffles_threads = 8
@@ -61,8 +63,12 @@ workflow hifisomatic {
     # VEP cache can be downloaded from https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_refseq_vep_110_GRCh38.tar.gz
     File? vep_cache
     Int vep_threads = 8
+    # Annotate germline variants?
+    Boolean annotate_germline = false
     # Minimum number of CG to prioritize
     Int ncg_to_filter = 50
+    # Sometimes when there's too many mutations HiPhase will run OOM. Use LongPhase
+    Boolean uselongphase = false
   }
 
   call common.splitContigs {
@@ -189,17 +195,13 @@ workflow hifisomatic {
               indel_qual = clairs_indel_qual
           }
 
-          # Annotate somatic VCF
-          if(size(gatherClairS.output_vcf) > 0 && defined(vep_cache)){
-            call annotation.vep_annotate {
-              input:
-                input_vcf = gatherClairS.output_vcf,
-                vep_cache = select_first([vep_cache]),
-                ref_fasta = ref_fasta,
-                ref_fasta_index = ref_fasta_index,
-                pname = patient,
-                threads = vep_threads
-            }
+          # Mutational signature
+          call common.mutationalpattern {
+            input:
+              vcf = gatherClairS.output_vcf,
+              pname = patient,
+              max_delta = mutsig_max_delta,
+              threads = samtools_threads
           }
 
           call clairs.gatherClairS_germline {
@@ -211,20 +213,61 @@ workflow hifisomatic {
           }
           # Phase only if size of VCF is not zero (no variants)
           if(size(gatherClairS_germline.output_tumor_germline_vcf) > 0){
-            call phasing.hiphase as phaseTumorBam {
-              input:
-                bam = MergeTumorBams.merged_aligned_bam,
-                bam_index = IndexTumorBam.merged_aligned_bam_index_bai,
-                vcf = gatherClairS_germline.output_tumor_germline_vcf,
-                vcf_index = gatherClairS_germline.output_tumor_germline_vcf_index,
-                pname = patient,
-                ref_fasta = ref_fasta,
-                ref_fasta_index = ref_fasta_index,
-                threads = samtools_threads
+            if(uselongphase){
+              call phasing.longphase_with_somatic as phaseTumorBam_longphase {
+                input:
+                  bam = MergeTumorBams.merged_aligned_bam,
+                  bam_index = IndexTumorBam.merged_aligned_bam_index_bai,
+                  vcf = gatherClairS_germline.output_tumor_germline_vcf,
+                  vcf_index = gatherClairS_germline.output_tumor_germline_vcf_index,
+                  somatic_SNP_indel_vcf = gatherClairS.output_vcf,
+                  somatic_SNP_indel_vcf_index = gatherClairS.output_vcf_index,
+                  pname = patient,
+                  ref_fasta = ref_fasta,
+                  ref_fasta_index = ref_fasta_index,
+                  threads = samtools_threads
+              }
             }
+            if(!uselongphase){
+              call phasing.hiphase_with_somatic as phaseTumorBam {
+                input:
+                  bam = MergeTumorBams.merged_aligned_bam,
+                  bam_index = IndexTumorBam.merged_aligned_bam_index_bai,
+                  vcf = gatherClairS_germline.output_tumor_germline_vcf,
+                  vcf_index = gatherClairS_germline.output_tumor_germline_vcf_index,
+                  somatic_SNP_indel_vcf = gatherClairS.output_vcf,
+                  somatic_SNP_indel_vcf_index = gatherClairS.output_vcf_index,
+                  pname = patient,
+                  ref_fasta = ref_fasta,
+                  ref_fasta_index = ref_fasta_index,
+                  threads = samtools_threads
+              }
+            }
+            
+
+            # Annotate somatic VCF
+            if(size(select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf])) > 0 && defined(vep_cache)){
+              call annotation.vep_annotate as annotateSomatic {
+                input:
+                  input_vcf = select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf]),
+                  vep_cache = select_first([vep_cache]),
+                  ref_fasta = ref_fasta,
+                  ref_fasta_index = ref_fasta_index,
+                  pname = patient,
+                  threads = vep_threads
+              }
+
+              call prioritization.prioritize_small_variants as prioritizeSomatic {
+                input:
+                  vep_annotated_vcf = annotateSomatic.vep_annotated_vcf,
+                  threads = samtools_threads,
+                  pname = patient
+              }
+            }
+
             call alignment.IndexBam as IndexTumorBamPhased {
               input:
-                bam = phaseTumorBam.hiphase_bam,
+                bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam]),
                 threads = samtools_threads
             }
           }
@@ -240,6 +283,20 @@ workflow hifisomatic {
                 ref_fasta_index = ref_fasta_index,
                 threads = samtools_threads
             }
+
+          # Annotate germline VCF
+           if(size(phaseNormalBam.hiphase_vcf) > 0 && defined(vep_cache) && annotate_germline){
+              call annotation.vep_annotate as annotateGermline {
+                input:
+                  input_vcf = phaseNormalBam.hiphase_vcf,
+                  vep_cache = select_first([vep_cache]),
+                  ref_fasta = ref_fasta,
+                  ref_fasta_index = ref_fasta_index,
+                  pname = patient,
+                  threads = vep_threads
+              }
+            }
+
             call alignment.IndexBam as IndexNormalBamPhased {
               input:
                 bam = phaseNormalBam.hiphase_bam,
@@ -268,7 +325,7 @@ workflow hifisomatic {
     # Calculate alignment statistics for tumor
     call common.seqkit_bamstats as bamstatsTumor {
       input:
-        bam = select_first([phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
+        bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
         bam_index = select_first([IndexTumorBamPhased.merged_aligned_bam_index_bai, IndexTumorBam.merged_aligned_bam_index_bai]),
         threads = samtools_threads
     }
@@ -297,7 +354,7 @@ workflow hifisomatic {
     call common.cpg_pileup as pileup_tumor {
       input:
         pname = patient + ".tumor",
-        bam = select_first([phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
+        bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
         bam_index = select_first([IndexTumorBamPhased.merged_aligned_bam_index_bai, IndexTumorBam.merged_aligned_bam_index_bai]),
         reference = ref_fasta,
         reference_index = ref_fasta_index,
@@ -399,11 +456,11 @@ workflow hifisomatic {
 
     call structural_variants.Severus_sv {
       input:
-        tumor_bam = select_first([phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
+        tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
         tumor_bam_index = select_first([IndexTumorBamPhased.merged_aligned_bam_index_bai, IndexTumorBam.merged_aligned_bam_index_bai]),
         normal_bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
         normal_bam_index = select_first([IndexNormalBamPhased.merged_aligned_bam_index_bai, IndexNormalBam.merged_aligned_bam_index_bai]),
-        phased_vcf = phaseTumorBam.hiphase_vcf,
+        phased_vcf = select_first([phaseTumorBam_longphase.longphase_vcf, phaseTumorBam.hiphase_vcf]),
         pname = patient,
         threads = sniffles_threads
     }
@@ -443,6 +500,18 @@ workflow hifisomatic {
             pname = patient,
             threads = annotsv_threads
       }
+
+      call prioritization.prioritize_sv_intogen as prioritize_Severus {
+        input:
+          annotSV_tsv = annotateSeverus.annotsv_annotated_tsv,
+          threads = samtools_threads
+      }
+
+      call prioritization.prioritize_sv_intogen as prioritize_Sniffles {
+        input:
+          annotSV_tsv = annotateSniffles.annotsv_annotated_tsv,
+          threads = samtools_threads
+      }
     }
 
     call cnvkit.cnvkit_tumor {
@@ -460,15 +529,21 @@ workflow hifisomatic {
   }
 
   output {
-    Array[File?] small_variant_vcf = gatherClairS.output_vcf
-    Array[File?] small_variant_vcf_annotated = vep_annotate.vep_annotated_vcf
+    Array[File?] small_variant_vcf = phaseTumorBam.hiphase_somatic_small_variants_vcf
+    Array[File?] small_variant_vcf_annotated = annotateSomatic.vep_annotated_vcf
+    Array[File?] small_variant_tsv_annotated = prioritizeSomatic.vep_annotated_tsv
+    Array[File?] small_variant_tsv_CCG = prioritizeSomatic.vep_annotated_tsv_intogenCCG
+    Array[Array[File]+?] mutsig_SNV = mutationalpattern.mutsig_output
+    Array[File?] mutsig_SNV_profile = mutationalpattern.mut_profile
     Array[File?] tumor_germline_small_variant_vcf = gatherClairS_germline.output_tumor_germline_vcf
     Array[File?] normal_germline_small_variant_vcf = gatherClairS_germline.output_normal_germline_vcf
+    Array[File?] normal_germline_small_variant_vcf_annotated = annotateGermline.vep_annotated_vcf
     Array[File] tumor_bams = MergeTumorBams.merged_aligned_bam
     Array[File] tumor_bams_bai = IndexTumorBam.merged_aligned_bam_index_bai
-    Array[File?] tumor_bams_phased = phaseTumorBam.hiphase_bam
-    Array[File?] tumor_bams_phase_stats = phaseTumorBam.hiphase_stats
+    Array[File?] tumor_bams_hiphase = phaseTumorBam.hiphase_bam
+    Array[File?] tumor_bams_hiphase_stats = phaseTumorBam.hiphase_stats
     Array[File?] tumor_bams_phased_index = IndexTumorBamPhased.merged_aligned_bam_index_bai
+    Array[File?] tumor_bams_longphase = phaseTumorBam_longphase.longphase_bam
     Array[File] normal_bams = MergeNormalBams.merged_aligned_bam
     Array[File] normal_bams_bai = IndexNormalBam.merged_aligned_bam_index_bai
     Array[File?] normal_bams_phased = phaseNormalBam.hiphase_bam
@@ -493,7 +568,9 @@ workflow hifisomatic {
     Array[File] Severus_filterHPRC_vcf_index = filterHPRC_Severus.output_vcf_index
     Array[Array[File]+] cnvkit_output = cnvkit_tumor.cnvkit_output
     Array[File?] AnnotatedSnifflesSV = annotateSniffles.annotsv_annotated_tsv
+    Array[File?] AnnotatedSnifflesSV_intogen = prioritize_Sniffles.annotSV_intogen_tsv
     Array[File?] AnnotatedSeverusSV = annotateSeverus.annotsv_annotated_tsv
+    Array[File?] AnnotatedSeverusSV_intogen = prioritize_Severus.annotSV_intogen_tsv
     Array[File] mosdepth_tumor_bed = MosdepthTumor.output_bed
     Array[File] mosdepth_tumor_bed_index = MosdepthTumor.output_bed_index
     Array[File] mosdepth_tumor_summary = MosdepthTumor.output_summary

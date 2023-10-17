@@ -30,7 +30,7 @@ task DSS_DMR {
     }
 
     runtime {
-        docker: "kpinpb/dss:v0.1"
+        docker: "kpinpb/dss:v0.2"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"

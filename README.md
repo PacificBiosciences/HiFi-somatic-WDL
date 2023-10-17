@@ -21,27 +21,33 @@ A step-by-step tutorial and FAQ can be found [here](docs/step-by-step.md).
 
 ## Important outputs from workflow
 
-Upon completion the workflow will generate the following (non-exhaustive list) results in the `$OUTDIR/_LAST/out` folder:
+Upon completion the workflow will generate the following (non-exhaustive list) results in the `$OUTDIR/_LAST/out` folder. Please refer to [output](docs/output.md) for a more detailed description of the outputs.
 
 | Folder                            | Types of results                                                                  |
 | --------------------------------- | --------------------------------------------------------------------------------- |
 | AnnotatedSeverusSV                | Severus structural variants annotated with AnnotSV (TSV, see [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf))                          |
 | AnnotatedSnifflesSV               | Sniffles structural variants annotated with AnnotSV (TSV)                         |
+| Annotated*SV_intogen               | Structural variants annotated with AnnotSV (TSV) overlapping with the Compendium of Cancer Genes (IntOGen May 23)  |
 | small_variant_vcf_annotated       | ClairS SNV/INDEL annotated with VEP (VCF, single entry per variant with `--pick`, see [VEP documentation](https://asia.ensembl.org/info/docs/tools/vep/script/vep_options.html))                                         |
+| small_variant_tsv_annotated       | VEP annotation for SNV/INDEL in TSV format                                         |
+| small_variant_tsv_CCG       | SNV/INDEL that are in the Compendium of Cancer Genes (IntOGen May 23)                                        |
+| mutsig_SNV_profile       | Mutational profile plot (MutationalPattern)                                        |
+| mutsig_SNV       | Mutational signature in TSV format (MutationalPattern)                                        |
+| normal_germline_small_variant_vcf_annotated       | ClairS germline SNV/INDEL (In normal sample) annotated with VEP (Optional, see [input JSON parameters](docs/step-by-step.md#input-json-parameters))                                         |
 | DMR_annotated                     | Differentially methylated region annotated with genes/introns/promoters etc (TSV) |
 | DMR_results                       | Raw differentially methylated region from DSS (Unannotated, TSV)                               |
 | DMR_annotated_CCG                       | Annotated DMR (>50 CpG sites) overlapping with the Compendium of Cancer Genes (IntOGen May 23)                               |
 | mosdepth_normal_summary           | Depth of coverage of normal (TXT)                                                 |
 | mosdepth_tumor_summary            | Depth of coverage of tumor (TXT)                                                  |
-| normal_bams_phased                | Phased normal BAM file                                                            |
-| tumor_bams_phased                 | Phased tumor BAM file                                                             |
+| normal_bams_phased                | Phased normal BAM file (Hiphase)                                                           |
+| tumor_bams_hiphase                 | Phased tumor BAM file (Hiphase)                                                            |
+| tumor_bams_longphase                 | Phased tumor BAM file (Optionally, use Longphase for phasing. See [input JSON parameters](docs/step-by-step.md#input-json-parameters))                                                            |
 | overall_(tumor\|normal)_alignment_stats      | Alignment overall statistics (Mapped %)                                                    |
 | per_alignment_(tumor\|normal)_stats| Statistics (accuracy/n_mismatches/length) for each alignment                     |
 | aligned_RL_summary_(tumor\|normal)| Aligned read length N50, mean and median                     |
 | normal_germline_small_variant_vcf | Germline variants in normal (VCF)                                                 |
 | tumor_germline_small_variant_vcf  | Germline variants in tumor (VCF)                                                  |
-| pileup_normal_bed                 | Summarized 5mC probability  in normal(BED, see [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools) for format description)                                        |
-| pileup_tumor_bed                  | Summarized 5mC probability in tumor (BED)                                         |
+| pileup_(normal\/tumor)_bed                 | Summarized 5mC probability  in normal and tumor (BED, see [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools) for format description)                                        |
 | cnvkit_output                     | Copy number segments (BED)                                                        |
 | sniffles_somatic_vcf_filterHPRC   | Sniffles structural variants (Unannotated VCF)                                    |
 | Severus_filterHPRC_vcf            | Severus structural variants (Unannotated VCF)                                     |
@@ -71,6 +77,9 @@ Following are the references for the tools used in the workflow and should be ci
 9. Park, Y. & Wu, H. Differential methylation analysis for BS-seq data under general experimental design. Bioinformatics 32, 1446–1453 (2016).
 10. Talevich, E., Shain, A. H., Botton, T. & Bastian, B. C. CNVkit: Genome-Wide Copy Number Detection and Visualization from Targeted DNA Sequencing. PLoS Comput Biol 12, e1004873 (2016).
 11. Martínez-Jiménez, F. et al. A compendium of mutational cancer driver genes. Nat Rev Cancer 20, 555–572 (2020). <https://www.intogen.org>
+12. Manders, F. et al. MutationalPatterns: the one stop shop for the analysis of mutational processes. BMC Genomics 23, 134 (2022).
+  13.  Lin, J.-H., Chen, L.-C., Yu, S.-C. & Huang, Y.-T. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics 38, 1816–1822 (2022).
+
 
 
 ## Tools versions
@@ -102,6 +111,8 @@ Following are the references for the tools used in the workflow and should be ci
 | seqkit       | 2.5.1     | Aligned BAM statistics                               |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation |
 | IntOGen        | May 31 2023    | Compendium of Cancer Genes for annotation |
+| MutationalPattern        | 3.10.0   | Mutational signatures based on SNV |
+| Longphase        | v1.5.1   | Optional phasing tool |
 </details>
 
 ## Change logs
@@ -109,7 +120,17 @@ Following are the references for the tools used in the workflow and should be ci
 <details>
   <summary>Click to expand changelogs:</summary>
 
-- v0.2: Downgraded to WDL 1.0 for better compatibility. Added run time attribute to tasks for future support on cloud (not tested yet).
+- v0.3:
+  - Added IntOGen filtering of SV/SNV/INDEL/DMR. 
+  - Added mutational signature analysis. 
+  - Added germline small variants annotation with VEP (optional).
+  - Added Longphase as an optional phasing tool.
+  - Better documentation of output in [output](docs/output.md).
+  
+- v0.2:
+  - Downgraded to WDL 1.0 for better compatibility. 
+  - Added run time attribute to tasks for future support on cloud (not tested yet).
+  
 - v0.1: Initial release
 
 </details>

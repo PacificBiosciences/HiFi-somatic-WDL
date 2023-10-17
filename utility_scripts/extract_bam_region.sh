@@ -65,18 +65,23 @@ for ((i=0;i<${#tumor_bam[@]};++i)); do
     samtools index -@"${threads}" "${outdir}/${sample}/BAM/${sample}.tumor_${prefix}.bam"
     # Find normal from list of normal_bam
     echo "${normal_bam[@]}"
-    normal=$(echo "${normal_bam[@]}" | tr ' ' '\n' | grep "${sample}.")
+    normal=$(echo "${normal_bam[@]}" | tr ' ' '\n' | grep "${sample}\.")
     echo -e "Extracting normal BAM for ${sample}"
     samtools view -@"${threads}" -bh "${normal}" "$region" > "${outdir}/${sample}/BAM/${sample}.normal_${prefix}.bam"
     samtools index -@"${threads}" "${outdir}/${sample}/BAM/${sample}.normal_${prefix}.bam"
 
     # Find all SNV/INDEL VCF for the sample and 
     # extract according to region desired
-    echo "${vcfs[@]}" | tr ' ' '\n' | grep "${sample}." > "${outdir}/${sample}/VCF/vcf.list"
+    echo "${vcfs[@]}" | tr ' ' '\n' | grep "${sample}\." > "${outdir}/${sample}/VCF/vcf.list"
     echo -e "Extracting VCF for ${sample}"
     while IFS= read -r vcf
     do
         vcf_name=$(basename "${vcf}")
+        # Index if tbi does not exist
+        if [[ ! -f "${vcf}.tbi" ]]
+        then
+            tabix -p vcf "${vcf}"
+        fi
         bcftools view ${vcf} \
             -R ${prefix}_${chr}_${start}-${end}.bed \
             -Oz -o "${outdir}/${sample}/VCF/${vcf_name%.vcf.gz}_${prefix}.vcf.gz"
@@ -84,8 +89,8 @@ for ((i=0;i<${#tumor_bam[@]};++i)); do
     done < <(cat "${outdir}"/"${sample}"/VCF/vcf.list)
 
     # Do the same for SV (Severus and Sniffles)
-    sniffles_vcf=$(echo "${sniffles_vcfs[@]}" | tr ' ' '\n' | grep "${sample}.sniffles")
-    severus_vcf=$(echo "${severus_vcfs[@]}" | tr ' ' '\n' | grep "severus_somatic_${sample}.")
+    sniffles_vcf=$(echo "${sniffles_vcfs[@]}" | tr ' ' '\n' | grep "${sample}\.sniffles")
+    severus_vcf=$(echo "${severus_vcfs[@]}" | tr ' ' '\n' | grep "severus_somatic_${sample}\.")
     sniffles_vcf_name=$(basename "${sniffles_vcf}")
     severus_vcf_name=$(basename "${severus_vcf}")
     echo -e "Extracting Sniffles VCF for ${sample}"
@@ -100,12 +105,12 @@ for ((i=0;i<${#tumor_bam[@]};++i)); do
     tabix -p vcf "${outdir}/${sample}/VCF/${severus_vcf_name%.vcf.gz}_${prefix}.vcf.gz"
 
     # Extract pileup
-    comb_normal=$(echo "${combined_cpg_pileup_normal[@]}" | tr ' ' '\n' | grep "${sample}.")
-    comb_tumor=$(echo "${combined_cpg_pileup_tumor[@]}" | tr ' ' '\n' | grep "${sample}.")
-    hap1_normal=$(echo "${hap1_cpg_pileup_normal[@]}" | tr ' ' '\n' | grep "${sample}.")
-    hap1_tumor=$(echo "${hap1_cpg_pileup_tumor[@]}" | tr ' ' '\n' | grep "${sample}.")
-    hap2_normal=$(echo "${hap2_cpg_pileup_normal[@]}" | tr ' ' '\n' | grep "${sample}.")
-    hap2_tumor=$(echo "${hap2_cpg_pileup_tumor[@]}" | tr ' ' '\n' | grep "${sample}.")
+    comb_normal=$(echo "${combined_cpg_pileup_normal[@]}" | tr ' ' '\n' | grep "${sample}\.")
+    comb_tumor=$(echo "${combined_cpg_pileup_tumor[@]}" | tr ' ' '\n' | grep "${sample}\.")
+    hap1_normal=$(echo "${hap1_cpg_pileup_normal[@]}" | tr ' ' '\n' | grep "${sample}\.")
+    hap1_tumor=$(echo "${hap1_cpg_pileup_tumor[@]}" | tr ' ' '\n' | grep "${sample}\.")
+    hap2_normal=$(echo "${hap2_cpg_pileup_normal[@]}" | tr ' ' '\n' | grep "${sample}\.")
+    hap2_tumor=$(echo "${hap2_cpg_pileup_tumor[@]}" | tr ' ' '\n' | grep "${sample}\.")
     
     bedtools intersect -a "${comb_tumor}" -b ${prefix}_${chr}_${start}-${end}.bed > "${outdir}/${sample}/pileup/${sample}.tumor.cpg.combined_${prefix}.bed"
     bedtools intersect -a "${comb_normal}" -b ${prefix}_${chr}_${start}-${end}.bed > "${outdir}/${sample}/pileup/${sample}.normal.cpg.combined_${prefix}.bed"

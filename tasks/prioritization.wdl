@@ -66,3 +66,79 @@ task prioritize_dmr_intogen {
         preemptible: 1
     }
 }
+
+task prioritize_sv_intogen {
+    input {
+        File annotSV_tsv
+        Int threads
+    }
+
+    Float file_size = ceil(size(annotSV_tsv, "GB") + 10)
+
+    command <<<
+    set -euxo pipefail
+
+    csvtk join -t \
+        ~{annotSV_tsv} \
+        /app/Compendium_Cancer_Genes.tsv \
+        -f "Gene_name;SYMBOL" |\
+            csvtk filter2 -t -f '$Annotation_mode == "split"' |\
+            csvtk summary -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
+                -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
+                sed 's/:collapse//g'  > ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
+    >>>
+
+    output {
+        File annotSV_intogen_tsv = sub(basename(annotSV_tsv), "\\.tsv$", "") + "_intogenCCG.tsv"
+    }
+
+    runtime {
+        docker: "kpinpb/general_tools:v0.1"
+        cpu: threads
+        memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
+    }
+}
+
+task prioritize_small_variants {
+    input {
+        File vep_annotated_vcf
+        Int threads
+        String pname
+    }
+
+    Float file_size = ceil(size(vep_annotated_vcf, "GB") + 10)
+    String fname = sub(basename(vep_annotated_vcf), "\\.vcf.gz", "") + ".tsv"
+    String fname2 = sub(basename(vep_annotated_vcf), "\\.vcf.gz", "") + "_intogenCCG.tsv"
+
+    command <<<
+    set -euxo pipefail
+
+    echo -e "CHROM\tPOS\tREF\tALT\tFORMAT\t~{pname}\t$(bcftools +split-vep ~{vep_annotated_vcf} -l | cut -f2 | tr '\n' '\t' | sed 's/\t$//g')" > ~{fname}
+    bcftools +split-vep ~{vep_annotated_vcf} -A tab -f '%CHROM\t%POS\t%REF\t%ALT\t%FORMAT\t%CSQ\n' >> ~{fname}
+
+    csvtk join -t \
+        ~{fname} \
+        <(sed 's/DOMAINS/CCG_DOMAINS/g' /app/Compendium_Cancer_Genes.tsv) \
+        -f SYMBOL |\
+            csvtk summary -t -g "$(csvtk headers -t ~{fname} | tr '\n' ',' | sed 's/,$//g')" \
+                -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,CCG_DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
+                sed 's/:collapse//g' > ~{fname2}
+    >>>
+
+    output {
+        File vep_annotated_tsv = fname
+        File vep_annotated_tsv_intogenCCG = fname2
+    }
+
+    runtime {
+        docker: "kpinpb/general_tools:v0.1"
+        cpu: threads
+        memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
+    }
+}
