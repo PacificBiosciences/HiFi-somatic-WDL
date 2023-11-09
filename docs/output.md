@@ -1,5 +1,16 @@
 # Output from workflow
 
+- [Output from workflow](#output-from-workflow)
+  - [QC results](#qc-results)
+  - [Structural variants](#structural-variants)
+  - [SNV/INDEL (Somatic and germline)](#snvindel-somatic-and-germline)
+  - [Differentially methylated region](#differentially-methylated-region)
+  - [Somatic SNV/INDEL annotation](#somatic-snvindel-annotation)
+  - [Prioritization](#prioritization)
+  - [Mutational signatures](#mutational-signatures)
+  - [Purity and ploidy estimation](#purity-and-ploidy-estimation)
+  - [Copy number variation](#copy-number-variation)
+
 ## QC results
 
 Depth of coverage for both tumor and normal can be found in the `mosdepth_normal_summary` and `mosdepth_tumor_summary` folders. 
@@ -91,3 +102,16 @@ There are two folders in the output:
   - `type_occurences.tsv` contains the frequency of each mutation type in the sample.
   - `mut_sigs_bootstrapped.tsv` contains the bootstrap results of the fitted signatures using the `fit_to_signatures_bootstrapped` function.
     The bootstrap results can be used to determine how stable the fitted signatures are.
+
+## Purity and ploidy estimation
+
+The workflow currently implements the HMFtools suite to estimate purity and ploidy based on Amber, Cobalt and Purple. However, 
+Cobalt does not currently count the reads in long-reads correctly so the read-depth segmentation is not accurate. Nevertheless, the purity
+and ploidy estimates were found to be reasonably robust in our experience, but should be used with caution. Purity and ploidy estimates can be found
+in the `*.purity.tsv` file in `Purple_outputs` folder.
+
+## Copy number variation
+
+CNVKit is used to segment copy number from the matched tumor/normal BAM files. To optimize for long-reads, we set bin size to 10 kbp and found
+it to be optimal based on COLO829. The workflow also uses purity and ploidy estimates from HMFtools in combination with ClairS heterozygous SNVs
+to estimate major and minor copy numbers in `cnvkit_cns_with_major_minor_CN` folder.

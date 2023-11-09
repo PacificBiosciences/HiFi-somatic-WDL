@@ -10,6 +10,8 @@ import "tasks/phasing.wdl" as phasing
 import "tasks/basemod.wdl" as basemod
 import "tasks/annotation.wdl" as annotation
 import "tasks/prioritization.wdl" as prioritization
+import "tasks/clonality.wdl" as clonality
+import "tasks/deepsomatic.wdl" as deepsomatic
 
 workflow hifisomatic {
   input {
@@ -17,10 +19,11 @@ workflow hifisomatic {
     # Files are not aligned by default. If aligned, set skip_align to true
     Boolean skip_align = false
     File ref_fasta
-    # Can also define FASTA MMI for pbmm2
-    File? ref_fasta_mmi
+    File ref_fasta_dict
     # FASTA index refers to the standard faidx. For mmi index use ref_fasta
     File ref_fasta_index
+    # Can also define FASTA MMI for pbmm2
+    File? ref_fasta_mmi
     File ref_bed
     File cnvkit_refflat
     Int cnvkit_threads = 8
@@ -37,6 +40,8 @@ workflow hifisomatic {
     Int clairs_threads = 16
     Int clairs_snv_qual = 2
     Int clairs_indel_qual = 11
+    # Deepsomatic threads
+    Int deepsomatic_threads = 8
     # Mutational signature max delta for MutationalPattern fitting
     Float mutsig_max_delta = 0.004
     # Sniffles
@@ -44,6 +49,8 @@ workflow hifisomatic {
     Int sniffles_threads = 8
     File hprc_sniffles_control_vcf
     File hprc_sniffles_control_vcf_index
+    # Minimum reads support for Severus
+    Int severus_min_reads = 2
     # AnnotSV cache can be downloaded using install script from https://lbgi.fr/AnnotSV/.
     # After the database is downloaded, zip the folder and provide the path to the zip file.
     # E.g. by default this is $ANNOTSV/share/AnnotSV
@@ -69,6 +76,9 @@ workflow hifisomatic {
     Int ncg_to_filter = 50
     # Sometimes when there's too many mutations HiPhase will run OOM. Use LongPhase
     Boolean uselongphase = false
+    # Amber, Cobalt and Purple
+    File? ensembl_data_dir_tarball
+    Int hmftools_threads = 8
   }
 
   call common.splitContigs {
@@ -181,6 +191,19 @@ workflow hifisomatic {
               platform = clairs_platform,
               threads = clairs_threads
             }
+          
+          # call deepsomatic.DeepSomatic {
+          #   input:
+          #     tumor_bam = MergeTumorBams.merged_aligned_bam,
+          #     tumor_bam_index = IndexTumorBam.merged_aligned_bam_index_bai,
+          #     normal_bam = MergeNormalBams.merged_aligned_bam,
+          #     normal_bam_index = IndexNormalBam.merged_aligned_bam_index_bai,
+          #     contig = ctg,
+          #     ref_fasta = ref_fasta,
+          #     ref_fasta_index = ref_fasta_index,
+          #     threads = deepsomatic_threads,
+          #     pname = patient
+          #   }
           }
           call clairs.gatherClairS {
             input:
@@ -454,20 +477,38 @@ workflow hifisomatic {
         truvari_arguments = "-p 0 -s 0 -S 0 --sizemax 100000000 --dup-to-ins"
     }
 
-    call structural_variants.Severus_sv {
-      input:
-        tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
-        tumor_bam_index = select_first([IndexTumorBamPhased.merged_aligned_bam_index_bai, IndexTumorBam.merged_aligned_bam_index_bai]),
-        normal_bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
-        normal_bam_index = select_first([IndexNormalBamPhased.merged_aligned_bam_index_bai, IndexNormalBam.merged_aligned_bam_index_bai]),
-        phased_vcf = select_first([phaseTumorBam_longphase.longphase_vcf, phaseTumorBam.hiphase_vcf]),
-        pname = patient,
-        threads = sniffles_threads
+    if(call_small_variants){
+      call structural_variants.Severus_sv as phased_severus {
+        input:
+          tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
+          tumor_bam_index = select_first([IndexTumorBamPhased.merged_aligned_bam_index_bai, IndexTumorBam.merged_aligned_bam_index_bai]),
+          normal_bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
+          normal_bam_index = select_first([IndexNormalBamPhased.merged_aligned_bam_index_bai, IndexNormalBam.merged_aligned_bam_index_bai]),
+          trf_bed = sniffles_trf_bed,
+          phased_vcf = select_first([phaseTumorBam_longphase.longphase_vcf, phaseTumorBam.hiphase_vcf]),
+          pname = patient,
+          threads = sniffles_threads,
+          min_supp_reads = severus_min_reads
+      }
+    }
+
+    if(!call_small_variants){
+      call structural_variants.Severus_sv as unphased_severus {
+        input:
+          tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
+          tumor_bam_index = select_first([IndexTumorBamPhased.merged_aligned_bam_index_bai, IndexTumorBam.merged_aligned_bam_index_bai]),
+          normal_bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
+          normal_bam_index = select_first([IndexNormalBamPhased.merged_aligned_bam_index_bai, IndexNormalBam.merged_aligned_bam_index_bai]),
+          trf_bed = sniffles_trf_bed,
+          pname = patient,
+          threads = sniffles_threads,
+          min_supp_reads = severus_min_reads
+      }
     }
 
     call common.tabix_vcf as tabixSeverus {
       input:
-        vcf = Severus_sv.output_vcf,
+        vcf = select_first([phased_severus.output_vcf, unphased_severus.output_vcf]),
         contig_bed = ref_bed,
         threads = samtools_threads
     }
@@ -526,6 +567,75 @@ workflow hifisomatic {
         pname = patient,
         threads = cnvkit_threads
     }
+
+    if(defined(ensembl_data_dir_tarball)){
+      call clonality.Amber {
+        input:
+          referenceName = patient + ".normal",
+          referenceBam = MergeNormalBams.merged_aligned_bam,
+          referenceBamIndex = IndexNormalBam.merged_aligned_bam_index_bai,
+          tumorName = patient + ".tumor",
+          tumorBam = MergeTumorBams.merged_aligned_bam,
+          tumorBamIndex = IndexTumorBam.merged_aligned_bam_index_bai,
+          ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+          referenceFasta = ref_fasta,
+          referenceFastaFai = ref_fasta_index,
+          referenceFastaDict = ref_fasta_dict,
+          threads = hmftools_threads
+      }
+
+      call clonality.Cobalt {
+        input:
+          referenceName = patient + ".normal",
+          referenceBam = MergeNormalBams.merged_aligned_bam,
+          referenceBamIndex = IndexNormalBam.merged_aligned_bam_index_bai,
+          tumorName = patient + ".tumor",
+          tumorBam = MergeTumorBams.merged_aligned_bam,
+          tumorBamIndex = IndexTumorBam.merged_aligned_bam_index_bai,
+          referenceFasta = ref_fasta,
+          referenceFastaFai = ref_fasta_index,
+          referenceFastaDict = ref_fasta_dict,
+          ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+          threads = hmftools_threads
+      }
+
+      call clonality.Purple {
+        input:
+          referenceName = patient + ".normal",
+          tumorName = patient + ".tumor",
+          outputDir = "./purple",
+          amberOutput = Amber.outputs,
+          cobaltOutput = Cobalt.outputs,
+          referenceFasta = ref_fasta,
+          referenceFastaFai = ref_fasta_index,
+          referenceFastaDict = ref_fasta_dict,
+          ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+          threads = hmftools_threads
+      }
+
+      # Recall CNVKit major and minor CN
+      if (call_small_variants && size(gatherClairS_germline.output_normal_germline_vcf) > 0) {
+        call cnvkit.merge_germline as mergeGermline {
+          input:
+            tumor_germline_vcf = select_first([gatherClairS_germline.output_tumor_germline_vcf]),
+            tumor_germline_vcf_tbi = select_first([gatherClairS_germline.output_tumor_germline_vcf_index]),
+            normal_germline_vcf = select_first([gatherClairS_germline.output_normal_germline_vcf]),
+            normal_germline_vcf_tbi = select_first([gatherClairS_germline.output_normal_germline_vcf_index]),
+            pname = patient,
+            threads = samtools_threads
+        }
+        
+        call cnvkit.cnvkit_recall {
+          input:
+            cnvkit_cns = cnvkit_tumor.cnvkit_output_cns,
+            merged_germline_heterozygous_vcf = mergeGermline.merged_germline_heterozygous_vcf,
+            merged_germline_heterozygous_vcf_tbi = mergeGermline.merged_germline_heterozygous_vcf_tbi,
+            threads = samtools_threads,
+            purity_ploidy = Purple.purity_ploidy,
+            pname = patient
+        }
+      }
+    }
   }
 
   output {
@@ -563,10 +673,11 @@ workflow hifisomatic {
     Array[File] sniffles_somatic_vcf_index = bcftools_filter.output_vcf_index
     Array[File] sniffles_somatic_vcf_filterHPRC = filterHPRC_sniffles.output_vcf
     Array[File] sniffles_somatic_vcf_filterHPRC_index = filterHPRC_sniffles.output_vcf_index
-    Array[File] Severus_vcf = Severus_sv.output_vcf
+    Array[File] Severus_vcf = tabixSeverus.output_vcf
     Array[File] Severus_filterHPRC_vcf = filterHPRC_Severus.output_vcf
     Array[File] Severus_filterHPRC_vcf_index = filterHPRC_Severus.output_vcf_index
     Array[Array[File]+] cnvkit_output = cnvkit_tumor.cnvkit_output
+    Array[File?] cnvkit_cns_with_major_minor_CN = cnvkit_recall.cnvkit_cns_with_major_minor_CN
     Array[File?] AnnotatedSnifflesSV = annotateSniffles.annotsv_annotated_tsv
     Array[File?] AnnotatedSnifflesSV_intogen = prioritize_Sniffles.annotSV_intogen_tsv
     Array[File?] AnnotatedSeverusSV = annotateSeverus.annotsv_annotated_tsv
@@ -583,6 +694,9 @@ workflow hifisomatic {
     Array[File] per_alignment_normal_stats = bamstatsNormal.seqkit_alignment_stats
     Array[File] aligned_RL_summary_tumor = summarize_tumor_RL.output_summary
     Array[File] aligned_RL_summary_normal = summarize_normal_RL.output_summary
+    Array[Array[File]+?] Amber_outputs = Amber.outputs
+    Array[Array[File]+?] Cobalt_outputs = Cobalt.outputs
+    Array[Array[File]+?] Purple_outputs = Purple.outputs
     # Array[File] cramino_tumor_bamstats = craminoTumor.output_cramino_stats
     # Array[File] cramino_normal_bamstats = craminoNormal.output_cramino_stats
   }

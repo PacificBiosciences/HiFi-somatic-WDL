@@ -5,7 +5,7 @@
   - [Create a working directory](#create-a-working-directory)
   - [Install miniwdl](#install-miniwdl)
   - [Download the resources and references](#download-the-resources-and-references)
-  - [Download the annotation databases](#download-the-annotation-databases)
+  - [Download the annotation and hmftools databases](#download-the-annotation-and-hmftools-databases)
   - [Download demo dataset (COLO829)](#download-demo-dataset-colo829)
   - [Modify the input json file to point to the downloaded files](#modify-the-input-json-file-to-point-to-the-downloaded-files)
   - [Modify the miniwdl config file](#modify-the-miniwdl-config-file)
@@ -42,22 +42,25 @@ pip install miniwdl-slurm
 
 ```bash
 # Download resource bundle needed for the workflow
-curl -LO 'https://zenodo.org/record/8382325/files/hifisomatic_resources.tar.gz'
+curl -LO 'https://zenodo.org/record/10086866/files/hifisomatic_resources.tar.gz'
 # Extract the archive
 tar -xzvf hifisomatic_resources.tar.gz
 # Check that you have the following files:
 ├── chr.bed
 ├── GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.fasta
 ├── GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.fasta.fai
+├── GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.dict
 ├── human_GRCh38_no_alt_analysis_set.trf.bed
 ├── refFlat.hg38.txt
 ├── sniffles_all_non_germline.nosamples.vcf.gz
 └── sniffles_all_non_germline.nosamples.vcf.gz.tbi
 ```
 
-## Download the annotation databases
+## Download the annotation and hmftools databases
 
 Annotation is only carried out if `"hifisomatic.vep_cache"` (For SNV and indels) and/or `"hifisomatic.annotsv_cache"` (For structural variants) are specified. If you do not need to annotate the variants, just remove the lines containing `cache` in the JSON file.
+
+`hmftools` resource is used by Amber, Cobalt and Purple for purity and ploidy estimation. If you do not need to estimate purity and ploidy, just remove the lines containing `"hifisomatic.ensembl_data_dir_tarball"` in the JSON file. Note that if you are running the downsampled demo dataset, you do not need to download the hmftools resource as the demo dataset does not contain enough data to estimate purity and ploidy and will fail in those steps.
 
 ```bash
 # Download install script from AnnotSV
@@ -69,9 +72,11 @@ bash INSTALL_annotations.sh
 mv AnnotSV_annotations AnnotSV
 tar -czvf annotsv_cache.tar.gz AnnotSV
 
-
 # Download VEP bundle
 wget 'https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_refseq_vep_110_GRCh38.tar.gz'
+
+# Download hmftools resource
+wget 'https://storage.googleapis.com/hmf-public/HMFtools-Resources/dna_pipeline/v5_33/38/hmf_dna_pipeline_resources.38_v5.33.tar.gz'
 ```
 
 ## Download demo dataset (COLO829)
@@ -85,9 +90,9 @@ Or you can download a small demo dataset here that contains the region with trut
 
 ```bash
 # Download tumor demo
-curl -LO 'https://zenodo.org/record/8382325/files/COLO829.30X.SV_region.bam'
+curl -LO 'https://zenodo.org/record/10086866/files/COLO829.30X.SV_region.bam'
 # Download matched normal demo
-curl -LO 'https://zenodo.org/record/8382325/files/COLO829BL.30X.SV_region.bam'
+curl -LO 'https://zenodo.org/record/10086866/files/COLO829BL.30X.SV_region.bam'
 ```
 
 ## Modify the input json file to point to the downloaded files

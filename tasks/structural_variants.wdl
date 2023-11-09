@@ -176,9 +176,11 @@ task Severus_sv {
     File tumor_bam_index
     File normal_bam
     File normal_bam_index
+    File trf_bed
     File? phased_vcf
     String pname
     Int threads
+    Int min_supp_reads
   }
 
   Float file_size = ceil(size(tumor_bam, "GB") + size(normal_bam, "GB") + size(phased_vcf, "GB") + 10)
@@ -187,14 +189,14 @@ task Severus_sv {
     set -euxo pipefail
     
     echo "Running Severus for ~{pname}"
-    python /app/Severus/severus.py \
+    severus \
       --target-bam ~{tumor_bam} \
       --control-bam ~{normal_bam} \
       ~{"--phasing-vcf " + phased_vcf} \
       --out-dir ~{pname + "_severus"} \
       -t ~{threads} \
-      --vntr-bed /app/Severus/vntrs/human_GRCh38_no_alt_analysis_set.trf.bed \
-      --min-support 2
+      --vntr-bed ~{trf_bed} \
+      --min-support ~{min_supp_reads}
   >>>
 
   output {
@@ -202,7 +204,7 @@ task Severus_sv {
   }
 
   runtime {
-    docker: "kpinpb/severus:v0.2"
+    docker: "quay.io/biocontainers/severus:0.1.1--pyhdfd78af_0"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

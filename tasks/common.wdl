@@ -12,28 +12,29 @@ task tabix_vcf {
   command <<<
     set -euxo pipefail
     echo "indexing ~{vcf}"
-    # Get rid of those with SVLEN=0 and change <INS> to INS
+    # Get rid of SVLEN=0 and change <INS> to INS
     # to avoid Truvari error problem
     sed 's/SVLEN=0;//g' ~{vcf} > tmp.vcf
     sed -i 's/<INS>/INS/g' tmp.vcf
 
-    # If filename contains "severus", add headers
-    if [[ ~{basename(vcf)} == *"severus"* ]]; then
-      echo "Adding headers to ~{vcf}"
-      bcftools view -h ~{vcf} > headers.txt
-      # Remove the line that starts with #CHROM to a separate file first
-      grep -v "^#CHROM" headers.txt > headers2.txt
-      echo "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variatio\">" >> headers2.txt
-      echo "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">" >> headers2.txt
-      echo "##INFO=<ID=INSLEN,Number=1,Type=Integer,Description=\"Length of inserted sequence\">" >> headers2.txt
-      echo "##INFO=<ID=DETAILED_TYPE,Number=1,Type=String,Description=\"Detailed type of structural variant\">" >> headers2.txt
-      # Add the line back to the original file
-      grep "^#CHROM" headers.txt >> headers2.txt
-      rm -f headers.txt
-      bcftools reheader -h headers2.txt tmp.vcf |\
-        bcftools sort -Ov -o tmp2.vcf
-      mv tmp2.vcf tmp.vcf
-    fi
+    # # If filename contains "severus", add headers
+    # Deprecated, no longer needed as of severus 0.1.0
+    # if [[ ~{basename(vcf)} == *"severus"* ]]; then
+    #   echo "Adding headers to ~{vcf}"
+    #   bcftools view -h ~{vcf} > headers.txt
+    #   # Remove the line that starts with #CHROM to a separate file first
+    #   grep -v "^#CHROM" headers.txt > headers2.txt
+    #   echo "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variatio\">" >> headers2.txt
+    #   echo "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">" >> headers2.txt
+    #   echo "##INFO=<ID=INSLEN,Number=1,Type=Integer,Description=\"Length of inserted sequence\">" >> headers2.txt
+    #   echo "##INFO=<ID=DETAILED_TYPE,Number=1,Type=String,Description=\"Detailed type of structural variant\">" >> headers2.txt
+    #   # Add the line back to the original file
+    #   grep "^#CHROM" headers.txt >> headers2.txt
+    #   rm -f headers.txt
+    #   bcftools reheader -h headers2.txt tmp.vcf |\
+    #     bcftools sort -Ov -o tmp2.vcf
+    #   mv tmp2.vcf tmp.vcf
+    # fi
 
     bgzip tmp.vcf 
     tabix tmp.vcf.gz

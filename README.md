@@ -48,10 +48,11 @@ Upon completion the workflow will generate the following (non-exhaustive list) r
 | normal_germline_small_variant_vcf | Germline variants in normal (VCF)                                                 |
 | tumor_germline_small_variant_vcf  | Germline variants in tumor (VCF)                                                  |
 | pileup_(normal\/tumor)_bed                 | Summarized 5mC probability  in normal and tumor (BED, see [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools) for format description)                                        |
-| cnvkit_output                     | Copy number segments (BED)                                                        |
+| cnvkit_cns_with_major_minor_CN                     | Copy number segments adjusted with purity and ploidy estimate, see cnvkit_output for raw CNVKit results(BED)                                                        |
 | sniffles_somatic_vcf_filterHPRC   | Sniffles structural variants (Unannotated VCF)                                    |
 | Severus_filterHPRC_vcf            | Severus structural variants (Unannotated VCF)                                     |
 | small_variant_vcf                 | ClairS SNV/INDEL (Unannotated VCF)                                                |
+| Purple_outputs | Purity and ploidy estimate from HMFtools suite |
 
 ## Demo datasets and accuracy of the workflow
 
@@ -78,7 +79,8 @@ Following are the references for the tools used in the workflow and should be ci
 10. Talevich, E., Shain, A. H., Botton, T. & Bastian, B. C. CNVkit: Genome-Wide Copy Number Detection and Visualization from Targeted DNA Sequencing. PLoS Comput Biol 12, e1004873 (2016).
 11. Martínez-Jiménez, F. et al. A compendium of mutational cancer driver genes. Nat Rev Cancer 20, 555–572 (2020). <https://www.intogen.org>
 12. Manders, F. et al. MutationalPatterns: the one stop shop for the analysis of mutational processes. BMC Genomics 23, 134 (2022).
-  13.  Lin, J.-H., Chen, L.-C., Yu, S.-C. & Huang, Y.-T. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics 38, 1816–1822 (2022).
+13.  Lin, J.-H., Chen, L.-C., Yu, S.-C. & Huang, Y.-T. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics 38, 1816–1822 (2022).
+14.  HMFtools suite (Amber, Cobalt and Purple): <https://github.com/hartwigmedical/hmftools/tree/master>
 
 
 
@@ -107,18 +109,30 @@ Following are the references for the tools used in the workflow and should be ci
 | HiPhase      | 0.10.2    | Diploid phasing using germline variants              |
 | Sniffles     | 2.0.7     | Structural variants                                  |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                |
-| Severus      | commit-7453c5e | Structural variants                             |
+| Severus      | v0.1.0 | Structural variants                             |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation |
 | IntOGen        | May 31 2023    | Compendium of Cancer Genes for annotation |
 | MutationalPattern        | 3.10.0   | Mutational signatures based on SNV |
 | Longphase        | v1.5.1   | Optional phasing tool |
+| Amber        | v3.9.1   | BAF segmentation (HMFtools suite) |
+| Cobalt        | v1.14.1   | Log ratio segmentation (HMFtools suite) |
+| Purple        | v3.9   | Purity and ploidy estimate, somatic CNV (HMFtools suite) |
 </details>
 
 ## Change logs
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.4:
+  - Added purity, ploidy and somatic CNV with Amber, Cobalt and Purple
+    - Note that Cobalt doesn't count the read depth from long-reads correctly so
+      it'll affect the segmentation accuracy. However, purity and ploidy
+      estimation appears to be robust.
+  - CNVKit segmentation results recalled with purity and ploidy estimate from Purple.
+  - Severus release now updated with Bioconda container.
+  - Fix bug when call_smallvariants is set to false (Issue #1).
 
 - v0.3:
   - Added IntOGen filtering of SV/SNV/INDEL/DMR. 
