@@ -1,11 +1,12 @@
 # wdl-hifisomatic
 
-tumor-normal variant calling workflow for HiFi data
+A tumor-normal variant calling workflow for HiFi data
+---
 
-- [wdl-hifisomatic: A tumor-normal variant calling workflow based on HiFi reads](#wdl-hifisomatic-a-tumor-normal-variant-calling-workflow-based-on-hifi-reads)
+- [wdl-hifisomatic: A tumor-normal variant calling workflow for HiFi data](#wdl-hifisomatic-a-tumor-normal-variant-calling-workflow-based-on-hifi-reads)
   - [Usage](#usage)
-  - [Important outputs from workflow](#important-outputs-from-workflow)
-  - [Demo datasets and accuracy of the workflow](#demo-datasets-and-accuracy-of-the-workflow)
+  - [Description of output](#important-outputs-from-workflow)
+  - [Demo datasets and performance](#demo-datasets-and-accuracy-of-the-workflow)
   - [References](#references)
   - [Tools versions](#tools-versions)
   - [Change logs](#change-logs)
@@ -14,15 +15,17 @@ tumor-normal variant calling workflow for HiFi data
 ![Alt text](figures/simple_workflow_diagram.png)
 
 
+
+# Install and Dependencies 
+The workflow requires WDL [Workflow Description Language](https://github.com/openwdl/wdl). It depends on `miniwdl` and `singularity` (version 3 and above). `miniwdl` can be installed using Bioconda.
+
 ## Usage
 
-This workflow is written based on the [Workflow Description Language](https://github.com/openwdl/wdl). It depends on `miniwdl` and `singularity` (version 3 and above). `miniwdl` can be installed using Bioconda.
-
-A step-by-step tutorial and FAQ can be found [here](docs/step-by-step.md).
+A step-by-step tutorial demonstrates the usage and FAQ can be found [here](docs/step-by-step.md).
 
 ## Important outputs from workflow
 
-Upon completion the workflow will generate the following (non-exhaustive list) results in the `$OUTDIR/_LAST/out` folder. Please refer to [output](docs/output.md) for a more detailed description of the outputs.
+The workflow will generate the following (non-exhaustive list) results in the `$OUTDIR/_LAST/out` folder. Please refer to [output](docs/output.md) for a more detailed description of the outputs.
 
 | Folder                            | Types of results                                                                  |
 | --------------------------------- | --------------------------------------------------------------------------------- |

@@ -16,12 +16,12 @@
 Depth of coverage for both tumor and normal can be found in the `mosdepth_normal_summary` and `mosdepth_tumor_summary` folders. 
 The `mosdepth` folder contains the depth of coverage for each chromosome and overall coverage (`total` at the end of the file).
 
-`overall_(tumor\|normal)_alignment_stats` contains the alignment statistics for both tumor and normal. The statistics are produced by
-using `seqkit bam` command. Per-alignment stats are also generated in the `per_alignment_(tumor\|normal)_stats` folders.
+`overall_(tumor\|normal)_alignment_stats` contains the alignment statistics for both tumor and normal samples. The statistics are produced by
+using the `seqkit bam` command. Per-alignment stats are also generated in the `per_alignment_(tumor\|normal)_stats` folders.
 
 ## Structural variants
 
-The pipeline incorporates the structural variants callers [Severus](https://github.com/KolmogorovLab/Severus) with default parameter. The results from Severus are also
+The pipeline incorporates the structural variants caller [Severus](https://github.com/KolmogorovLab/Severus) with default parameter. The results from Severus are also
 filtered with a set of germline structural variants VCF (from Human Pangenome Reference Consortium) to remove false positives. The filtering was done with Truvari using the following command:
 
 ``` bash
@@ -30,19 +30,18 @@ truvari bench -p 0 -s 0 -S 0 --sizemax 100000000 --dup-to-ins
 
 The `fp.vcf.gz` VCF file from the `bench` step is taken as the final VCF file. This is why the final SV VCF files contain Truvari annotations in the INFO field (folder `Severus_filtered_vcf`).
 
-We then use AnnotSV to annotate the structural variants into a TSV file (`AnnotatedSeverusSV`). The TSV file format is described in [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf).
-To help prioritizing variants relevant to cancer, the workflow also annotates the SVs with IntOGen Compendium of Cancer Genes (CCG) and produce a final set of SV in the `Annotated*SV_intogen` folder
+ `AnnotSV` is used to annotate the structural variants a TSV file (`AnnotatedSeverusSV`). The TSV file format is described in [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf).
+To help prioritizing variants relevant to cancer, the workflow also annotates the SVs with IntOGen Compendium of Cancer Genes (CCG) and produce a final set of SV in the `Annotated*SV_intogen` folder.
 
 ## SNV/INDEL (Somatic and germline)
 
 We use ClairS to call both somatic and germline SNV/INDELs (Default Revio model, please see [input JSON parameters](step-by-step.md#input-json-parameters) 
-for parameter to switch to Sequel II). The workflow splits the human genome into chunks (default 50 Mbp) and calls SNV/INDELs in parallel, then collect
+for parameter to switch to Sequel II). The workflow splits the human genome into chunks (default 50 Mbp) and calls SNV/INDELs in parallel, then gathers
 the output into a single VCF (`small_variant_vcf` folder). Finally, we use Ensembl VEP to annotate the VCF file (`small_variant_tsv_annotated` folder). Similar to SV, the workflow also annotates the SNV/INDELs with IntOGen Compendium of Cancer Genes (CCG) and produce a final set of SNV/INDELs in the `small_variant_tsv_CCG` folder.
 
 ## Differentially methylated region
 
-Firstly, CpG call at each loci in the human genome is summarized using [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools). The bed file for the CpG call is then used to call DMRs using DSS. You
-may find the pileup bed file in the `pileup_(normal\/tumor)_bed` folder.
+Firstly, CpG calls, at each loci in the human genome, are summarized using [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools). The bed file for the CpG calls are then used to call DMRs using DSS. The pileup bed file is found in the `pileup_(normal\/tumor)_bed` folder.
 
 `DMR_annotated` contains 5 folders for each patient. Each folder represents differentially methylated region 
 annotated differently. Annotation is done using [annotatr](https://bioconductor.org/packages/devel/bioc/vignettes/annotatr/inst/doc/annotatr-vignette.html).

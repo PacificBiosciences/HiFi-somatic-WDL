@@ -1,12 +1,12 @@
 # Benchmarking COLO829 (structural variants) and HCC1395 (SNV/INDEL)
 
-In order to simulate tumor purity, we downsample aligned BAM file using samtools and mix the normal and tumor.
-For example, a 50% purity 60X tumor consists of 30X tumor merged with 30X normal.
+In order to simulate tumor purity, we downsampled the aligned BAM file using samtools and mixed the normal and tumor datasets.
+For example, at 50% purity the mixture consists of 30-fold coverage tumor merged with 30-fold normal coverage.
 
 ### Structural variants recall for COLO829 (Severus)
 
-Truth sets were obtained from Valle-Inclan et. al. 2022 [(Zenodo record)](https://zenodo.org/record/6426985). Benchmark was carried out
-using `truvari` with the parameter of `-p 0 -s 0 -S 0 --sizemax 100000000 --dup-to-ins`. The following results are obtained from Severus' VCF file. All 57 truth SVs called for 60X (100% purity) had also been manually checked to ensure Truvari was correctly matching the SVs.
+Truth sets were obtained from Valle-Inclan et. al. 2022 [(Zenodo record)](https://zenodo.org/record/6426985). The Benchmark was carried out
+using `truvari` with the parameter of `-p 0 -s 0 -S 0 --sizemax 100000000 --dup-to-ins`. The following results were obtained from the Severus' VCF file. All 57 known SVs (truth) called at 60-fold coverage (100% purity) were manually checked to ensure Truvari was correctly matching the SVs.
 
 | Caller  | Normal coverage | Tumor coverage | Purity | Truth SV Called | Total SV Called | Recall (Truth / 62) | Precision |
 | ------- | --------------- | -------------- | ------ | --------------- | --------------- | ------------------- | --------- |
@@ -22,7 +22,7 @@ using `truvari` with the parameter of `-p 0 -s 0 -S 0 --sizemax 100000000 --dup-
 
 ![Alt text](../figures/severus_recall.png)
 
-There are 4 structural variants that Severus failed to called. `truthset_13` and `truthset_42` did not show any evidence based on manual inspection via IGV. `truthset_32` has just 2 variant reads out of 102 reads, which is 2% VAF. `truthset_51` does not have any coverage in the normal. Finally, `truthset_52` is part of a complex structural variants chain with truthset 19, 20, 53 and 54.
+There were four structural variants that Severus failed to called. `truthset_13` and `truthset_42` did not show any evidence based on manual inspection via IGV. `truthset_32` has 2/102 reads supporting the alternative allele (2% VAF). `truthset_51` did not have any coverage in the normal. Finally, `truthset_52` was part of a complex structural variant chain with truthset 19, 20, 53 and 54.
 
 ### Small variants recall for HCC1395 (ClairS)
 
