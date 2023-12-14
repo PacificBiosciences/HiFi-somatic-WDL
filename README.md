@@ -1,4 +1,6 @@
-# wdl-hifisomatic: A tumor-normal variant calling workflow based on HiFi reads
+# wdl-hifisomatic
+
+tumor-normal variant calling workflow for HiFi data
 
 - [wdl-hifisomatic: A tumor-normal variant calling workflow based on HiFi reads](#wdl-hifisomatic-a-tumor-normal-variant-calling-workflow-based-on-hifi-reads)
   - [Usage](#usage)
