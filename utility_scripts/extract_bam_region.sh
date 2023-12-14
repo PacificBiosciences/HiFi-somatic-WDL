@@ -29,11 +29,10 @@ end=$(echo "$region" | cut -d':' -f2 | cut -d'-' -f2 | sed 's/,//g')
 echo -e "${chr}\t${start}\t${end}" > ${prefix}_${chr}_${start}-${end}.bed
 
 # In workflow directory, look for */_LAST/out/ for bam files
-tumor_bam=$(fd -p -j "${threads}" --type symlink 'tumor_bams_phased/.*\.bam$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
-normal_bam=$(fd -p -j "${threads}" --type symlink 'normal_bams_phased/.*\.bam$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
+tumor_bam=$(fd -p -j "${threads}" --type symlink 'tumor_bams_(hiphase|longphase)/.*\.bam$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
+normal_bam=$(fd -p -j "${threads}" --type symlink 'normal_bams_(phased)/.*\.bam$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
 vcfs=$(fd -p -j "${threads}" --type symlink 'small_variant_vcf/.*\.vcf.gz$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
-sniffles_vcfs=$(fd -p -j "${threads}" --type symlink 'sniffles_somatic_vcf_filterHPRC/.*\.vcf.gz$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
-severus_vcfs=$(fd -p -j "${threads}" --type symlink 'Severus_filterHPRC_vcf/.*\.vcf.gz$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
+severus_vcfs=$(fd -p -j "${threads}" --type symlink 'Severus_filtered_vcf/.*\.vcf.gz$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
 combined_cpg_pileup_normal=$(fd -p -j "${threads}" --type symlink 'pileup_normal_bed/.*\.normal\.cpg\.combined\.bed$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
 combined_cpg_pileup_tumor=$(fd -p -j "${threads}" --type symlink 'pileup_tumor_bed/.*\.tumor\.cpg\.combined\.bed$' "${workdir}"/*/_LAST/out/ -x readlink -f {})
 hap1_cpg_pileup_normal=$(fd -p -j "${threads}" --type symlink 'pileup_normal_bed/.*\.normal\.cpg\.hap1\.bed$' "${workdir}"/*/_LAST/out/ -x readlink -f {})

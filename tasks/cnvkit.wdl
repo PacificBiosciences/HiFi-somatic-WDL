@@ -20,6 +20,9 @@ task cnvkit_tumor {
     set -euxo pipefail
     
     echo "Running cnvkit tumor for ~{pname}"
+
+    cnvkit.py version
+
     cnvkit.py batch \
         ~{tumor_bam} \
         --normal ~{normal_bam} \
@@ -66,6 +69,8 @@ task merge_germline {
   set -euxo pipefail
 
   echo -e "~{normalname}\n~{tumorname}" > sample_names.txt
+
+  bcftools --version
 
   bcftools merge --force-samples \
     ~{normal_germline_vcf} \
@@ -155,6 +160,8 @@ task cnvkit_recall {
   # Set integer ploidy
   ploidy=$(cut -f2 ~{purity_ploidy} | awk '{print int($1 + 0.5)}')
   purity=$(cut -f1 ~{purity_ploidy})
+
+  cnvkit.py version
 
   cnvkit.py call \
     ~{cnvkit_cns} \

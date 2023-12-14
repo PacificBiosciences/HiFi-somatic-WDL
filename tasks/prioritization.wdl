@@ -12,6 +12,8 @@ task prioritize_dmr_intogen {
     command <<<
     set -euxo pipefail
 
+    csvtk version
+
     # Join with intogen CCG genes and filter for at 
     # least 100 CGs
     for dmr_file in ~{sep=" " dmr_files}
@@ -58,7 +60,7 @@ task prioritize_dmr_intogen {
     }
 
     runtime {
-        docker: "kpinpb/general_tools:v0.1"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:6d8c96585ef32007d7fd375984cb6c85dade282e018982254521ee0c685a0166"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -77,6 +79,8 @@ task prioritize_sv_intogen {
 
     command <<<
     set -euxo pipefail
+    
+    csvtk version
 
     csvtk join -t \
         ~{annotSV_tsv} \
@@ -93,7 +97,7 @@ task prioritize_sv_intogen {
     }
 
     runtime {
-        docker: "kpinpb/general_tools:v0.1"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:6d8c96585ef32007d7fd375984cb6c85dade282e018982254521ee0c685a0166"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -116,6 +120,8 @@ task prioritize_small_variants {
     command <<<
     set -euxo pipefail
 
+    csvtk version
+
     echo -e "CHROM\tPOS\tREF\tALT\tFORMAT\t~{pname}\t$(bcftools +split-vep ~{vep_annotated_vcf} -l | cut -f2 | tr '\n' '\t' | sed 's/\t$//g')" > ~{fname}
     bcftools +split-vep ~{vep_annotated_vcf} -A tab -f '%CHROM\t%POS\t%REF\t%ALT\t%FORMAT\t%CSQ\n' >> ~{fname}
 
@@ -134,7 +140,7 @@ task prioritize_small_variants {
     }
 
     runtime {
-        docker: "kpinpb/general_tools:v0.1"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:6d8c96585ef32007d7fd375984cb6c85dade282e018982254521ee0c685a0166"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"

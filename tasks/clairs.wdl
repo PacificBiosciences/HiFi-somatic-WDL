@@ -21,6 +21,8 @@ task ClairS {
     set -euxo pipefail
 
     echo "Running tumor normal variant calling for patient ~{pname} using ~{tumor_bam} and ~{normal_bam}"
+
+    /opt/bin/run_clairs --version
     
     # If using old version of Singularity (e.g. 2.6), the path for python doesn't work and ClairS
     # will fail with python not found error. In that case, uncomment this:
@@ -43,37 +45,6 @@ task ClairS {
     if [ -d ~{pname + "_clairs/tmp/clair3_output/phased_output"} ]
       then rm -f ~{pname + "_clairs/tmp/clair3_output/phased_output/*.bam"} 
     fi
-
-    # Count the line with snv/indel candidate 0 and those that's not 0
-    # If equal, means no candidate
-    more0=$(grep -c "Total snv candidates found: .*, total indel candidates found: .*" ~{pname + "_clairs/run_clairs.log"} || test $? = 1;)
-    only0_snv=$(grep -c "Total snv candidates found: 0, total indel candidates found:" ~{pname + "_clairs/run_clairs.log"} || test $? = 1;)
-    only0_indel=$(grep -c "Total snv candidates found: .*, total indel candidates found: 0" ~{pname + "_clairs/run_clairs.log"} || test $? = 1;)
-
-    if [[ $more0 -eq $only0_snv ]]; then
-      echo "No SNV candidates found for ~{pname}, skipping clairs"
-      # Make sure these files exist so that the workflow doesn't fail
-      touch ~{pname + "_clairs/snv.vcf.gz"}
-      touch ~{pname + "_clairs/snv.vcf.gz.tbi"}
-      touch ~{pname + "_clairs/indel.vcf.gz"}
-      touch ~{pname + "_clairs/indel.vcf.gz.tbi"}
-      touch ~{pname + "_clairs/clair3_tumor_germline_output.vcf.gz"}
-      touch ~{pname + "_clairs/clair3_tumor_germline_output.vcf.gz.tbi"}
-      touch ~{pname + "_clairs/clair3_normal_germline_output.vcf.gz"}
-      touch ~{pname + "_clairs/clair3_normal_germline_output.vcf.gz.tbi"}
-    fi
-    if [[ $more0 -eq $only0_indel ]]; then
-      echo "No indel candidates found for ~{pname}, skipping clairs"
-      # Make sure these files exist so that the workflow doesn't fail
-      touch ~{pname + "_clairs/snv.vcf.gz"}
-      touch ~{pname + "_clairs/snv.vcf.gz.tbi"}
-      touch ~{pname + "_clairs/indel.vcf.gz"}
-      touch ~{pname + "_clairs/indel.vcf.gz.tbi"}
-      touch ~{pname + "_clairs/clair3_tumor_germline_output.vcf.gz"}
-      touch ~{pname + "_clairs/clair3_tumor_germline_output.vcf.gz.tbi"}
-      touch ~{pname + "_clairs/clair3_normal_germline_output.vcf.gz"}
-      touch ~{pname + "_clairs/clair3_normal_germline_output.vcf.gz.tbi"}
-    fi
   >>>
 
   output {
@@ -86,7 +57,7 @@ task ClairS {
   }
 
   runtime {
-    docker: "hkubal/clairs:v0.1.6"
+    docker: "hkubal/clairs@sha256:e53731a10a0cee50fa46388f412168697e7e87e5921fbac7c2672d2a45e15389"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
@@ -96,7 +67,7 @@ task ClairS {
 }
 
 # Collect SNPs and indel into a single file
-task gatherClairS {
+task gather_ClairS {
   input {
     Array[File] snv_vcf
     Array[File] snv_vcf_index
@@ -115,6 +86,8 @@ task gatherClairS {
   set -euxo pipefail
 
   echo "Merging somatic small variant for ~{pname}"
+
+  bcftools --version
 
   # Put the path of files of snv and indel into a single file
   # All the empty files stuff below are there to handle
@@ -181,7 +154,7 @@ task gatherClairS {
 
 # Collect germline variants
 # Collect SNPs and indel into a single file
-task gatherClairS_germline {
+task gather_ClairS_germline {
   input {
     Array[File] tumor_vcf
     Array[File] normal_vcf
@@ -195,6 +168,8 @@ task gatherClairS_germline {
     set -euxo pipefail
 
     echo "Merging germline small variant for ~{pname}"
+
+    bcftools --version
 
     # Put the path of files of snv and indel into a single file
     # All the empty files stuff below are there to handle

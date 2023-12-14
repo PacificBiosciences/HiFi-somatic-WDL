@@ -1,0 +1,853 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 973B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/continuumio/miniconda3:23.10.0-1
+#3 ...
+
+#4 [auth] continuumio/miniconda3:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/continuumio/miniconda3:23.10.0-1
+#3 DONE 4.2s
+
+#5 [ 1/10] FROM docker.io/continuumio/miniconda3:23.10.0-1@sha256:5ee0ed861bce8f67acb0a3e8a416891781db54302d93bf20a3c6301d7683d7b9
+#5 resolve docker.io/continuumio/miniconda3:23.10.0-1@sha256:5ee0ed861bce8f67acb0a3e8a416891781db54302d93bf20a3c6301d7683d7b9 done
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 0B / 114.51MB 0.1s
+#5 sha256:5ee0ed861bce8f67acb0a3e8a416891781db54302d93bf20a3c6301d7683d7b9 3.11kB / 3.11kB done
+#5 sha256:166ff37fba6c25fcad8516aa5481a2a8dfde11370f81b245c1e2e8002e68bcce 869B / 869B done
+#5 sha256:6d17b7c0d4a8e7b46141cc2681f5b040c4be0ec229227be9d1fbe39fc18f76c5 4.61kB / 4.61kB done
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 0B / 31.42MB 0.1s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 0B / 50.08MB 0.1s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 8.39MB / 114.51MB 0.5s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 22.02MB / 114.51MB 0.8s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 3.15MB / 31.42MB 0.9s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 29.36MB / 114.51MB 1.0s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 39.85MB / 114.51MB 1.2s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 10.49MB / 31.42MB 1.2s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 13.63MB / 31.42MB 1.3s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 48.23MB / 114.51MB 1.4s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 17.72MB / 31.42MB 1.4s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 3.15MB / 50.08MB 1.4s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 23.07MB / 31.42MB 1.6s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 56.62MB / 114.51MB 1.7s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 30.41MB / 31.42MB 1.8s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 8.39MB / 50.08MB 1.8s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 68.16MB / 114.51MB 1.9s
+#5 sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 31.42MB / 31.42MB 1.8s done
+#5 extracting sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 12.58MB / 50.08MB 2.1s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 80.74MB / 114.51MB 2.2s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 92.27MB / 114.51MB 2.4s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 16.78MB / 50.08MB 2.4s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 101.13MB / 114.51MB 2.6s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 24.12MB / 50.08MB 2.6s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 108.00MB / 114.51MB 2.7s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 114.51MB / 114.51MB 2.8s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 28.31MB / 50.08MB 2.8s
+#5 sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 114.51MB / 114.51MB 2.9s done
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 31.46MB / 50.08MB 2.9s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 36.27MB / 50.08MB 3.1s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 48.23MB / 50.08MB 3.4s
+#5 sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 50.08MB / 50.08MB 3.5s done
+#5 extracting sha256:0bc8ff246cb8ff91066742f8f7ded40397e7aaaa925200b7bec5382d1ffcd6a0 2.2s done
+#5 extracting sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188
+#5 extracting sha256:e87dc284eda57fe6f1d5be295889a742364d6d91e93be71884dd4a992f74c188 2.7s done
+#5 extracting sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf
+#5 extracting sha256:f1fbf9532e5b7f4c7ff8816c4941e636c6db3fe1f37487868908d79aeb735aaf 3.9s done
+#5 DONE 11.1s
+
+#6 [ 2/10] RUN apt-get update &&     apt-get install -y git g++ gcc autoconf make zlib1g-dev libbz2-dev liblzma-dev procps git libarchive-dev &&     rm -rf /var/lib/apt/lists/*
+#6 1.153 Get:1 http://deb.debian.org/debian bullseye InRelease [116 kB]
+#6 1.573 Get:2 http://deb.debian.org/debian-security bullseye-security InRelease [48.4 kB]
+#6 1.781 Get:3 http://deb.debian.org/debian bullseye-updates InRelease [44.1 kB]
+#6 3.032 Get:4 http://deb.debian.org/debian bullseye/main amd64 Packages [8062 kB]
+#6 4.411 Get:5 http://deb.debian.org/debian-security bullseye-security/main amd64 Packages [260 kB]
+#6 6.092 Get:6 http://deb.debian.org/debian bullseye-updates/main amd64 Packages [17.7 kB]
+#6 10.23 Fetched 8548 kB in 10s (875 kB/s)
+#6 10.23 Reading package lists...
+#6 13.26 Reading package lists...
+#6 16.22 Building dependency tree...
+#6 16.80 Reading state information...
+#6 17.44 git is already the newest version (1:2.30.2-1+deb11u2).
+#6 17.44 procps is already the newest version (2:3.3.17-5).
+#6 17.44 The following additional packages will be installed:
+#6 17.44   automake autotools-dev binutils binutils-common binutils-x86-64-linux-gnu
+#6 17.44   bzip2-doc cpp cpp-10 fontconfig-config fonts-dejavu-core g++-10 gcc-10
+#6 17.44   libarchive13 libasan6 libatomic1 libbinutils libc-dev-bin libc-devtools
+#6 17.44   libc6-dev libcc1-0 libcrypt-dev libctf-nobfd0 libctf0 libdeflate0
+#6 17.44   libfontconfig1 libfreetype6 libgcc-10-dev libgd3 libgomp1 libicu67 libisl23
+#6 17.44   libitm1 libjbig0 libjpeg62-turbo liblsan0 libmpc3 libmpfr6 libnsl-dev
+#6 17.44   libpng16-16 libquadmath0 libsigsegv2 libstdc++-10-dev libtiff5 libtirpc-dev
+#6 17.44   libtsan0 libubsan1 libwebp6 libxml2 libxpm4 linux-libc-dev m4 manpages
+#6 17.44   manpages-dev
+#6 17.44 Suggested packages:
+#6 17.44   autoconf-archive gnu-standards autoconf-doc libtool gettext binutils-doc
+#6 17.44   cpp-doc gcc-10-locales g++-multilib g++-10-multilib gcc-10-doc gcc-multilib
+#6 17.44   flex bison gdb gcc-doc gcc-10-multilib lrzip glibc-doc libgd-tools
+#6 17.44   liblzma-doc libstdc++-10-doc m4-doc make-doc man-browser
+#6 18.85 The following NEW packages will be installed:
+#6 18.85   autoconf automake autotools-dev binutils binutils-common
+#6 18.85   binutils-x86-64-linux-gnu bzip2-doc cpp cpp-10 fontconfig-config
+#6 18.85   fonts-dejavu-core g++ g++-10 gcc gcc-10 libarchive-dev libarchive13 libasan6
+#6 18.85   libatomic1 libbinutils libbz2-dev libc-dev-bin libc-devtools libc6-dev
+#6 18.85   libcc1-0 libcrypt-dev libctf-nobfd0 libctf0 libdeflate0 libfontconfig1
+#6 18.85   libfreetype6 libgcc-10-dev libgd3 libgomp1 libicu67 libisl23 libitm1
+#6 18.85   libjbig0 libjpeg62-turbo liblsan0 liblzma-dev libmpc3 libmpfr6 libnsl-dev
+#6 18.85   libpng16-16 libquadmath0 libsigsegv2 libstdc++-10-dev libtiff5 libtirpc-dev
+#6 18.85   libtsan0 libubsan1 libwebp6 libxml2 libxpm4 linux-libc-dev m4 make manpages
+#6 18.85   manpages-dev zlib1g-dev
+#6 19.33 0 upgraded, 61 newly installed, 0 to remove and 2 not upgraded.
+#6 19.33 Need to get 77.5 MB of archives.
+#6 19.33 After this operation, 281 MB of additional disk space will be used.
+#6 19.33 Get:1 http://deb.debian.org/debian bullseye/main amd64 manpages all 5.10-1 [1412 kB]
+#6 20.43 Get:2 http://deb.debian.org/debian bullseye/main amd64 libsigsegv2 amd64 2.13-1 [34.8 kB]
+#6 20.44 Get:3 http://deb.debian.org/debian bullseye/main amd64 m4 amd64 1.4.18-5 [204 kB]
+#6 20.45 Get:4 http://deb.debian.org/debian bullseye/main amd64 autoconf all 2.69-14 [313 kB]
+#6 20.47 Get:5 http://deb.debian.org/debian bullseye/main amd64 autotools-dev all 20180224.1+nmu1 [77.1 kB]
+#6 20.48 Get:6 http://deb.debian.org/debian bullseye/main amd64 automake all 1:1.16.3-2 [814 kB]
+#6 20.62 Get:7 http://deb.debian.org/debian bullseye/main amd64 binutils-common amd64 2.35.2-2 [2220 kB]
+#6 20.86 Get:8 http://deb.debian.org/debian bullseye/main amd64 libbinutils amd64 2.35.2-2 [570 kB]
+#6 20.90 Get:9 http://deb.debian.org/debian bullseye/main amd64 libctf-nobfd0 amd64 2.35.2-2 [110 kB]
+#6 20.91 Get:10 http://deb.debian.org/debian bullseye/main amd64 libctf0 amd64 2.35.2-2 [53.2 kB]
+#6 20.91 Get:11 http://deb.debian.org/debian bullseye/main amd64 binutils-x86-64-linux-gnu amd64 2.35.2-2 [1809 kB]
+#6 21.04 Get:12 http://deb.debian.org/debian bullseye/main amd64 binutils amd64 2.35.2-2 [61.2 kB]
+#6 21.05 Get:13 http://deb.debian.org/debian bullseye/main amd64 bzip2-doc all 1.0.8-4 [514 kB]
+#6 21.09 Get:14 http://deb.debian.org/debian bullseye/main amd64 libisl23 amd64 0.23-1 [676 kB]
+#6 21.14 Get:15 http://deb.debian.org/debian bullseye/main amd64 libmpfr6 amd64 4.1.0-3 [2012 kB]
+#6 21.28 Get:16 http://deb.debian.org/debian bullseye/main amd64 libmpc3 amd64 1.2.0-1 [45.0 kB]
+#6 21.28 Get:17 http://deb.debian.org/debian bullseye/main amd64 cpp-10 amd64 10.2.1-6 [8528 kB]
+#6 21.85 Get:18 http://deb.debian.org/debian bullseye/main amd64 cpp amd64 4:10.2.1-1 [19.7 kB]
+#6 21.85 Get:19 http://deb.debian.org/debian bullseye/main amd64 fonts-dejavu-core all 2.37-2 [1069 kB]
+#6 21.92 Get:20 http://deb.debian.org/debian bullseye/main amd64 fontconfig-config all 2.13.1-4.2 [281 kB]
+#6 21.94 Get:21 http://deb.debian.org/debian bullseye/main amd64 libcc1-0 amd64 10.2.1-6 [47.0 kB]
+#6 21.95 Get:22 http://deb.debian.org/debian bullseye/main amd64 libgomp1 amd64 10.2.1-6 [99.9 kB]
+#6 21.95 Get:23 http://deb.debian.org/debian bullseye/main amd64 libitm1 amd64 10.2.1-6 [25.8 kB]
+#6 21.96 Get:24 http://deb.debian.org/debian bullseye/main amd64 libatomic1 amd64 10.2.1-6 [9008 B]
+#6 21.96 Get:25 http://deb.debian.org/debian bullseye/main amd64 libasan6 amd64 10.2.1-6 [2065 kB]
+#6 22.09 Get:26 http://deb.debian.org/debian bullseye/main amd64 liblsan0 amd64 10.2.1-6 [828 kB]
+#6 22.15 Get:27 http://deb.debian.org/debian bullseye/main amd64 libtsan0 amd64 10.2.1-6 [2000 kB]
+#6 22.29 Get:28 http://deb.debian.org/debian bullseye/main amd64 libubsan1 amd64 10.2.1-6 [777 kB]
+#6 22.34 Get:29 http://deb.debian.org/debian bullseye/main amd64 libquadmath0 amd64 10.2.1-6 [145 kB]
+#6 22.35 Get:30 http://deb.debian.org/debian bullseye/main amd64 libgcc-10-dev amd64 10.2.1-6 [2328 kB]
+#6 22.50 Get:31 http://deb.debian.org/debian bullseye/main amd64 gcc-10 amd64 10.2.1-6 [17.0 MB]
+#6 23.61 Get:32 http://deb.debian.org/debian bullseye/main amd64 gcc amd64 4:10.2.1-1 [5192 B]
+#6 23.61 Get:33 http://deb.debian.org/debian-security bullseye-security/main amd64 libc-dev-bin amd64 2.31-13+deb11u7 [276 kB]
+#6 23.63 Get:34 http://deb.debian.org/debian bullseye/main amd64 linux-libc-dev amd64 5.10.197-1 [1668 kB]
+#6 23.74 Get:35 http://deb.debian.org/debian bullseye/main amd64 libcrypt-dev amd64 1:4.4.18-4 [104 kB]
+#6 23.75 Get:36 http://deb.debian.org/debian bullseye/main amd64 libtirpc-dev amd64 1.3.1-1+deb11u1 [191 kB]
+#6 23.77 Get:37 http://deb.debian.org/debian bullseye/main amd64 libnsl-dev amd64 1.3.0-2 [66.4 kB]
+#6 23.77 Get:38 http://deb.debian.org/debian-security bullseye-security/main amd64 libc6-dev amd64 2.31-13+deb11u7 [2361 kB]
+#6 23.93 Get:39 http://deb.debian.org/debian bullseye/main amd64 libstdc++-10-dev amd64 10.2.1-6 [1741 kB]
+#6 24.05 Get:40 http://deb.debian.org/debian bullseye/main amd64 g++-10 amd64 10.2.1-6 [9380 kB]
+#6 24.76 Get:41 http://deb.debian.org/debian bullseye/main amd64 g++ amd64 4:10.2.1-1 [1644 B]
+#6 24.77 Get:42 http://deb.debian.org/debian bullseye/main amd64 libicu67 amd64 67.1-7 [8622 kB]
+#6 25.33 Get:43 http://deb.debian.org/debian bullseye/main amd64 libxml2 amd64 2.9.10+dfsg-6.7+deb11u4 [693 kB]
+#6 25.38 Get:44 http://deb.debian.org/debian bullseye/main amd64 libarchive13 amd64 3.4.3-2+deb11u1 [343 kB]
+#6 25.41 Get:45 http://deb.debian.org/debian bullseye/main amd64 libarchive-dev amd64 3.4.3-2+deb11u1 [519 kB]
+#6 25.44 Get:46 http://deb.debian.org/debian bullseye/main amd64 libbz2-dev amd64 1.0.8-4 [30.1 kB]
+#6 25.45 Get:47 http://deb.debian.org/debian bullseye/main amd64 libpng16-16 amd64 1.6.37-3 [294 kB]
+#6 25.47 Get:48 http://deb.debian.org/debian bullseye/main amd64 libfreetype6 amd64 2.10.4+dfsg-1+deb11u1 [418 kB]
+#6 25.49 Get:49 http://deb.debian.org/debian bullseye/main amd64 libfontconfig1 amd64 2.13.1-4.2 [347 kB]
+#6 25.52 Get:50 http://deb.debian.org/debian bullseye/main amd64 libjpeg62-turbo amd64 1:2.0.6-4 [151 kB]
+#6 25.53 Get:51 http://deb.debian.org/debian bullseye/main amd64 libdeflate0 amd64 1.7-1 [53.1 kB]
+#6 25.53 Get:52 http://deb.debian.org/debian bullseye/main amd64 libjbig0 amd64 2.1-3.1+b2 [31.0 kB]
+#6 25.58 Get:53 http://deb.debian.org/debian bullseye/main amd64 libwebp6 amd64 0.6.1-2.1+deb11u2 [259 kB]
+#6 25.60 Get:54 http://deb.debian.org/debian-security bullseye-security/main amd64 libtiff5 amd64 4.2.0-1+deb11u5 [290 kB]
+#6 25.64 Get:55 http://deb.debian.org/debian-security bullseye-security/main amd64 libxpm4 amd64 1:3.5.12-1.1+deb11u1 [50.0 kB]
+#6 25.65 Get:56 http://deb.debian.org/debian bullseye/main amd64 libgd3 amd64 2.3.0-2 [137 kB]
+#6 25.66 Get:57 http://deb.debian.org/debian-security bullseye-security/main amd64 libc-devtools amd64 2.31-13+deb11u7 [246 kB]
+#6 25.68 Get:58 http://deb.debian.org/debian bullseye/main amd64 liblzma-dev amd64 5.2.5-2.1~deb11u1 [229 kB]
+#6 25.72 Get:59 http://deb.debian.org/debian bullseye/main amd64 make amd64 4.3-4.1 [396 kB]
+#6 25.75 Get:60 http://deb.debian.org/debian bullseye/main amd64 manpages-dev all 5.10-1 [2309 kB]
+#6 25.90 Get:61 http://deb.debian.org/debian bullseye/main amd64 zlib1g-dev amd64 1:1.2.11.dfsg-2+deb11u2 [191 kB]
+#6 26.61 debconf: delaying package configuration, since apt-utils is not installed
+#6 26.91 Fetched 77.5 MB in 7s (11.0 MB/s)
+#6 27.05 Selecting previously unselected package manpages.
+#6 27.05 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 12444 files and directories currently installed.)
+#6 27.10 Preparing to unpack .../00-manpages_5.10-1_all.deb ...
+#6 27.10 Unpacking manpages (5.10-1) ...
+#6 27.55 Selecting previously unselected package libsigsegv2:amd64.
+#6 27.55 Preparing to unpack .../01-libsigsegv2_2.13-1_amd64.deb ...
+#6 27.56 Unpacking libsigsegv2:amd64 (2.13-1) ...
+#6 27.72 Selecting previously unselected package m4.
+#6 27.72 Preparing to unpack .../02-m4_1.4.18-5_amd64.deb ...
+#6 27.72 Unpacking m4 (1.4.18-5) ...
+#6 27.91 Selecting previously unselected package autoconf.
+#6 27.92 Preparing to unpack .../03-autoconf_2.69-14_all.deb ...
+#6 27.92 Unpacking autoconf (2.69-14) ...
+#6 28.15 Selecting previously unselected package autotools-dev.
+#6 28.15 Preparing to unpack .../04-autotools-dev_20180224.1+nmu1_all.deb ...
+#6 28.16 Unpacking autotools-dev (20180224.1+nmu1) ...
+#6 28.32 Selecting previously unselected package automake.
+#6 28.33 Preparing to unpack .../05-automake_1%3a1.16.3-2_all.deb ...
+#6 28.35 Unpacking automake (1:1.16.3-2) ...
+#6 28.63 Selecting previously unselected package binutils-common:amd64.
+#6 28.63 Preparing to unpack .../06-binutils-common_2.35.2-2_amd64.deb ...
+#6 28.63 Unpacking binutils-common:amd64 (2.35.2-2) ...
+#6 29.42 Selecting previously unselected package libbinutils:amd64.
+#6 29.42 Preparing to unpack .../07-libbinutils_2.35.2-2_amd64.deb ...
+#6 29.42 Unpacking libbinutils:amd64 (2.35.2-2) ...
+#6 29.74 Selecting previously unselected package libctf-nobfd0:amd64.
+#6 29.74 Preparing to unpack .../08-libctf-nobfd0_2.35.2-2_amd64.deb ...
+#6 29.74 Unpacking libctf-nobfd0:amd64 (2.35.2-2) ...
+#6 29.93 Selecting previously unselected package libctf0:amd64.
+#6 29.93 Preparing to unpack .../09-libctf0_2.35.2-2_amd64.deb ...
+#6 29.94 Unpacking libctf0:amd64 (2.35.2-2) ...
+#6 30.10 Selecting previously unselected package binutils-x86-64-linux-gnu.
+#6 30.10 Preparing to unpack .../10-binutils-x86-64-linux-gnu_2.35.2-2_amd64.deb ...
+#6 30.10 Unpacking binutils-x86-64-linux-gnu (2.35.2-2) ...
+#6 30.78 Selecting previously unselected package binutils.
+#6 30.78 Preparing to unpack .../11-binutils_2.35.2-2_amd64.deb ...
+#6 30.79 Unpacking binutils (2.35.2-2) ...
+#6 30.95 Selecting previously unselected package bzip2-doc.
+#6 30.95 Preparing to unpack .../12-bzip2-doc_1.0.8-4_all.deb ...
+#6 30.95 Unpacking bzip2-doc (1.0.8-4) ...
+#6 31.16 Selecting previously unselected package libisl23:amd64.
+#6 31.16 Preparing to unpack .../13-libisl23_0.23-1_amd64.deb ...
+#6 31.16 Unpacking libisl23:amd64 (0.23-1) ...
+#6 31.49 Selecting previously unselected package libmpfr6:amd64.
+#6 31.50 Preparing to unpack .../14-libmpfr6_4.1.0-3_amd64.deb ...
+#6 31.50 Unpacking libmpfr6:amd64 (4.1.0-3) ...
+#6 31.89 Selecting previously unselected package libmpc3:amd64.
+#6 31.89 Preparing to unpack .../15-libmpc3_1.2.0-1_amd64.deb ...
+#6 31.89 Unpacking libmpc3:amd64 (1.2.0-1) ...
+#6 32.05 Selecting previously unselected package cpp-10.
+#6 32.05 Preparing to unpack .../16-cpp-10_10.2.1-6_amd64.deb ...
+#6 32.06 Unpacking cpp-10 (10.2.1-6) ...
+#6 34.33 Selecting previously unselected package cpp.
+#6 34.34 Preparing to unpack .../17-cpp_4%3a10.2.1-1_amd64.deb ...
+#6 34.34 Unpacking cpp (4:10.2.1-1) ...
+#6 34.60 Selecting previously unselected package fonts-dejavu-core.
+#6 34.60 Preparing to unpack .../18-fonts-dejavu-core_2.37-2_all.deb ...
+#6 34.62 Unpacking fonts-dejavu-core (2.37-2) ...
+#6 35.07 Selecting previously unselected package fontconfig-config.
+#6 35.07 Preparing to unpack .../19-fontconfig-config_2.13.1-4.2_all.deb ...
+#6 37.45 Unpacking fontconfig-config (2.13.1-4.2) ...
+#6 37.63 Selecting previously unselected package libcc1-0:amd64.
+#6 37.64 Preparing to unpack .../20-libcc1-0_10.2.1-6_amd64.deb ...
+#6 37.64 Unpacking libcc1-0:amd64 (10.2.1-6) ...
+#6 37.80 Selecting previously unselected package libgomp1:amd64.
+#6 37.81 Preparing to unpack .../21-libgomp1_10.2.1-6_amd64.deb ...
+#6 37.81 Unpacking libgomp1:amd64 (10.2.1-6) ...
+#6 37.98 Selecting previously unselected package libitm1:amd64.
+#6 37.98 Preparing to unpack .../22-libitm1_10.2.1-6_amd64.deb ...
+#6 37.99 Unpacking libitm1:amd64 (10.2.1-6) ...
+#6 38.14 Selecting previously unselected package libatomic1:amd64.
+#6 38.14 Preparing to unpack .../23-libatomic1_10.2.1-6_amd64.deb ...
+#6 38.15 Unpacking libatomic1:amd64 (10.2.1-6) ...
+#6 38.30 Selecting previously unselected package libasan6:amd64.
+#6 38.30 Preparing to unpack .../24-libasan6_10.2.1-6_amd64.deb ...
+#6 38.31 Unpacking libasan6:amd64 (10.2.1-6) ...
+#6 39.06 Selecting previously unselected package liblsan0:amd64.
+#6 39.06 Preparing to unpack .../25-liblsan0_10.2.1-6_amd64.deb ...
+#6 39.07 Unpacking liblsan0:amd64 (10.2.1-6) ...
+#6 39.46 Selecting previously unselected package libtsan0:amd64.
+#6 39.46 Preparing to unpack .../26-libtsan0_10.2.1-6_amd64.deb ...
+#6 39.46 Unpacking libtsan0:amd64 (10.2.1-6) ...
+#6 40.24 Selecting previously unselected package libubsan1:amd64.
+#6 40.25 Preparing to unpack .../27-libubsan1_10.2.1-6_amd64.deb ...
+#6 40.25 Unpacking libubsan1:amd64 (10.2.1-6) ...
+#6 40.61 Selecting previously unselected package libquadmath0:amd64.
+#6 40.62 Preparing to unpack .../28-libquadmath0_10.2.1-6_amd64.deb ...
+#6 40.62 Unpacking libquadmath0:amd64 (10.2.1-6) ...
+#6 40.80 Selecting previously unselected package libgcc-10-dev:amd64.
+#6 40.80 Preparing to unpack .../29-libgcc-10-dev_10.2.1-6_amd64.deb ...
+#6 40.80 Unpacking libgcc-10-dev:amd64 (10.2.1-6) ...
+#6 41.47 Selecting previously unselected package gcc-10.
+#6 41.47 Preparing to unpack .../30-gcc-10_10.2.1-6_amd64.deb ...
+#6 41.47 Unpacking gcc-10 (10.2.1-6) ...
+#6 46.02 Selecting previously unselected package gcc.
+#6 46.02 Preparing to unpack .../31-gcc_4%3a10.2.1-1_amd64.deb ...
+#6 46.03 Unpacking gcc (4:10.2.1-1) ...
+#6 46.18 Selecting previously unselected package libc-dev-bin.
+#6 46.18 Preparing to unpack .../32-libc-dev-bin_2.31-13+deb11u7_amd64.deb ...
+#6 46.18 Unpacking libc-dev-bin (2.31-13+deb11u7) ...
+#6 46.35 Selecting previously unselected package linux-libc-dev:amd64.
+#6 46.35 Preparing to unpack .../33-linux-libc-dev_5.10.197-1_amd64.deb ...
+#6 46.36 Unpacking linux-libc-dev:amd64 (5.10.197-1) ...
+#6 46.87 Selecting previously unselected package libcrypt-dev:amd64.
+#6 46.87 Preparing to unpack .../34-libcrypt-dev_1%3a4.4.18-4_amd64.deb ...
+#6 46.87 Unpacking libcrypt-dev:amd64 (1:4.4.18-4) ...
+#6 47.05 Selecting previously unselected package libtirpc-dev:amd64.
+#6 47.06 Preparing to unpack .../35-libtirpc-dev_1.3.1-1+deb11u1_amd64.deb ...
+#6 47.06 Unpacking libtirpc-dev:amd64 (1.3.1-1+deb11u1) ...
+#6 47.25 Selecting previously unselected package libnsl-dev:amd64.
+#6 47.25 Preparing to unpack .../36-libnsl-dev_1.3.0-2_amd64.deb ...
+#6 47.26 Unpacking libnsl-dev:amd64 (1.3.0-2) ...
+#6 47.42 Selecting previously unselected package libc6-dev:amd64.
+#6 47.43 Preparing to unpack .../37-libc6-dev_2.31-13+deb11u7_amd64.deb ...
+#6 47.43 Unpacking libc6-dev:amd64 (2.31-13+deb11u7) ...
+#6 48.25 Selecting previously unselected package libstdc++-10-dev:amd64.
+#6 48.25 Preparing to unpack .../38-libstdc++-10-dev_10.2.1-6_amd64.deb ...
+#6 48.26 Unpacking libstdc++-10-dev:amd64 (10.2.1-6) ...
+#6 49.04 Selecting previously unselected package g++-10.
+#6 49.04 Preparing to unpack .../39-g++-10_10.2.1-6_amd64.deb ...
+#6 49.04 Unpacking g++-10 (10.2.1-6) ...
+#6 51.48 Selecting previously unselected package g++.
+#6 51.48 Preparing to unpack .../40-g++_4%3a10.2.1-1_amd64.deb ...
+#6 51.49 Unpacking g++ (4:10.2.1-1) ...
+#6 51.63 Selecting previously unselected package libicu67:amd64.
+#6 51.64 Preparing to unpack .../41-libicu67_67.1-7_amd64.deb ...
+#6 51.64 Unpacking libicu67:amd64 (67.1-7) ...
+#6 54.17 Selecting previously unselected package libxml2:amd64.
+#6 54.17 Preparing to unpack .../42-libxml2_2.9.10+dfsg-6.7+deb11u4_amd64.deb ...
+#6 54.17 Unpacking libxml2:amd64 (2.9.10+dfsg-6.7+deb11u4) ...
+#6 54.57 Selecting previously unselected package libarchive13:amd64.
+#6 54.58 Preparing to unpack .../43-libarchive13_3.4.3-2+deb11u1_amd64.deb ...
+#6 54.59 Unpacking libarchive13:amd64 (3.4.3-2+deb11u1) ...
+#6 54.89 Selecting previously unselected package libarchive-dev:amd64.
+#6 54.90 Preparing to unpack .../44-libarchive-dev_3.4.3-2+deb11u1_amd64.deb ...
+#6 54.90 Unpacking libarchive-dev:amd64 (3.4.3-2+deb11u1) ...
+#6 55.25 Selecting previously unselected package libbz2-dev:amd64.
+#6 55.25 Preparing to unpack .../45-libbz2-dev_1.0.8-4_amd64.deb ...
+#6 55.25 Unpacking libbz2-dev:amd64 (1.0.8-4) ...
+#6 55.42 Selecting previously unselected package libpng16-16:amd64.
+#6 55.43 Preparing to unpack .../46-libpng16-16_1.6.37-3_amd64.deb ...
+#6 55.43 Unpacking libpng16-16:amd64 (1.6.37-3) ...
+#6 55.64 Selecting previously unselected package libfreetype6:amd64.
+#6 55.65 Preparing to unpack .../47-libfreetype6_2.10.4+dfsg-1+deb11u1_amd64.deb ...
+#6 55.65 Unpacking libfreetype6:amd64 (2.10.4+dfsg-1+deb11u1) ...
+#6 55.91 Selecting previously unselected package libfontconfig1:amd64.
+#6 55.91 Preparing to unpack .../48-libfontconfig1_2.13.1-4.2_amd64.deb ...
+#6 55.92 Unpacking libfontconfig1:amd64 (2.13.1-4.2) ...
+#6 56.11 Selecting previously unselected package libjpeg62-turbo:amd64.
+#6 56.11 Preparing to unpack .../49-libjpeg62-turbo_1%3a2.0.6-4_amd64.deb ...
+#6 56.12 Unpacking libjpeg62-turbo:amd64 (1:2.0.6-4) ...
+#6 56.32 Selecting previously unselected package libdeflate0:amd64.
+#6 56.32 Preparing to unpack .../50-libdeflate0_1.7-1_amd64.deb ...
+#6 56.33 Unpacking libdeflate0:amd64 (1.7-1) ...
+#6 56.49 Selecting previously unselected package libjbig0:amd64.
+#6 56.49 Preparing to unpack .../51-libjbig0_2.1-3.1+b2_amd64.deb ...
+#6 56.49 Unpacking libjbig0:amd64 (2.1-3.1+b2) ...
+#6 56.65 Selecting previously unselected package libwebp6:amd64.
+#6 56.65 Preparing to unpack .../52-libwebp6_0.6.1-2.1+deb11u2_amd64.deb ...
+#6 56.66 Unpacking libwebp6:amd64 (0.6.1-2.1+deb11u2) ...
+#6 56.86 Selecting previously unselected package libtiff5:amd64.
+#6 56.86 Preparing to unpack .../53-libtiff5_4.2.0-1+deb11u5_amd64.deb ...
+#6 56.87 Unpacking libtiff5:amd64 (4.2.0-1+deb11u5) ...
+#6 57.08 Selecting previously unselected package libxpm4:amd64.
+#6 57.08 Preparing to unpack .../54-libxpm4_1%3a3.5.12-1.1+deb11u1_amd64.deb ...
+#6 57.08 Unpacking libxpm4:amd64 (1:3.5.12-1.1+deb11u1) ...
+#6 57.25 Selecting previously unselected package libgd3:amd64.
+#6 57.25 Preparing to unpack .../55-libgd3_2.3.0-2_amd64.deb ...
+#6 57.26 Unpacking libgd3:amd64 (2.3.0-2) ...
+#6 57.43 Selecting previously unselected package libc-devtools.
+#6 57.43 Preparing to unpack .../56-libc-devtools_2.31-13+deb11u7_amd64.deb ...
+#6 57.44 Unpacking libc-devtools (2.31-13+deb11u7) ...
+#6 57.61 Selecting previously unselected package liblzma-dev:amd64.
+#6 57.61 Preparing to unpack .../57-liblzma-dev_5.2.5-2.1~deb11u1_amd64.deb ...
+#6 57.63 Unpacking liblzma-dev:amd64 (5.2.5-2.1~deb11u1) ...
+#6 57.84 Selecting previously unselected package make.
+#6 57.84 Preparing to unpack .../58-make_4.3-4.1_amd64.deb ...
+#6 57.84 Unpacking make (4.3-4.1) ...
+#6 58.20 Selecting previously unselected package manpages-dev.
+#6 58.20 Preparing to unpack .../59-manpages-dev_5.10-1_all.deb ...
+#6 58.21 Unpacking manpages-dev (5.10-1) ...
+#6 59.05 Selecting previously unselected package zlib1g-dev:amd64.
+#6 59.06 Preparing to unpack .../60-zlib1g-dev_1%3a1.2.11.dfsg-2+deb11u2_amd64.deb ...
+#6 59.06 Unpacking zlib1g-dev:amd64 (1:1.2.11.dfsg-2+deb11u2) ...
+#6 59.37 Setting up bzip2-doc (1.0.8-4) ...
+#6 59.37 Setting up libxpm4:amd64 (1:3.5.12-1.1+deb11u1) ...
+#6 59.38 Setting up libicu67:amd64 (67.1-7) ...
+#6 59.38 Setting up manpages (5.10-1) ...
+#6 59.39 Setting up binutils-common:amd64 (2.35.2-2) ...
+#6 59.40 Setting up libdeflate0:amd64 (1.7-1) ...
+#6 59.40 Setting up linux-libc-dev:amd64 (5.10.197-1) ...
+#6 59.40 Setting up libctf-nobfd0:amd64 (2.35.2-2) ...
+#6 59.41 Setting up libgomp1:amd64 (10.2.1-6) ...
+#6 59.41 Setting up libjbig0:amd64 (2.1-3.1+b2) ...
+#6 59.42 Setting up libasan6:amd64 (10.2.1-6) ...
+#6 59.42 Setting up autotools-dev (20180224.1+nmu1) ...
+#6 59.43 Setting up libtirpc-dev:amd64 (1.3.1-1+deb11u1) ...
+#6 59.44 Setting up libjpeg62-turbo:amd64 (1:2.0.6-4) ...
+#6 59.44 Setting up make (4.3-4.1) ...
+#6 59.44 Setting up libmpfr6:amd64 (4.1.0-3) ...
+#6 59.45 Setting up libsigsegv2:amd64 (2.13-1) ...
+#6 59.45 Setting up libquadmath0:amd64 (10.2.1-6) ...
+#6 59.46 Setting up libpng16-16:amd64 (1.6.37-3) ...
+#6 59.46 Setting up libmpc3:amd64 (1.2.0-1) ...
+#6 59.46 Setting up libatomic1:amd64 (10.2.1-6) ...
+#6 59.47 Setting up libwebp6:amd64 (0.6.1-2.1+deb11u2) ...
+#6 59.47 Setting up fonts-dejavu-core (2.37-2) ...
+#6 59.49 Setting up liblzma-dev:amd64 (5.2.5-2.1~deb11u1) ...
+#6 59.50 Setting up libubsan1:amd64 (10.2.1-6) ...
+#6 59.50 Setting up libnsl-dev:amd64 (1.3.0-2) ...
+#6 59.51 Setting up libcrypt-dev:amd64 (1:4.4.18-4) ...
+#6 59.51 Setting up libtiff5:amd64 (4.2.0-1+deb11u5) ...
+#6 59.52 Setting up libbinutils:amd64 (2.35.2-2) ...
+#6 59.53 Setting up libisl23:amd64 (0.23-1) ...
+#6 59.53 Setting up libc-dev-bin (2.31-13+deb11u7) ...
+#6 59.54 Setting up libxml2:amd64 (2.9.10+dfsg-6.7+deb11u4) ...
+#6 59.54 Setting up libcc1-0:amd64 (10.2.1-6) ...
+#6 59.55 Setting up liblsan0:amd64 (10.2.1-6) ...
+#6 59.55 Setting up cpp-10 (10.2.1-6) ...
+#6 59.56 Setting up libitm1:amd64 (10.2.1-6) ...
+#6 59.56 Setting up libtsan0:amd64 (10.2.1-6) ...
+#6 59.57 Setting up libctf0:amd64 (2.35.2-2) ...
+#6 59.57 Setting up manpages-dev (5.10-1) ...
+#6 59.58 Setting up libarchive13:amd64 (3.4.3-2+deb11u1) ...
+#6 59.58 Setting up fontconfig-config (2.13.1-4.2) ...
+#6 60.24 debconf: unable to initialize frontend: Dialog
+#6 60.24 debconf: (TERM is not set, so the dialog frontend is not usable.)
+#6 60.24 debconf: falling back to frontend: Readline
+#6 63.01 Setting up libgcc-10-dev:amd64 (10.2.1-6) ...
+#6 63.01 Setting up m4 (1.4.18-5) ...
+#6 63.02 Setting up libfreetype6:amd64 (2.10.4+dfsg-1+deb11u1) ...
+#6 63.02 Setting up autoconf (2.69-14) ...
+#6 63.03 Setting up libarchive-dev:amd64 (3.4.3-2+deb11u1) ...
+#6 63.03 Setting up cpp (4:10.2.1-1) ...
+#6 63.09 Setting up libc6-dev:amd64 (2.31-13+deb11u7) ...
+#6 63.09 Setting up libfontconfig1:amd64 (2.13.1-4.2) ...
+#6 63.09 Setting up binutils-x86-64-linux-gnu (2.35.2-2) ...
+#6 63.10 Setting up libbz2-dev:amd64 (1.0.8-4) ...
+#6 63.10 Setting up automake (1:1.16.3-2) ...
+#6 63.14 update-alternatives: using /usr/bin/automake-1.16 to provide /usr/bin/automake (automake) in auto mode
+#6 63.15 update-alternatives: warning: skip creation of /usr/share/man/man1/automake.1.gz because associated file /usr/share/man/man1/automake-1.16.1.gz (of link group automake) doesn't exist
+#6 63.15 update-alternatives: warning: skip creation of /usr/share/man/man1/aclocal.1.gz because associated file /usr/share/man/man1/aclocal-1.16.1.gz (of link group automake) doesn't exist
+#6 63.15 Setting up libstdc++-10-dev:amd64 (10.2.1-6) ...
+#6 63.16 Setting up binutils (2.35.2-2) ...
+#6 63.16 Setting up libgd3:amd64 (2.3.0-2) ...
+#6 63.17 Setting up gcc-10 (10.2.1-6) ...
+#6 63.17 Setting up zlib1g-dev:amd64 (1:1.2.11.dfsg-2+deb11u2) ...
+#6 63.18 Setting up libc-devtools (2.31-13+deb11u7) ...
+#6 63.18 Setting up g++-10 (10.2.1-6) ...
+#6 63.19 Setting up gcc (4:10.2.1-1) ...
+#6 63.30 Setting up g++ (4:10.2.1-1) ...
+#6 63.50 update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+#6 63.51 Processing triggers for libc-bin (2.31-13+deb11u7) ...
+#6 DONE 64.1s
+
+#7 [ 3/10] RUN conda install -n base -c conda-forge mamba libarchive
+#7 3.985 Channels:
+#7 3.985  - conda-forge
+#7 3.985  - defaults
+#7 3.985 Platform: linux-64
+#7 3.985 Collecting package metadata (repodata.json): ...working... done
+#7 192.6 Solving environment: ...working... done
+#7 199.2 
+#7 199.2 ## Package Plan ##
+#7 199.2 
+#7 199.2   environment location: /opt/conda
+#7 199.2 
+#7 199.2   added / updated specs:
+#7 199.2     - libarchive
+#7 199.2     - mamba
+#7 199.2 
+#7 199.2 
+#7 199.2 The following packages will be downloaded:
+#7 199.2 
+#7 199.2     package                    |            build
+#7 199.2     ---------------------------|-----------------
+#7 199.2     _libgcc_mutex-0.1          |      conda_forge           3 KB  conda-forge
+#7 199.2     _openmp_mutex-4.5          |            2_gnu          23 KB  conda-forge
+#7 199.2     c-ares-1.23.0              |       hd590300_0         150 KB  conda-forge
+#7 199.2     ca-certificates-2023.11.17 |       hbcca054_0         151 KB  conda-forge
+#7 199.2     certifi-2023.11.17         |     pyhd8ed1ab_0         155 KB  conda-forge
+#7 199.2     conda-23.11.0              |  py311h38be061_1         1.2 MB  conda-forge
+#7 199.2     distro-1.8.0               |     pyhd8ed1ab_0          40 KB  conda-forge
+#7 199.2     fmt-10.1.1                 |       h00ab1b0_1         188 KB  conda-forge
+#7 199.2     icu-73.2                   |       h59595ed_0        11.5 MB  conda-forge
+#7 199.2     keyutils-1.6.1             |       h166bdaf_0         115 KB  conda-forge
+#7 199.2     krb5-1.21.2                |       h659d440_0         1.3 MB  conda-forge
+#7 199.2     libarchive-3.7.2           |       h2aa1ff5_1         846 KB  conda-forge
+#7 199.2     libcurl-8.5.0              |       hca28451_0         380 KB  conda-forge
+#7 199.2     libgcc-ng-13.2.0           |       h807b86a_3         755 KB  conda-forge
+#7 199.2     libgomp-13.2.0             |       h807b86a_3         412 KB  conda-forge
+#7 199.2     libiconv-1.17              |       hd590300_1         676 KB  conda-forge
+#7 199.2     libmamba-1.5.5             |       had39da4_0         1.6 MB  conda-forge
+#7 199.2     libmambapy-1.5.5           |  py311hf2555c7_0         296 KB  conda-forge
+#7 199.2     libnghttp2-1.58.0          |       h47da74e_1         617 KB  conda-forge
+#7 199.2     libssh2-1.11.0             |       h0841786_0         265 KB  conda-forge
+#7 199.2     libstdcxx-ng-13.2.0        |       h7e041cc_3         3.7 MB  conda-forge
+#7 199.2     libxml2-2.12.3             |       h232c23b_0         688 KB  conda-forge
+#7 199.2     libzlib-1.2.13             |       hd590300_5          60 KB  conda-forge
+#7 199.2     lzo-2.10                   |    h516909a_1000         314 KB  conda-forge
+#7 199.2     mamba-1.5.5                |  py311h3072747_0          65 KB  conda-forge
+#7 199.2     menuinst-2.0.1             |  py311h38be061_0         159 KB  conda-forge
+#7 199.2     openssl-3.2.0              |       hd590300_1         2.7 MB  conda-forge
+#7 199.2     platformdirs-4.1.0         |     pyhd8ed1ab_0          20 KB  conda-forge
+#7 199.2     python_abi-3.11            |          2_cp311           5 KB  conda-forge
+#7 199.2     zlib-1.2.13                |       hd590300_5          91 KB  conda-forge
+#7 199.2     ------------------------------------------------------------
+#7 199.2                                            Total:        28.3 MB
+#7 199.2 
+#7 199.2 The following NEW packages will be INSTALLED:
+#7 199.2 
+#7 199.2   distro             conda-forge/noarch::distro-1.8.0-pyhd8ed1ab_0 
+#7 199.2   keyutils           conda-forge/linux-64::keyutils-1.6.1-h166bdaf_0 
+#7 199.2   libiconv           conda-forge/linux-64::libiconv-1.17-hd590300_1 
+#7 199.2   libzlib            conda-forge/linux-64::libzlib-1.2.13-hd590300_5 
+#7 199.2   lzo                conda-forge/linux-64::lzo-2.10-h516909a_1000 
+#7 199.2   mamba              conda-forge/linux-64::mamba-1.5.5-py311h3072747_0 
+#7 199.2   menuinst           conda-forge/linux-64::menuinst-2.0.1-py311h38be061_0 
+#7 199.2   platformdirs       conda-forge/noarch::platformdirs-4.1.0-pyhd8ed1ab_0 
+#7 199.2   python_abi         conda-forge/linux-64::python_abi-3.11-2_cp311 
+#7 199.2 
+#7 199.2 The following packages will be UPDATED:
+#7 199.2 
+#7 199.2   c-ares                pkgs/main::c-ares-1.19.1-h5eee18b_0 --> conda-forge::c-ares-1.23.0-hd590300_0 
+#7 199.2   ca-certificates    pkgs/main::ca-certificates-2023.08.22~ --> conda-forge::ca-certificates-2023.11.17-hbcca054_0 
+#7 199.2   certifi            pkgs/main/linux-64::certifi-2023.7.22~ --> conda-forge/noarch::certifi-2023.11.17-pyhd8ed1ab_0 
+#7 199.2   conda              pkgs/main::conda-23.10.0-py311h06a430~ --> conda-forge::conda-23.11.0-py311h38be061_1 
+#7 199.2   fmt                       pkgs/main::fmt-9.1.0-hdb19cb5_0 --> conda-forge::fmt-10.1.1-h00ab1b0_1 
+#7 199.2   icu                        pkgs/main::icu-73.1-h6a678d5_0 --> conda-forge::icu-73.2-h59595ed_0 
+#7 199.2   krb5                    pkgs/main::krb5-1.20.1-h143b758_1 --> conda-forge::krb5-1.21.2-h659d440_0 
+#7 199.2   libarchive         pkgs/main::libarchive-3.6.2-h6ac8c49_2 --> conda-forge::libarchive-3.7.2-h2aa1ff5_1 
+#7 199.2   libcurl               pkgs/main::libcurl-8.4.0-h251f7ec_0 --> conda-forge::libcurl-8.5.0-hca28451_0 
+#7 199.2   libgcc-ng          pkgs/main::libgcc-ng-11.2.0-h1234567_1 --> conda-forge::libgcc-ng-13.2.0-h807b86a_3 
+#7 199.2   libgomp              pkgs/main::libgomp-11.2.0-h1234567_1 --> conda-forge::libgomp-13.2.0-h807b86a_3 
+#7 199.2   libmamba             pkgs/main::libmamba-1.5.3-haf1ee3a_0 --> conda-forge::libmamba-1.5.5-had39da4_0 
+#7 199.2   libmambapy         pkgs/main::libmambapy-1.5.3-py311h2da~ --> conda-forge::libmambapy-1.5.5-py311hf2555c7_0 
+#7 199.2   libnghttp2         pkgs/main::libnghttp2-1.57.0-h2d74bed~ --> conda-forge::libnghttp2-1.58.0-h47da74e_1 
+#7 199.2   libssh2              pkgs/main::libssh2-1.10.0-hdbd6064_2 --> conda-forge::libssh2-1.11.0-h0841786_0 
+#7 199.2   libstdcxx-ng       pkgs/main::libstdcxx-ng-11.2.0-h12345~ --> conda-forge::libstdcxx-ng-13.2.0-h7e041cc_3 
+#7 199.2   libxml2              pkgs/main::libxml2-2.10.4-hf1b16e4_1 --> conda-forge::libxml2-2.12.3-h232c23b_0 
+#7 199.2   openssl              pkgs/main::openssl-3.0.12-h7f8727e_0 --> conda-forge::openssl-3.2.0-hd590300_1 
+#7 199.2   zlib                    pkgs/main::zlib-1.2.13-h5eee18b_0 --> conda-forge::zlib-1.2.13-hd590300_5 
+#7 199.2 
+#7 199.2 The following packages will be SUPERSEDED by a higher-priority channel:
+#7 199.2 
+#7 199.2   _libgcc_mutex           pkgs/main::_libgcc_mutex-0.1-main --> conda-forge::_libgcc_mutex-0.1-conda_forge 
+#7 199.2   _openmp_mutex          pkgs/main::_openmp_mutex-5.1-1_gnu --> conda-forge::_openmp_mutex-4.5-2_gnu 
+#7 199.2 
+#7 199.2 
+#7 199.2 Proceed ([y]/n)? 
+#7 206.5 
+#7 206.5 Downloading and Extracting Packages: ...working... done
+#7 206.5 Preparing transaction: ...working... done
+#7 206.9 Verifying transaction: ...working... done
+#7 209.0 Executing transaction: ...working... done
+#7 DONE 216.2s
+
+#8 [ 4/10] RUN mamba create -n tools
+#8 3.753 
+#8 3.753 Looking for: []
+#8 3.753 
+#8 3.753 Preparing transaction: ...working... done
+#8 3.754 Verifying transaction: ...working... done
+#8 4.033 Executing transaction: ...working... done
+#8 4.038 
+#8 4.038 To activate this environment, use
+#8 4.038 
+#8 4.038      $ mamba activate tools
+#8 4.038 
+#8 4.038 To deactivate an active environment, use
+#8 4.038 
+#8 4.038      $ mamba deactivate
+#8 4.038 
+#8 DONE 4.2s
+
+#9 [ 5/10] RUN mamba install -c bioconda -c conda-forge -n tools csvtk==0.27.2 samtools==1.17 bcftools==1.17 bedtools==2.31.0 datamash==1.8 seqkit==2.5.1
+#9 4.375 warning  libmamba Could not parse mod/etag header
+#9 4.380 warning  libmamba Could not parse mod/etag header
+#9 4.383 warning  libmamba Could not parse mod/etag header
+#9 4.703 warning  libmamba Could not parse mod/etag header
+#9 4.748 warning  libmamba Could not parse mod/etag header
+#9 4.783 warning  libmamba Could not parse mod/etag header
+#9 75.98 Transaction
+#9 75.98 
+#9 75.98   Prefix: /opt/conda/envs/tools
+#9 75.98 
+#9 75.98   Updating specs:
+#9 75.98 
+#9 75.98    - csvtk==0.27.2
+#9 75.98    - samtools==1.17
+#9 75.98    - bcftools==1.17
+#9 75.98    - bedtools==2.31.0
+#9 75.98    - datamash==1.8
+#9 75.98    - seqkit==2.5.1
+#9 75.98 
+#9 75.98 
+#9 76.00   Package                 Version  Build                Channel           Size
+#9 76.00 ────────────────────────────────────────────────────────────────────────────────
+#9 76.00   Install:
+#9 76.00 ────────────────────────────────────────────────────────────────────────────────
+#9 76.00 
+#9 76.00   + csvtk                  0.27.2  h9ee0642_0           bioconda           8MB
+#9 76.00   + seqkit                  2.5.1  h9ee0642_0           bioconda           7MB
+#9 76.00   + _libgcc_mutex             0.1  conda_forge          conda-forge     Cached
+#9 76.00   + libstdcxx-ng           13.2.0  h7e041cc_3           conda-forge     Cached
+#9 76.00   + ca-certificates    2023.11.17  hbcca054_0           conda-forge     Cached
+#9 76.00   + libgomp                13.2.0  h807b86a_3           conda-forge     Cached
+#9 76.00   + _openmp_mutex             4.5  2_gnu                conda-forge     Cached
+#9 76.00   + libgcc-ng              13.2.0  h807b86a_3           conda-forge     Cached
+#9 76.00   + libev                    4.33  hd590300_2           conda-forge      113kB
+#9 76.00   + libgfortran5           13.2.0  ha4646dd_3           conda-forge        1MB
+#9 76.00   + c-ares                 1.23.0  hd590300_0           conda-forge     Cached
+#9 76.00   + libnsl                  2.0.1  hd590300_0           conda-forge       33kB
+#9 76.00   + openssl                 3.2.0  hd590300_1           conda-forge     Cached
+#9 76.00   + libdeflate               1.19  hd590300_0           conda-forge       67kB
+#9 76.00   + keyutils                1.6.1  h166bdaf_0           conda-forge     Cached
+#9 76.00   + xz                      5.2.6  h166bdaf_0           conda-forge      418kB
+#9 76.00   + bzip2                   1.0.8  hd590300_5           conda-forge      254kB
+#9 76.00   + ncurses                   6.4  h59595ed_2           conda-forge      884kB
+#9 76.00   + libzlib                1.2.13  hd590300_5           conda-forge     Cached
+#9 76.00   + datamash                  1.8  hd590300_0           conda-forge      351kB
+#9 76.00   + libgfortran-ng         13.2.0  h69a702a_3           conda-forge       24kB
+#9 76.00   + perl                   5.32.1  4_hd590300_perl5     conda-forge       13MB
+#9 76.00   + libedit          3.1.20191231  he28a2e2_2           conda-forge      124kB
+#9 76.00   + libnghttp2             1.58.0  h47da74e_1           conda-forge     Cached
+#9 76.00   + zstd                    1.5.5  hfc55251_0           conda-forge      545kB
+#9 76.00   + libssh2                1.11.0  h0841786_0           conda-forge     Cached
+#9 76.00   + zlib                   1.2.13  hd590300_5           conda-forge     Cached
+#9 76.00   + libopenblas            0.3.25  pthreads_h413a1c8_0  conda-forge        6MB
+#9 76.00   + krb5                   1.21.2  h659d440_0           conda-forge     Cached
+#9 76.00   + libblas                 3.9.0  20_linux64_openblas  conda-forge       14kB
+#9 76.00   + libcurl                 8.5.0  hca28451_0           conda-forge     Cached
+#9 76.00   + libcblas                3.9.0  20_linux64_openblas  conda-forge       14kB
+#9 76.00   + gsl                       2.7  he838d99_0           conda-forge        3MB
+#9 76.00   + bedtools               2.31.0  hf5e1c6e_3           bioconda           2MB
+#9 76.00   + htslib                   1.18  h81da01d_0           bioconda           3MB
+#9 76.00   + bcftools                 1.17  h3cc50cf_1           bioconda         945kB
+#9 76.00   + samtools                 1.17  hd87286a_2           bioconda         460kB
+#9 76.00 
+#9 76.00   Summary:
+#9 76.00 
+#9 76.00   Install: 37 packages
+#9 76.00 
+#9 76.00   Total download: 48MB
+#9 76.00 
+#9 76.00 ────────────────────────────────────────────────────────────────────────────────
+#9 76.00 
+#9 76.00 
+#9 76.00 Confirm changes: [Y/n] 
+#9 85.63 Looking for: ['csvtk==0.27.2', 'samtools==1.17', 'bcftools==1.17', 'bedtools==2.31.0', 'datamash==1.8', 'seqkit==2.5.1']
+#9 85.63 
+#9 85.63 
+#9 85.63 Downloading and Extracting Packages: ...working... done
+#9 85.63 Preparing transaction: ...working... done
+#9 86.95 Verifying transaction: ...working... done
+#9 94.65 Executing transaction: ...working... done
+#9 DONE 100.0s
+
+#10 [ 6/10] RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
+#10 DONE 0.3s
+
+#11 [ 7/10] RUN echo "conda activate tools" >> ~/.bashrc
+#11 DONE 0.1s
+
+#12 [ 8/10] RUN conda clean --all -y
+#12 2.755 Will remove 52 (74.1 MB) tarball(s).
+#12 2.755 Will remove 1 index cache(s).
+#12 2.755 Will remove 6 (313 KB) package(s).
+#12 2.755 There are no tempfile(s) to remove.
+#12 2.755 There are no logfile(s) to remove.
+#12 DONE 3.0s
+
+#13 [ 9/10] WORKDIR /opt/longphase
+#13 DONE 0.0s
+
+#14 [10/10] RUN git clone https://github.com/twolinin/longphase.git /opt/longphase &&     git checkout 6c5a9c798a9daa0f77d14bff35f20c4424bfb6ec &&     autoreconf -i &&     ./configure &&     make -j 4 &&     rm -rf /opt/longphase/.git
+#14 0.235 Cloning into '/opt/longphase'...
+#14 11.63 Note: switching to '6c5a9c798a9daa0f77d14bff35f20c4424bfb6ec'.
+#14 11.63 
+#14 11.63 You are in 'detached HEAD' state. You can look around, make experimental
+#14 11.63 changes and commit them, and you can discard any commits you make in this
+#14 11.63 state without impacting any branches by switching back to a branch.
+#14 11.63 
+#14 11.63 If you want to create a new branch to retain commits you create, you may
+#14 11.63 do so (now or later) by using -c with the switch command. Example:
+#14 11.63 
+#14 11.63   git switch -c <new-branch-name>
+#14 11.63 
+#14 11.63 Or undo this operation with:
+#14 11.63 
+#14 11.63   git switch -
+#14 11.63 
+#14 11.63 Turn off this advice by setting config variable advice.detachedHead to false
+#14 11.63 
+#14 11.63 HEAD is now at 6c5a9c7 Merge branch 'main' of github.com:twolinin/longphase into main
+#14 15.39 m4/ax_with_htslib.m4:17: warning: AC_CONFIG_SUBDIRS: you should use literals
+#14 15.39 ../../lib/autoconf/status.m4:1097: AC_CONFIG_SUBDIRS is expanded from...
+#14 15.39 m4/ax_with_htslib.m4:17: the top level
+#14 17.27 m4/ax_with_htslib.m4:17: warning: AC_CONFIG_SUBDIRS: you should use literals
+#14 17.27 ../../lib/autoconf/status.m4:1097: AC_CONFIG_SUBDIRS is expanded from...
+#14 17.27 m4/ax_with_htslib.m4:17: the top level
+#14 18.09 m4/ax_with_htslib.m4:17: warning: AC_CONFIG_SUBDIRS: you should use literals
+#14 18.09 ../../lib/autoconf/status.m4:1097: AC_CONFIG_SUBDIRS is expanded from...
+#14 18.09 m4/ax_with_htslib.m4:17: the top level
+#14 19.33 m4/ax_with_htslib.m4:17: warning: AC_CONFIG_SUBDIRS: you should use literals
+#14 19.33 ../../lib/autoconf/status.m4:1097: AC_CONFIG_SUBDIRS is expanded from...
+#14 19.33 m4/ax_with_htslib.m4:17: the top level
+#14 20.58 checking for ./htslib/htslib/sam.h... yes
+#14 20.59 checking for gawk... no
+#14 20.59 checking for mawk... mawk
+#14 20.59 checking for gcc... gcc
+#14 20.93 checking whether the C compiler works... yes
+#14 21.43 checking for C compiler default output file name... a.out
+#14 21.44 checking for suffix of executables... 
+#14 21.89 checking whether we are cross compiling... no
+#14 22.39 checking for suffix of object files... o
+#14 22.72 checking whether we are using the GNU C compiler... yes
+#14 23.05 checking whether gcc accepts -g... yes
+#14 23.38 checking for gcc option to accept ISO C89... none needed
+#14 24.17 checking for special C compiler options needed for large files... no
+#14 24.17 checking for _FILE_OFFSET_BITS value needed for large files... no
+#14 25.19 configure: creating ./config.status
+#14 26.35 config.status: creating config.mk
+#14 26.57 config.status: creating config.h
+#14 26.72 === configuring in htslib (/opt/longphase/htslib)
+#14 26.79 configure: running /bin/bash ./configure --disable-option-checking '--prefix=/usr/local'  --cache-file=/dev/null --srcdir=.
+#14 27.91 checking for gcc... gcc
+#14 28.32 checking whether the C compiler works... yes
+#14 28.86 checking for C compiler default output file name... a.out
+#14 28.87 checking for suffix of executables... 
+#14 29.35 checking whether we are cross compiling... no
+#14 29.89 checking for suffix of object files... o
+#14 30.26 checking whether we are using the GNU C compiler... yes
+#14 30.58 checking whether gcc accepts -g... yes
+#14 30.90 checking for gcc option to accept ISO C89... none needed
+#14 31.61 checking for ranlib... ranlib
+#14 31.62 checking for grep that handles long lines and -e... /bin/grep
+#14 31.64 checking for C compiler warning flags... -Wall
+#14 31.99 checking whether C compiler accepts -mssse3 -mpopcnt -msse4.1... yes
+#14 34.38 checking whether C compiler accepts -mavx2... yes
+#14 36.67 checking whether C compiler accepts -mavx512f... yes
+#14 38.47 checking whether C compiler supports ARM Neon... no
+#14 38.74 checking for pkg-config... no
+#14 38.74 checking for special C compiler options needed for large files... no
+#14 38.74 checking for _FILE_OFFSET_BITS value needed for large files... no
+#14 39.17 checking shared library type for unknown-Linux... plain .so
+#14 39.17 checking whether the compiler accepts -fvisibility=hidden... yes
+#14 39.72 checking how to run the C preprocessor... gcc -E
+#14 40.50 checking for egrep... /bin/grep -E
+#14 40.53 checking for ANSI C header files... yes
+#14 42.35 checking for sys/types.h... yes
+#14 42.75 checking for sys/stat.h... yes
+#14 43.12 checking for stdlib.h... yes
+#14 43.72 checking for string.h... yes
+#14 44.13 checking for memory.h... yes
+#14 44.53 checking for strings.h... yes
+#14 44.92 checking for inttypes.h... yes
+#14 45.32 checking for stdint.h... yes
+#14 45.72 checking for unistd.h... yes
+#14 46.14 checking for stdlib.h... (cached) yes
+#14 46.29 checking for unistd.h... (cached) yes
+#14 46.56 checking for sys/param.h... yes
+#14 46.99 checking for getpagesize... yes
+#14 47.67 checking for working mmap... yes
+#14 48.74 checking for gmtime_r... yes
+#14 49.42 checking for fsync... yes
+#14 50.12 checking for drand48... yes
+#14 50.81 checking for srand48_deterministic... no
+#14 51.86 checking whether fdatasync is declared... yes
+#14 52.36 checking for fdatasync... yes
+#14 53.00 checking for library containing log... -lm
+#14 54.29 checking for zlib.h... yes
+#14 54.73 checking for inflate in -lz... yes
+#14 55.38 checking for library containing recv... none required
+#14 56.28 checking for bzlib.h... yes
+#14 56.63 checking for BZ2_bzBuffToBuffCompress in -lbz2... yes
+#14 57.27 checking for lzma.h... yes
+#14 57.56 checking for lzma_easy_buffer_encode in -llzma... yes
+#14 58.20 checking whether htscodecs files are present... yes
+#14 58.20 checking for libdeflate.h... no
+#14 58.46 checking for libdeflate_deflate_compress in -ldeflate... no
+#14 59.07 checking for curl/curl.h... no
+#14 59.42 checking for curl_easy_pause in -lcurl... no
+#14 60.15 checking for curl_easy_init in -lcurl... no
+#14 60.74 configure: WARNING: libcurl not enabled: library not found
+#14 60.74 configure: WARNING: GCS support not enabled: requires libcurl support
+#14 60.74 configure: WARNING: S3 support not enabled: requires libcurl support
+#14 60.74 checking for library containing regcomp... none required
+#14 61.51 checking whether PTHREAD_MUTEX_RECURSIVE is declared... yes
+#14 62.12 configure: creating ./config.status
+#14 63.41 config.status: creating config.mk
+#14 63.58 config.status: creating htslib.pc.tmp
+#14 63.76 config.status: creating config.h
+#14 63.88 config.status: linking htscodecs_bundled.mk to htscodecs.mk
+#14 64.43 cd htslib && make htslib_static.mk
+#14 64.49 make[1]: Entering directory '/opt/longphase/htslib'
+#14 64.69 sed -n '/^static_libs=/s/[^=]*=/HTSLIB_static_LIBS = /p;/^static_ldflags=/s/[^=]*=/HTSLIB_static_LDFLAGS = /p' htslib.pc.tmp > htslib_static.mk
+#14 64.74 make[1]: Leaving directory '/opt/longphase/htslib'
+#14 64.80 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o Haplotag.o -c Haplotag.cpp 
+#14 64.80 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o ParsingBam.o -c ParsingBam.cpp 
+#14 64.80 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o Util.o -c Util.cpp 
+#14 64.80 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o HaplotagProcess.o -c HaplotagProcess.cpp 
+#14 70.18 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o PhasingProcess.o -c PhasingProcess.cpp 
+#14 71.31 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o Phasing.o -c Phasing.cpp 
+#14 85.28 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o PhasingGraph.o -c PhasingGraph.cpp 
+#14 87.09 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o ModCall.o -c ModCall.cpp 
+#14 94.17 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o ModCallParsingBam.o -c ModCallParsingBam.cpp 
+#14 96.33 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o ModCallProcess.o -c ModCallProcess.cpp 
+#14 104.4 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o main.o -c main.cpp 
+#14 109.6 cd htslib && make hts-object-files
+#14 109.7 make[1]: Entering directory '/opt/longphase/htslib'
+#14 110.0 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o kfunc.o kfunc.c
+#14 112.0 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o kstring.o kstring.c
+#14 112.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o bcf_sr_sort.o bcf_sr_sort.c
+#14 114.7 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o bgzf.o bgzf.c
+#14 118.7 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o errmod.o errmod.c
+#14 121.2 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o faidx.o faidx.c
+#14 121.9 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o header.o header.c
+#14 122.4 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o hfile.o hfile.c
+#14 123.7 echo '#define HTS_VERSION_TEXT "1.16"' > version.h
+#14 123.8 echo '#define HTS_CC "gcc"' > config_vars.h
+#14 123.8 echo '#define HTS_CPPFLAGS ""' >> config_vars.h
+#14 123.8 echo '#define HTS_CFLAGS "-Wall -g -O2 -fvisibility=hidden"' >> config_vars.h
+#14 123.8 echo '#define HTS_LDFLAGS "-fvisibility=hidden "' >> config_vars.h
+#14 123.8 echo '#define HTS_LIBS "-llzma -lbz2 -lz -lm  "' >> config_vars.h
+#14 123.9 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o hts_expr.o hts_expr.c
+#14 126.9 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o hts_os.o hts_os.c
+#14 127.6 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o md5.o md5.c
+#14 128.1 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o multipart.o multipart.c
+#14 128.5 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o probaln.o probaln.c
+#14 129.3 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o realn.o realn.c
+#14 129.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o regidx.o regidx.c
+#14 130.4 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o region.o region.c
+#14 131.4 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o sam.o sam.c
+#14 131.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o synced_bcf_reader.o synced_bcf_reader.c
+#14 132.2 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o vcf_sweep.o vcf_sweep.c
+#14 133.0 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o tbx.o tbx.c
+#14 133.5 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o textutils.o textutils.c
+#14 135.1 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o thread_pool.o thread_pool.c
+#14 135.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o vcf.o vcf.c
+#14 136.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o vcfutils.o vcfutils.c
+#14 137.5 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_codecs.o cram/cram_codecs.c
+#14 141.4 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_decode.o cram/cram_decode.c
+#14 148.0 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_encode.o cram/cram_encode.c
+#14 150.6 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_external.o cram/cram_external.c
+#14 151.3 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_index.o cram/cram_index.c
+#14 152.6 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_io.o cram/cram_io.c
+#14 154.0 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/cram_stats.o cram/cram_stats.c
+#14 155.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/mFILE.o cram/mFILE.c
+#14 156.8 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/open_trace_file.o cram/open_trace_file.c
+#14 158.7 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/pooled_alloc.o cram/pooled_alloc.c
+#14 159.2 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o cram/string_alloc.o cram/string_alloc.c
+#14 159.3 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/arith_dynamic.o htscodecs/htscodecs/arith_dynamic.c
+#14 159.7 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/fqzcomp_qual.o htscodecs/htscodecs/fqzcomp_qual.c
+#14 160.2 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/htscodecs.o htscodecs/htscodecs/htscodecs.c
+#14 160.6 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/pack.o htscodecs/htscodecs/pack.c
+#14 162.4 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/rANS_static4x16pr.o htscodecs/htscodecs/rANS_static4x16pr.c
+#14 164.0 gcc -Wall -g -O2 -fvisibility=hidden -mavx2 -I.  -c -o htscodecs/htscodecs/rANS_static32x16pr_avx2.o htscodecs/htscodecs/rANS_static32x16pr_avx2.c
+#14 164.8 gcc -Wall -g -O2 -fvisibility=hidden -mavx512f -I.  -c -o htscodecs/htscodecs/rANS_static32x16pr_avx512.o htscodecs/htscodecs/rANS_static32x16pr_avx512.c
+#14 165.6 gcc -Wall -g -O2 -fvisibility=hidden -mssse3 -mpopcnt -msse4.1 -I.  -c -o htscodecs/htscodecs/rANS_static32x16pr_sse4.o htscodecs/htscodecs/rANS_static32x16pr_sse4.c
+#14 169.7 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/rANS_static32x16pr.o htscodecs/htscodecs/rANS_static32x16pr.c
+#14 171.1 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/rANS_static.o htscodecs/htscodecs/rANS_static.c
+#14 171.6 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/rle.o htscodecs/htscodecs/rle.c
+#14 171.7 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/tokenise_name3.o htscodecs/htscodecs/tokenise_name3.c
+#14 172.9 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o htscodecs/htscodecs/utils.o htscodecs/htscodecs/utils.c
+#14 173.9 gcc -Wall -g -O2 -fvisibility=hidden  -I.  -c -o hts.o hts.c
+#14 184.2 touch hts-object-files
+#14 184.2 make[1]: Leaving directory '/opt/longphase/htslib'
+#14 184.2 cd htslib && make lib-static
+#14 184.3 make[1]: Entering directory '/opt/longphase/htslib'
+#14 184.5 ar -rc libhts.a kfunc.o kstring.o bcf_sr_sort.o bgzf.o errmod.o faidx.o header.o hfile.o hts.o hts_expr.o hts_os.o md5.o multipart.o probaln.o realn.o regidx.o region.o sam.o synced_bcf_reader.o vcf_sweep.o tbx.o textutils.o thread_pool.o vcf.o vcfutils.o cram/cram_codecs.o cram/cram_decode.o cram/cram_encode.o cram/cram_external.o cram/cram_index.o cram/cram_io.o cram/cram_stats.o cram/mFILE.o cram/open_trace_file.o cram/pooled_alloc.o cram/string_alloc.o htscodecs/htscodecs/arith_dynamic.o htscodecs/htscodecs/fqzcomp_qual.o htscodecs/htscodecs/htscodecs.o htscodecs/htscodecs/pack.o htscodecs/htscodecs/rANS_static4x16pr.o htscodecs/htscodecs/rANS_static32x16pr_avx2.o htscodecs/htscodecs/rANS_static32x16pr_avx512.o htscodecs/htscodecs/rANS_static32x16pr_sse4.o htscodecs/htscodecs/rANS_static32x16pr.o htscodecs/htscodecs/rANS_static.o htscodecs/htscodecs/rle.o htscodecs/htscodecs/tokenise_name3.o htscodecs/htscodecs/utils.o  
+#14 184.6 ranlib libhts.a
+#14 184.7 make[1]: Leaving directory '/opt/longphase/htslib'
+#14 184.7 g++ -I. -Ihtslib -std=c++11 -g -Wall -O3 -o longphase Haplotag.o ParsingBam.o Util.o HaplotagProcess.o PhasingProcess.o Phasing.o PhasingGraph.o ModCall.o ModCallParsingBam.o ModCallProcess.o main.o htslib/libhts.a htslib/libhts.a -lpthread -lz -lm -lbz2 -llzma
+#14 DONE 186.1s
+
+#15 exporting to image
+#15 exporting layers
+#15 exporting layers 3.3s done
+#15 writing image sha256:73791e53d9272dfffb755d8206eede62ea1557930f10aab79c6b6f5cbf7fdb9a done
+#15 naming to docker.io/pacbio/longphase:v1.5.2 done
+#15 DONE 3.3s

@@ -11,7 +11,6 @@
 
 ![Alt text](figures/simple_workflow_diagram.png)
 
-Full DAG of the workflow can be found [here](figures/complex_workflow_diagram.png)
 
 ## Usage
 
@@ -26,7 +25,6 @@ Upon completion the workflow will generate the following (non-exhaustive list) r
 | Folder                            | Types of results                                                                  |
 | --------------------------------- | --------------------------------------------------------------------------------- |
 | AnnotatedSeverusSV                | Severus structural variants annotated with AnnotSV (TSV, see [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf))                          |
-| AnnotatedSnifflesSV               | Sniffles structural variants annotated with AnnotSV (TSV)                         |
 | Annotated*SV_intogen               | Structural variants annotated with AnnotSV (TSV) overlapping with the Compendium of Cancer Genes (IntOGen May 23)  |
 | small_variant_vcf_annotated       | ClairS SNV/INDEL annotated with VEP (VCF, single entry per variant with `--pick`, see [VEP documentation](https://asia.ensembl.org/info/docs/tools/vep/script/vep_options.html))                                         |
 | small_variant_tsv_annotated       | VEP annotation for SNV/INDEL in TSV format                                         |
@@ -49,10 +47,9 @@ Upon completion the workflow will generate the following (non-exhaustive list) r
 | tumor_germline_small_variant_vcf  | Germline variants in tumor (VCF)                                                  |
 | pileup_(normal\/tumor)_bed                 | Summarized 5mC probability  in normal and tumor (BED, see [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools) for format description)                                        |
 | cnvkit_cns_with_major_minor_CN                     | Copy number segments adjusted with purity and ploidy estimate, see cnvkit_output for raw CNVKit results(BED)                                                        |
-| sniffles_somatic_vcf_filterHPRC   | Sniffles structural variants (Unannotated VCF)                                    |
-| Severus_filterHPRC_vcf            | Severus structural variants (Unannotated VCF)                                     |
+| Severus_filtered_vcf            | Severus structural variants (Unannotated VCF)                                     |
 | small_variant_vcf                 | ClairS SNV/INDEL (Unannotated VCF)                                                |
-| Purple_outputs | Purity and ploidy estimate from HMFtools suite |
+| Purple_outputs | Purity and ploidy estimate + allele-specific copy numnber calls from HMFtools suite |
 
 ## Demo datasets and accuracy of the workflow
 
@@ -98,7 +95,7 @@ Following are the references for the tools used in the workflow and should be ci
 | AnnotSV      | 3.3.6     | Annotation of structural variants                    |
 | DSS          | 2.48.0    | Differential methylation                             |
 | annotatr     | 1.26.0    | Annotation of differentially methylated region (DMR) |
-| ClairS       | 0.1.5     | SNV and INDEL calling                                |
+| ClairS       | 0.1.6     | SNV and INDEL calling                                |
 | bcftools     | 1.17      | Manipulation of VCF                                  |
 | CNVKit       | 0.9.10    | Copy number segmentation                             |
 | Truvari      | 4.0.0     | Filtering of control structural variants             |
@@ -106,24 +103,29 @@ Following are the references for the tools used in the workflow and should be ci
 | mosdepth     | 0.3.4     | Calculating depth of coverage                        |
 | pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          |
 | fgbio        | 2.1.0     | Stripping kinetics from BAM files                    |
-| HiPhase      | 0.10.2    | Diploid phasing using germline variants              |
-| Sniffles     | 2.0.7     | Structural variants                                  |
+| HiPhase      | 1.1.0    | Diploid phasing using germline variants              |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                |
 | Severus      | v0.1.0 | Structural variants                             |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation |
 | IntOGen        | May 31 2023    | Compendium of Cancer Genes for annotation |
 | MutationalPattern        | 3.10.0   | Mutational signatures based on SNV |
-| Longphase        | v1.5.1   | Optional phasing tool |
-| Amber        | v3.9.1   | BAF segmentation (HMFtools suite) |
-| Cobalt        | v1.14.1   | Log ratio segmentation (HMFtools suite) |
-| Purple        | v3.9   | Purity and ploidy estimate, somatic CNV (HMFtools suite) |
+| Longphase        | v1.5.2   | Optional phasing tool |
+| Amber        | v4.0   | BAF segmentation (HMFtools suite) |
+| Cobalt        | v1.16.0   | Log ratio segmentation (HMFtools suite) |
+| Purple        | v4.0   | Purity and ploidy estimate, somatic CNV (HMFtools suite) |
 </details>
 
 ## Change logs
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.5:
+  - Updated Cobalt to 4.0. It now counts read depth correctly. See [here](https://github.com/hartwigmedical/hmftools/issues/485) for discussion on the issue.
+  - Containers are now on pacbio quay.io.
+  - SV calling now only uses Severus.
+  - Individual tasks now output version number in stdout.
 
 - v0.4:
   - Added purity, ploidy and somatic CNV with Amber, Cobalt and Purple

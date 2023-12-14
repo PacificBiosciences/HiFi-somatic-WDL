@@ -22,6 +22,8 @@ task vep_annotate {
             exit 1
         fi
 
+        vep --help
+
         tar -xzvf ~{vep_cache} -C vep_data/
         vep \
             --cache \
@@ -53,7 +55,7 @@ task vep_annotate {
     }
 
     runtime {
-        docker: "ensemblorg/ensembl-vep:release_110.1"
+        docker: "ensemblorg/ensembl-vep@sha256:70d64039e7b575801390296fa77bd78b983c94ab204baaa656425d8d4b738dac"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -82,6 +84,8 @@ task annotsv {
             echo "AnnotSV cache file not found. Please provide a valid cache file."
             exit 1
         fi
+
+        AnnotSV --version
 
         tar -xzvf ~{annotsv_cache} -C annotsv_cache_dir/
 

@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:latest
+FROM continuumio/miniconda3:23.10.0-1
 
 RUN apt-get update && \
     apt-get install -y git g++ gcc autoconf make zlib1g-dev libbz2-dev liblzma-dev procps git libarchive-dev && \
@@ -13,6 +13,7 @@ RUN conda clean --all -y
 
 WORKDIR /opt/longphase
 RUN git clone https://github.com/twolinin/longphase.git /opt/longphase && \
+    git checkout 6c5a9c798a9daa0f77d14bff35f20c4424bfb6ec && \
     autoreconf -i && \
     ./configure && \
     make -j 4 && \
@@ -21,4 +22,3 @@ RUN git clone https://github.com/twolinin/longphase.git /opt/longphase && \
 ENV PATH=/opt/conda/envs/tools/bin:${PATH}:${HOME}/bin:/opt/longphase
 
 CMD ["longphase", "phase", "--help"]
-#docker run -v "/gpu_disk2/jyunhong104/sup/:/input" -v "/gpu_disk/zhenyu111/longphase/output_longphase/:/output" longphase:1.5.1 longphase phase -s "/input/hg002.wf_snp.vcf.gz" -r "/input/GCA_000001405.15_GRCh38_no_alt_analysis_set.fa" -b "/input/hg002.sup.10x.bam" -t 8 -o "/output/longphase" --ont

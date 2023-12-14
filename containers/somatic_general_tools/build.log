@@ -1,0 +1,321 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 742B done
+#1 DONE 0.0s
+
+#2 [internal] load .dockerignore
+#2 transferring context: 2B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/continuumio/miniconda3:23.10.0-1
+#3 ...
+
+#4 [auth] continuumio/miniconda3:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/continuumio/miniconda3:23.10.0-1
+#3 DONE 3.1s
+
+#5 [ 1/14] FROM docker.io/continuumio/miniconda3:23.10.0-1@sha256:5ee0ed861bce8f67acb0a3e8a416891781db54302d93bf20a3c6301d7683d7b9
+#5 CACHED
+
+#6 [ 2/14] WORKDIR /app
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 711.56kB 0.0s done
+#7 DONE 0.0s
+
+#8 [ 3/14] RUN rm -rf /var/lib/apt/lists/*
+#8 DONE 0.2s
+
+#9 [ 4/14] RUN apt-get update
+#9 1.180 Get:1 http://deb.debian.org/debian bullseye InRelease [116 kB]
+#9 1.590 Get:2 http://deb.debian.org/debian-security bullseye-security InRelease [48.4 kB]
+#9 1.788 Get:3 http://deb.debian.org/debian bullseye-updates InRelease [44.1 kB]
+#9 2.966 Get:4 http://deb.debian.org/debian bullseye/main amd64 Packages [8062 kB]
+#9 4.270 Get:5 http://deb.debian.org/debian-security bullseye-security/main amd64 Packages [260 kB]
+#9 5.372 Get:6 http://deb.debian.org/debian bullseye-updates/main amd64 Packages [17.7 kB]
+#9 9.475 Fetched 8548 kB in 9s (948 kB/s)
+#9 9.475 Reading package lists...
+#9 DONE 12.0s
+
+#10 [ 5/14] RUN apt-get install -y procps git libarchive-dev
+#10 0.404 Reading package lists...
+#10 2.975 Building dependency tree...
+#10 3.476 Reading state information...
+#10 3.844 git is already the newest version (1:2.30.2-1+deb11u2).
+#10 3.844 procps is already the newest version (2:3.3.17-5).
+#10 3.844 The following additional packages will be installed:
+#10 3.846   libarchive13 libicu67 libxml2
+#10 3.848 Suggested packages:
+#10 3.848   lrzip
+#10 4.062 The following NEW packages will be installed:
+#10 4.063   libarchive-dev libarchive13 libicu67 libxml2
+#10 4.567 0 upgraded, 4 newly installed, 0 to remove and 2 not upgraded.
+#10 4.567 Need to get 10.2 MB of archives.
+#10 4.567 After this operation, 38.5 MB of additional disk space will be used.
+#10 4.567 Get:1 http://deb.debian.org/debian bullseye/main amd64 libicu67 amd64 67.1-7 [8622 kB]
+#10 6.186 Get:2 http://deb.debian.org/debian bullseye/main amd64 libxml2 amd64 2.9.10+dfsg-6.7+deb11u4 [693 kB]
+#10 6.255 Get:3 http://deb.debian.org/debian bullseye/main amd64 libarchive13 amd64 3.4.3-2+deb11u1 [343 kB]
+#10 6.277 Get:4 http://deb.debian.org/debian bullseye/main amd64 libarchive-dev amd64 3.4.3-2+deb11u1 [519 kB]
+#10 6.865 debconf: delaying package configuration, since apt-utils is not installed
+#10 6.985 Fetched 10.2 MB in 2s (4569 kB/s)
+#10 7.120 Selecting previously unselected package libicu67:amd64.
+#10 7.120 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 12444 files and directories currently installed.)
+#10 7.180 Preparing to unpack .../libicu67_67.1-7_amd64.deb ...
+#10 7.185 Unpacking libicu67:amd64 (67.1-7) ...
+#10 9.736 Selecting previously unselected package libxml2:amd64.
+#10 9.738 Preparing to unpack .../libxml2_2.9.10+dfsg-6.7+deb11u4_amd64.deb ...
+#10 9.739 Unpacking libxml2:amd64 (2.9.10+dfsg-6.7+deb11u4) ...
+#10 10.03 Selecting previously unselected package libarchive13:amd64.
+#10 10.03 Preparing to unpack .../libarchive13_3.4.3-2+deb11u1_amd64.deb ...
+#10 10.03 Unpacking libarchive13:amd64 (3.4.3-2+deb11u1) ...
+#10 10.25 Selecting previously unselected package libarchive-dev:amd64.
+#10 10.25 Preparing to unpack .../libarchive-dev_3.4.3-2+deb11u1_amd64.deb ...
+#10 10.25 Unpacking libarchive-dev:amd64 (3.4.3-2+deb11u1) ...
+#10 10.50 Setting up libicu67:amd64 (67.1-7) ...
+#10 10.50 Setting up libxml2:amd64 (2.9.10+dfsg-6.7+deb11u4) ...
+#10 10.51 Setting up libarchive13:amd64 (3.4.3-2+deb11u1) ...
+#10 10.51 Setting up libarchive-dev:amd64 (3.4.3-2+deb11u1) ...
+#10 10.52 Processing triggers for libc-bin (2.31-13+deb11u7) ...
+#10 DONE 10.7s
+
+#11 [ 6/14] RUN conda install -n base -c conda-forge mamba libarchive
+#11 3.667 Channels:
+#11 3.667  - conda-forge
+#11 3.667  - defaults
+#11 3.667 Platform: linux-64
+#11 3.667 Collecting package metadata (repodata.json): ...working... done
+#11 217.8 Solving environment: ...working... done
+#11 224.6 
+#11 224.6 ## Package Plan ##
+#11 224.6 
+#11 224.6   environment location: /opt/conda
+#11 224.6 
+#11 224.6   added / updated specs:
+#11 224.6     - libarchive
+#11 224.6     - mamba
+#11 224.6 
+#11 224.6 
+#11 224.6 The following packages will be downloaded:
+#11 224.6 
+#11 224.6     package                    |            build
+#11 224.6     ---------------------------|-----------------
+#11 224.6     _libgcc_mutex-0.1          |      conda_forge           3 KB  conda-forge
+#11 224.6     _openmp_mutex-4.5          |            2_gnu          23 KB  conda-forge
+#11 224.6     c-ares-1.23.0              |       hd590300_0         150 KB  conda-forge
+#11 224.6     ca-certificates-2023.11.17 |       hbcca054_0         151 KB  conda-forge
+#11 224.6     certifi-2023.11.17         |     pyhd8ed1ab_0         155 KB  conda-forge
+#11 224.6     conda-23.11.0              |  py311h38be061_1         1.2 MB  conda-forge
+#11 224.6     distro-1.8.0               |     pyhd8ed1ab_0          40 KB  conda-forge
+#11 224.6     fmt-10.1.1                 |       h00ab1b0_1         188 KB  conda-forge
+#11 224.6     icu-73.2                   |       h59595ed_0        11.5 MB  conda-forge
+#11 224.6     keyutils-1.6.1             |       h166bdaf_0         115 KB  conda-forge
+#11 224.6     krb5-1.21.2                |       h659d440_0         1.3 MB  conda-forge
+#11 224.6     libarchive-3.7.2           |       h2aa1ff5_1         846 KB  conda-forge
+#11 224.6     libcurl-8.5.0              |       hca28451_0         380 KB  conda-forge
+#11 224.6     libgcc-ng-13.2.0           |       h807b86a_3         755 KB  conda-forge
+#11 224.6     libgomp-13.2.0             |       h807b86a_3         412 KB  conda-forge
+#11 224.6     libiconv-1.17              |       hd590300_1         676 KB  conda-forge
+#11 224.6     libmamba-1.5.5             |       had39da4_0         1.6 MB  conda-forge
+#11 224.6     libmambapy-1.5.5           |  py311hf2555c7_0         296 KB  conda-forge
+#11 224.6     libnghttp2-1.58.0          |       h47da74e_1         617 KB  conda-forge
+#11 224.6     libssh2-1.11.0             |       h0841786_0         265 KB  conda-forge
+#11 224.6     libstdcxx-ng-13.2.0        |       h7e041cc_3         3.7 MB  conda-forge
+#11 224.6     libxml2-2.12.3             |       h232c23b_0         688 KB  conda-forge
+#11 224.6     libzlib-1.2.13             |       hd590300_5          60 KB  conda-forge
+#11 224.6     lzo-2.10                   |    h516909a_1000         314 KB  conda-forge
+#11 224.6     mamba-1.5.5                |  py311h3072747_0          65 KB  conda-forge
+#11 224.6     menuinst-2.0.1             |  py311h38be061_0         159 KB  conda-forge
+#11 224.6     openssl-3.2.0              |       hd590300_1         2.7 MB  conda-forge
+#11 224.6     platformdirs-4.1.0         |     pyhd8ed1ab_0          20 KB  conda-forge
+#11 224.6     python_abi-3.11            |          2_cp311           5 KB  conda-forge
+#11 224.6     zlib-1.2.13                |       hd590300_5          91 KB  conda-forge
+#11 224.6     ------------------------------------------------------------
+#11 224.6                                            Total:        28.3 MB
+#11 224.6 
+#11 224.6 The following NEW packages will be INSTALLED:
+#11 224.6 
+#11 224.6   distro             conda-forge/noarch::distro-1.8.0-pyhd8ed1ab_0 
+#11 224.6   keyutils           conda-forge/linux-64::keyutils-1.6.1-h166bdaf_0 
+#11 224.6   libiconv           conda-forge/linux-64::libiconv-1.17-hd590300_1 
+#11 224.6   libzlib            conda-forge/linux-64::libzlib-1.2.13-hd590300_5 
+#11 224.6   lzo                conda-forge/linux-64::lzo-2.10-h516909a_1000 
+#11 224.6   mamba              conda-forge/linux-64::mamba-1.5.5-py311h3072747_0 
+#11 224.6   menuinst           conda-forge/linux-64::menuinst-2.0.1-py311h38be061_0 
+#11 224.6   platformdirs       conda-forge/noarch::platformdirs-4.1.0-pyhd8ed1ab_0 
+#11 224.6   python_abi         conda-forge/linux-64::python_abi-3.11-2_cp311 
+#11 224.6 
+#11 224.6 The following packages will be UPDATED:
+#11 224.6 
+#11 224.6   c-ares                pkgs/main::c-ares-1.19.1-h5eee18b_0 --> conda-forge::c-ares-1.23.0-hd590300_0 
+#11 224.6   ca-certificates    pkgs/main::ca-certificates-2023.08.22~ --> conda-forge::ca-certificates-2023.11.17-hbcca054_0 
+#11 224.6   certifi            pkgs/main/linux-64::certifi-2023.7.22~ --> conda-forge/noarch::certifi-2023.11.17-pyhd8ed1ab_0 
+#11 224.6   conda              pkgs/main::conda-23.10.0-py311h06a430~ --> conda-forge::conda-23.11.0-py311h38be061_1 
+#11 224.6   fmt                       pkgs/main::fmt-9.1.0-hdb19cb5_0 --> conda-forge::fmt-10.1.1-h00ab1b0_1 
+#11 224.6   icu                        pkgs/main::icu-73.1-h6a678d5_0 --> conda-forge::icu-73.2-h59595ed_0 
+#11 224.6   krb5                    pkgs/main::krb5-1.20.1-h143b758_1 --> conda-forge::krb5-1.21.2-h659d440_0 
+#11 224.6   libarchive         pkgs/main::libarchive-3.6.2-h6ac8c49_2 --> conda-forge::libarchive-3.7.2-h2aa1ff5_1 
+#11 224.6   libcurl               pkgs/main::libcurl-8.4.0-h251f7ec_0 --> conda-forge::libcurl-8.5.0-hca28451_0 
+#11 224.6   libgcc-ng          pkgs/main::libgcc-ng-11.2.0-h1234567_1 --> conda-forge::libgcc-ng-13.2.0-h807b86a_3 
+#11 224.6   libgomp              pkgs/main::libgomp-11.2.0-h1234567_1 --> conda-forge::libgomp-13.2.0-h807b86a_3 
+#11 224.6   libmamba             pkgs/main::libmamba-1.5.3-haf1ee3a_0 --> conda-forge::libmamba-1.5.5-had39da4_0 
+#11 224.6   libmambapy         pkgs/main::libmambapy-1.5.3-py311h2da~ --> conda-forge::libmambapy-1.5.5-py311hf2555c7_0 
+#11 224.6   libnghttp2         pkgs/main::libnghttp2-1.57.0-h2d74bed~ --> conda-forge::libnghttp2-1.58.0-h47da74e_1 
+#11 224.6   libssh2              pkgs/main::libssh2-1.10.0-hdbd6064_2 --> conda-forge::libssh2-1.11.0-h0841786_0 
+#11 224.6   libstdcxx-ng       pkgs/main::libstdcxx-ng-11.2.0-h12345~ --> conda-forge::libstdcxx-ng-13.2.0-h7e041cc_3 
+#11 224.6   libxml2              pkgs/main::libxml2-2.10.4-hf1b16e4_1 --> conda-forge::libxml2-2.12.3-h232c23b_0 
+#11 224.6   openssl              pkgs/main::openssl-3.0.12-h7f8727e_0 --> conda-forge::openssl-3.2.0-hd590300_1 
+#11 224.6   zlib                    pkgs/main::zlib-1.2.13-h5eee18b_0 --> conda-forge::zlib-1.2.13-hd590300_5 
+#11 224.6 
+#11 224.6 The following packages will be SUPERSEDED by a higher-priority channel:
+#11 224.6 
+#11 224.6   _libgcc_mutex           pkgs/main::_libgcc_mutex-0.1-main --> conda-forge::_libgcc_mutex-0.1-conda_forge 
+#11 224.6   _openmp_mutex          pkgs/main::_openmp_mutex-5.1-1_gnu --> conda-forge::_openmp_mutex-4.5-2_gnu 
+#11 224.6 
+#11 224.6 
+#11 224.6 Proceed ([y]/n)? 
+#11 231.2 
+#11 231.2 Downloading and Extracting Packages: ...working... done
+#11 231.2 Preparing transaction: ...working... done
+#11 231.6 Verifying transaction: ...working... done
+#11 233.6 Executing transaction: ...working... done
+#11 DONE 240.8s
+
+#12 [ 7/14] RUN mamba create -n tools
+#12 3.977 
+#12 3.977 Looking for: []
+#12 3.977 
+#12 3.977 Preparing transaction: ...working... done
+#12 3.980 Verifying transaction: ...working... done
+#12 4.513 Executing transaction: ...working... done
+#12 4.520 
+#12 4.520 To activate this environment, use
+#12 4.520 
+#12 4.520      $ mamba activate tools
+#12 4.520 
+#12 4.520 To deactivate an active environment, use
+#12 4.520 
+#12 4.520      $ mamba deactivate
+#12 4.520 
+#12 DONE 4.7s
+
+#13 [ 8/14] RUN mamba install -c bioconda -c conda-forge -n tools csvtk==0.27.2 samtools==1.17 bcftools==1.17 bedtools==2.31.0 datamash==1.8 seqkit==2.5.1
+#13 4.949 warning  libmamba Could not parse mod/etag header
+#13 4.963 warning  libmamba Could not parse mod/etag header
+#13 4.967 warning  libmamba Could not parse mod/etag header
+#13 5.340 warning  libmamba Could not parse mod/etag header
+#13 5.378 warning  libmamba Could not parse mod/etag header
+#13 5.426 warning  libmamba Could not parse mod/etag header
+#13 75.36 Transaction
+#13 75.36 
+#13 75.36   Prefix: /opt/conda/envs/tools
+#13 75.36 
+#13 75.36   Updating specs:
+#13 75.36 
+#13 75.36    - csvtk==0.27.2
+#13 75.36    - samtools==1.17
+#13 75.36    - bcftools==1.17
+#13 75.36    - bedtools==2.31.0
+#13 75.36    - datamash==1.8
+#13 75.36    - seqkit==2.5.1
+#13 75.36 
+#13 75.36 
+#13 75.37   Package                 Version  Build                Channel           Size
+#13 75.37 ────────────────────────────────────────────────────────────────────────────────
+#13 75.37   Install:
+#13 75.37 ────────────────────────────────────────────────────────────────────────────────
+#13 75.37 
+#13 75.37   + csvtk                  0.27.2  h9ee0642_0           bioconda           8MB
+#13 75.37   + seqkit                  2.5.1  h9ee0642_0           bioconda           7MB
+#13 75.37   + _libgcc_mutex             0.1  conda_forge          conda-forge     Cached
+#13 75.37   + libstdcxx-ng           13.2.0  h7e041cc_3           conda-forge     Cached
+#13 75.37   + ca-certificates    2023.11.17  hbcca054_0           conda-forge     Cached
+#13 75.37   + libgomp                13.2.0  h807b86a_3           conda-forge     Cached
+#13 75.37   + _openmp_mutex             4.5  2_gnu                conda-forge     Cached
+#13 75.37   + libgcc-ng              13.2.0  h807b86a_3           conda-forge     Cached
+#13 75.37   + libev                    4.33  hd590300_2           conda-forge      113kB
+#13 75.37   + libgfortran5           13.2.0  ha4646dd_3           conda-forge        1MB
+#13 75.37   + c-ares                 1.23.0  hd590300_0           conda-forge     Cached
+#13 75.37   + libnsl                  2.0.1  hd590300_0           conda-forge       33kB
+#13 75.37   + openssl                 3.2.0  hd590300_1           conda-forge     Cached
+#13 75.37   + libdeflate               1.19  hd590300_0           conda-forge       67kB
+#13 75.37   + keyutils                1.6.1  h166bdaf_0           conda-forge     Cached
+#13 75.37   + xz                      5.2.6  h166bdaf_0           conda-forge      418kB
+#13 75.37   + bzip2                   1.0.8  hd590300_5           conda-forge      254kB
+#13 75.37   + ncurses                   6.4  h59595ed_2           conda-forge      884kB
+#13 75.37   + libzlib                1.2.13  hd590300_5           conda-forge     Cached
+#13 75.37   + datamash                  1.8  hd590300_0           conda-forge      351kB
+#13 75.37   + libgfortran-ng         13.2.0  h69a702a_3           conda-forge       24kB
+#13 75.37   + perl                   5.32.1  4_hd590300_perl5     conda-forge       13MB
+#13 75.37   + libedit          3.1.20191231  he28a2e2_2           conda-forge      124kB
+#13 75.37   + libnghttp2             1.58.0  h47da74e_1           conda-forge     Cached
+#13 75.37   + zstd                    1.5.5  hfc55251_0           conda-forge      545kB
+#13 75.37   + libssh2                1.11.0  h0841786_0           conda-forge     Cached
+#13 75.37   + zlib                   1.2.13  hd590300_5           conda-forge     Cached
+#13 75.37   + libopenblas            0.3.25  pthreads_h413a1c8_0  conda-forge        6MB
+#13 75.37   + krb5                   1.21.2  h659d440_0           conda-forge     Cached
+#13 75.37   + libblas                 3.9.0  20_linux64_openblas  conda-forge       14kB
+#13 75.37   + libcurl                 8.5.0  hca28451_0           conda-forge     Cached
+#13 75.37   + libcblas                3.9.0  20_linux64_openblas  conda-forge       14kB
+#13 75.37   + gsl                       2.7  he838d99_0           conda-forge        3MB
+#13 75.37   + bedtools               2.31.0  hf5e1c6e_3           bioconda           2MB
+#13 75.37   + htslib                   1.18  h81da01d_0           bioconda           3MB
+#13 75.37   + bcftools                 1.17  h3cc50cf_1           bioconda         945kB
+#13 75.37   + samtools                 1.17  hd87286a_2           bioconda         460kB
+#13 75.37 
+#13 75.37   Summary:
+#13 75.37 
+#13 75.37   Install: 37 packages
+#13 75.37 
+#13 75.37   Total download: 48MB
+#13 75.37 
+#13 75.37 ────────────────────────────────────────────────────────────────────────────────
+#13 75.37 
+#13 75.37 
+#13 75.37 Confirm changes: [Y/n] 
+#13 83.89 Looking for: ['csvtk==0.27.2', 'samtools==1.17', 'bcftools==1.17', 'bedtools==2.31.0', 'datamash==1.8', 'seqkit==2.5.1']
+#13 83.89 
+#13 83.89 
+#13 83.89 Downloading and Extracting Packages: ...working... done
+#13 83.89 Preparing transaction: ...working... done
+#13 85.14 Verifying transaction: ...working... done
+#13 92.96 Executing transaction: ...working... done
+#13 DONE 96.7s
+
+#14 [ 9/14] RUN echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc
+#14 DONE 0.3s
+
+#15 [10/14] RUN echo "conda activate tools" >> ~/.bashrc
+#15 DONE 0.3s
+
+#16 [11/14] RUN pip cache remove *
+#16 1.759 WARNING: No matching packages
+#16 1.760 Files removed: 0
+#16 DONE 1.9s
+
+#17 [12/14] RUN conda clean --all
+#17 1.703 Will remove 52 (74.1 MB) tarball(s).
+#17 1.703 Proceed ([y]/n)? 
+#17 1.936 Will remove 1 index cache(s).
+#17 1.936 Proceed ([y]/n)? 
+#17 2.016 Will remove 6 (313 KB) package(s).
+#17 2.016 Proceed ([y]/n)? 
+#17 2.436 There are no tempfile(s) to remove.
+#17 2.436 There are no logfile(s) to remove.
+#17 DONE 2.6s
+
+#18 [13/14] COPY Compendium_Cancer_Genes.tsv /app/Compendium_Cancer_Genes.tsv
+#18 DONE 0.0s
+
+#19 [14/14] RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+#19 DONE 0.3s
+
+#20 exporting to image
+#20 exporting layers
+#20 exporting layers 2.2s done
+#20 writing image sha256:416411916b96ab6e82c226ebaa2d72cd138a829e068c73622aa172ff79c88283 done
+#20 naming to docker.io/pacbio/somatic_general-tools:v0.1 done
+#20 DONE 2.2s

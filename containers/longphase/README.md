@@ -1,4 +1,11 @@
-* This uses docker buildx to build for multiple architecture or single architecture.
-* The issue with building for arm64 is that a lot of conda packages are not available!
-  * `docker buildx create --name mybuilder --use --bootstrap`
-  * `docker buildx build --platform linux/amd64 -t kpinpb/longphase:v1.5.1 .`
+- This will build longphase to quay.io
+
+```bash
+docker buildx build --platform linux/amd64 -t pacbio/longphase:v1.5.2 . --progress=plain --load &> build.log
+# Use docker images to find image ID, then run docker run IMAGEID, and use docker ps -l to find container ID
+# for commit
+docker commit 4c4a6caff388 quay.io/pacbio/longphase:v1.5.2
+docker commit 4c4a6caff388 quay.io/pacbio/longphase
+docker push quay.io/pacbio/longphase
+docker push quay.io/pacbio/longphase:v1.5.2
+```

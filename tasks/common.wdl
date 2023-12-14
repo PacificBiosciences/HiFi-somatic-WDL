@@ -17,24 +17,7 @@ task tabix_vcf {
     sed 's/SVLEN=0;//g' ~{vcf} > tmp.vcf
     sed -i 's/<INS>/INS/g' tmp.vcf
 
-    # # If filename contains "severus", add headers
-    # Deprecated, no longer needed as of severus 0.1.0
-    # if [[ ~{basename(vcf)} == *"severus"* ]]; then
-    #   echo "Adding headers to ~{vcf}"
-    #   bcftools view -h ~{vcf} > headers.txt
-    #   # Remove the line that starts with #CHROM to a separate file first
-    #   grep -v "^#CHROM" headers.txt > headers2.txt
-    #   echo "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variatio\">" >> headers2.txt
-    #   echo "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">" >> headers2.txt
-    #   echo "##INFO=<ID=INSLEN,Number=1,Type=Integer,Description=\"Length of inserted sequence\">" >> headers2.txt
-    #   echo "##INFO=<ID=DETAILED_TYPE,Number=1,Type=String,Description=\"Detailed type of structural variant\">" >> headers2.txt
-    #   # Add the line back to the original file
-    #   grep "^#CHROM" headers.txt >> headers2.txt
-    #   rm -f headers.txt
-    #   bcftools reheader -h headers2.txt tmp.vcf |\
-    #     bcftools sort -Ov -o tmp2.vcf
-    #   mv tmp2.vcf tmp.vcf
-    # fi
+    bcftools --version
 
     bgzip tmp.vcf 
     tabix tmp.vcf.gz
@@ -62,7 +45,7 @@ task tabix_vcf {
   }
 }
 
-# This is used to filter SV VCF with HPRC control VCF (Germline variants
+# This is used to filter SV VCF with control VCF (Germline variants
 # for all samples called with Sniffles)
 task truvari_filter {
   input {
@@ -78,19 +61,22 @@ task truvari_filter {
 
   command <<<
     set -euxo pipefail
+
+    truvari version
+
     truvari bench \
         -b ~{control_vcf} \
         -c ~{vcf} \
         -o truvari_filter \
         ~{truvari_arguments}
 
-    mv truvari_filter/fp.vcf.gz ~{sub(basename(vcf), "\\.vcf.gz", ".filterHPRC.vcf.gz")}
-    mv truvari_filter/fp.vcf.gz.tbi ~{sub(basename(vcf), "\\.vcf.gz", ".filterHPRC.vcf.gz.tbi")}
+    mv truvari_filter/fp.vcf.gz ~{sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz")}
+    mv truvari_filter/fp.vcf.gz.tbi ~{sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz.tbi")}
   >>>
 
   output {
-    File output_vcf = sub(basename(vcf), "\\.vcf.gz", ".filterHPRC.vcf.gz")
-    File output_vcf_index = sub(basename(vcf), "\\.vcf.gz", ".filterHPRC.vcf.gz.tbi")
+    File output_vcf = sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz")
+    File output_vcf_index = sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz.tbi")
   }
 
   runtime {
@@ -104,7 +90,7 @@ task truvari_filter {
 }
 
 # Use bedtools to split contigs
-task splitContigs {
+task split_contigs {
   input {
     File ref_fasta_index
     Int chunk_size
@@ -115,6 +101,8 @@ task splitContigs {
 
   command <<<
   set -euxo pipefail
+
+  bedtools --version
 
   echo "Splitting contigs for ~{ref_fasta_index}"
   bedtools makewindows -g ~{ref_fasta_index} -w ~{chunk_size} > contigs.bed
@@ -153,6 +141,9 @@ task mosdepth {
   set -euxo pipefail
 
   echo "Running mosdepth for ~{bam}"
+
+  mosdepth --version
+
   # Run this in case the index doesn't localize properly.
   # Miniwdl v1.1 seems ok, but Cromwell with dev spec will need this
   # to be uncommented otherwise it fails saying it index is not found.
@@ -221,7 +212,7 @@ task cpg_pileup {
   }
 
   runtime {
-    docker: "quay.io/pacbio/pb-cpg-tools:v2.3.1"
+    docker: "quay.io/pacbio/pb-cpg-tools@sha256:b95ff1c53bb16e53b8c24f0feaf625a4663973d80862518578437f44385f509b"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
@@ -240,6 +231,8 @@ task fgbio_strip {
 
   command <<<
     set -euxo pipefail
+
+    fgbio --version
     
     fgbio RemoveSamTags \
       -i ~{bam} \
@@ -272,6 +265,9 @@ task seqkit_bamstats {
 
   command <<<
   set -euxo pipefail
+
+  seqkit version
+
   seqkit bam -j ~{threads} -s ~{bam} -Z 2> ~{sub(basename(bam), "\\.bam", ".overall.stats.tsv")}
   echo -e '
   Dump:
@@ -309,6 +305,8 @@ task summarize_seqkit_alignment {
 
   command <<<
   set -euo pipefail
+
+  csvtk version
 
   echo -e "mean\tmedian\tn50\tsum" > ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
   csvtk cut -j ~{threads} -t -fRead,ReadLen ~{seqkit_alignment_stats} | csvtk uniq -t | csvtk sort -t -k ReadLen:n | awk '{
@@ -416,7 +414,7 @@ task mutationalpattern {
   }
 
   runtime {
-      docker: "kpinpb/dss:v0.2"
+      docker: "quay.io/pacbio/somatic_r_tools@sha256:3781f633775471d2b7c63dc22c326c25eea4175e18cf29ad5efe64c264719d8c"
       cpu: threads
       memory: "~{threads * 4} GB"
       disk: file_size + " GB"

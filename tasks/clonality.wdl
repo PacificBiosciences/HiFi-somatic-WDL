@@ -28,8 +28,8 @@ task Amber {
         mkdir ensembl_data_dir 
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
-
-        java -Xmx~{javaXmx} -jar /app/amber-3.9.1.jar \
+        
+        java -Xmx~{javaXmx} -jar /app/amber.jar \
             -reference ~{referenceName} \
             -reference_bam ~{referenceBam} \
             -tumor ~{tumorName} \
@@ -56,7 +56,7 @@ task Amber {
     }
 
     runtime {
-        docker: "kpinpb/hmftools:v0.1.2"
+        docker: "quay.io/pacbio/purple@sha256:8f9a70a1e3c6ee86b5cf41ec31fdc90c7cca744f35d84cd9caa997833245e61d"
         cpu: threads
         memory: memory
         disk: file_size + " GB"
@@ -92,7 +92,7 @@ task Cobalt {
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
 
-        java -Xmx~{javaXmx} -jar /app/cobalt-1.14.1.jar \
+        java -Xmx~{javaXmx} -jar /app/cobalt.jar \
             -reference ~{referenceName} \
             -reference_bam ~{referenceBam} \
             -tumor ~{tumorName} \
@@ -100,6 +100,7 @@ task Cobalt {
             -ref_genome ~{referenceFasta} \
             -output_dir ~{outputDir} \
             -threads ~{threads} \
+            -pcf_gamma 1000 \
             -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp
         
         rm -rf ensembl_data_dir
@@ -118,7 +119,7 @@ task Cobalt {
     }
 
     runtime {
-        docker: "kpinpb/hmftools:v0.1.2"
+        docker: "quay.io/pacbio/purple@sha256:8f9a70a1e3c6ee86b5cf41ec31fdc90c7cca744f35d84cd9caa997833245e61d"
         cpu: threads
         memory: memory
         disk: file_size + " GB"
@@ -160,24 +161,53 @@ task Purple {
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
 
-        java -Xmx~{javaXmx} -jar /app/purple_v3.9.jar \
-            -reference ~{referenceName} \
-            ~{"-germline_vcf " + germlineVcf} \
-            ~{"-germline_hotspots " + germlineHotspots} \
-            -tumor ~{tumorName} \
-            -output_dir ~{outputDir} \
-            -amber ~{sub(amberOutput[0], basename(amberOutput[0]), "")} \
-            -cobalt ~{sub(cobaltOutput[0], basename(cobaltOutput[0]), "")} \
-            -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp \
-            ~{"-somatic_vcf " + somaticVcf} \
-            -ref_genome ~{referenceFasta} \
-            -ref_genome_version 38 \
-            -ensembl_data_dir ensembl_data_dir/common/ensembl_data \
-            ~{"-somatic_hotspots " + somaticHotspots} \
-            ~{"-run_drivers -driver_gene_panel " + driverGenePanel} \
-            ~{"-highly_diploid_percentage " + highlyDiploidPercentage} \
-            ~{"-somatic_min_purity_spread " + somaticMinPuritySpread} \
-            -threads ~{threads}
+        java -Xmx~{javaXmx} -jar /app/purple.jar -version
+
+        # Pre-process somatic VCF
+        if [[ ! -z ~{somaticVcf} ]]; then
+            bash /app/process_clairS_VCF.sh ~{somaticVcf} ~{tumorName} ~{referenceName} tmp.vcf.gz
+
+            java -Xmx~{javaXmx} -jar /app/purple.jar \
+                -reference ~{referenceName} \
+                ~{"-germline_vcf " + germlineVcf} \
+                ~{"-germline_hotspots " + germlineHotspots} \
+                -tumor ~{tumorName} \
+                -output_dir ~{outputDir} \
+                -amber ~{sub(amberOutput[0], basename(amberOutput[0]), "")} \
+                -cobalt ~{sub(cobaltOutput[0], basename(cobaltOutput[0]), "")} \
+                -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp \
+                -somatic_vcf tmp.vcf.gz \
+                -ref_genome ~{referenceFasta} \
+                -ref_genome_version 38 \
+                -ensembl_data_dir ensembl_data_dir/common/ensembl_data \
+                ~{"-somatic_hotspots " + somaticHotspots} \
+                ~{"-run_drivers -driver_gene_panel " + driverGenePanel} \
+                ~{"-highly_diploid_percentage " + highlyDiploidPercentage} \
+                ~{"-somatic_min_purity_spread " + somaticMinPuritySpread} \
+                -threads ~{threads} \
+                -circos /usr/bin/circos \
+                -max_purity 0.99
+        else
+            java -Xmx~{javaXmx} -jar /app/purple.jar \
+                -reference ~{referenceName} \
+                ~{"-germline_vcf " + germlineVcf} \
+                ~{"-germline_hotspots " + germlineHotspots} \
+                -tumor ~{tumorName} \
+                -output_dir ~{outputDir} \
+                -amber ~{sub(amberOutput[0], basename(amberOutput[0]), "")} \
+                -cobalt ~{sub(cobaltOutput[0], basename(cobaltOutput[0]), "")} \
+                -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp \
+                -ref_genome ~{referenceFasta} \
+                -ref_genome_version 38 \
+                -ensembl_data_dir ensembl_data_dir/common/ensembl_data \
+                ~{"-somatic_hotspots " + somaticHotspots} \
+                ~{"-run_drivers -driver_gene_panel " + driverGenePanel} \
+                ~{"-highly_diploid_percentage " + highlyDiploidPercentage} \
+                ~{"-somatic_min_purity_spread " + somaticMinPuritySpread} \
+                -threads ~{threads} \
+                -circos /usr/bin/circos \
+                -max_purity 0.99
+        fi
 
         cut -f1,5 ~{outputDir}/~{tumorName}.purple.purity.tsv | tail -n+2 > purity_ploidy.tsv
 
@@ -237,7 +267,7 @@ task Purple {
     }
 
     runtime {
-        docker: "kpinpb/hmftools:v0.1.2"
+        docker: "quay.io/pacbio/purple@sha256:8f9a70a1e3c6ee86b5cf41ec31fdc90c7cca744f35d84cd9caa997833245e61d"
         cpu: threads
         memory: memory
         disk: file_size + " GB"

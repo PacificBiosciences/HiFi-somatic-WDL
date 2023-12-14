@@ -21,24 +21,16 @@ using `seqkit bam` command. Per-alignment stats are also generated in the `per_a
 
 ## Structural variants
 
-The pipeline incorporates two structural variants callers: [Severus](https://github.com/KolmogorovLab/Severus) and [Sniffles](https://github.com/fritzsedlazeck/Sniffles). 
-For Sniffles, we found version 2.0.7 to have higher recall rate for the COLO829 benchmark dataset. The workflow for Sniffles is as follow:
-
-- Generate SNF for tumor and normal.
-- Joint-call tumor and normal SNF without any QC. 
-- The VCF is then filtered using slivar to >0 coverage in normal, 0 reference reads and >= 2 variant reads. 
-- Filtered the resultant VCF with a Sniffles joint-called cohort of 110+ HPRC samples. 
-
-For Severus, the only additional parameter modified is `--min-support 2` to maximize the sensitivity of the caller. The results from Severus are also
-filtered with the HPRC control VCF to remove false positives. For both callers, the filtering was done with Truvari using the following command:
+The pipeline incorporates the structural variants callers [Severus](https://github.com/KolmogorovLab/Severus) with default parameter. The results from Severus are also
+filtered with a set of germline structural variants VCF (from Human Pangenome Reference Consortium) to remove false positives. The filtering was done with Truvari using the following command:
 
 ``` bash
 truvari bench -p 0 -s 0 -S 0 --sizemax 100000000 --dup-to-ins
 ```
 
-The `fp.vcf.gz` VCF file from the `bench` step is taken as the final VCF file. This is why the final SV VCF files contain Truvari annotations in the INFO field (folder `Severus_filterHPRC_vcf` and `sniffles_somatic_vcf_filterHPRC`).
+The `fp.vcf.gz` VCF file from the `bench` step is taken as the final VCF file. This is why the final SV VCF files contain Truvari annotations in the INFO field (folder `Severus_filtered_vcf`).
 
-We then use AnnotSV to annotate the structural variants into a TSV file (`AnnotatedSeverusSV` and `AnnotatedSnifflesSV` folders). The TSV file format is described in [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf).
+We then use AnnotSV to annotate the structural variants into a TSV file (`AnnotatedSeverusSV`). The TSV file format is described in [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf).
 To help prioritizing variants relevant to cancer, the workflow also annotates the SVs with IntOGen Compendium of Cancer Genes (CCG) and produce a final set of SV in the `Annotated*SV_intogen` folder
 
 ## SNV/INDEL (Somatic and germline)
@@ -105,13 +97,16 @@ There are two folders in the output:
 
 ## Purity and ploidy estimation
 
-The workflow currently implements the HMFtools suite to estimate purity and ploidy based on Amber, Cobalt and Purple. However, 
-Cobalt does not currently count the reads in long-reads correctly so the read-depth segmentation is not accurate. Nevertheless, the purity
-and ploidy estimates were found to be reasonably robust in our experience, but should be used with caution. Purity and ploidy estimates can be found
-in the `*.purity.tsv` file in `Purple_outputs` folder.
+The workflow currently implements the HMFtools suite to estimate purity and ploidy based on Amber, Cobalt and Purple. 
+For Cobalt, due to noises in long-reads based read-depth and B-allele frequency, we set PCF gamma to 1000 to allow for 
+better segmentation. See [GitHub issue](https://github.com/hartwigmedical/hmftools/issues/485) for discussion. Practically, this means
+that the CNV calls may miss smaller focal events, but those should be picked up by the SV caller.
+
+Secondly, the purity and ploidy estimates were found to be reasonably robust in our experience with HCC1395 and COLO829, 
+but should be used with caution. Purity and ploidy estimates can be found in the `*.purity.tsv` file in `Purple_outputs` folder.
 
 ## Copy number variation
 
 CNVKit is used to segment copy number from the matched tumor/normal BAM files. To optimize for long-reads, we set bin size to 10 kbp and found
 it to be optimal based on COLO829. The workflow also uses purity and ploidy estimates from HMFtools in combination with ClairS heterozygous SNVs
-to estimate major and minor copy numbers in `cnvkit_cns_with_major_minor_CN` folder.
+to estimate allele-specific major and minor copy numbers in `cnvkit_cns_with_major_minor_CN` folder. Purple also calls allele-specific copy numbers, but we have not systematically compared the results with CNVKit yet.

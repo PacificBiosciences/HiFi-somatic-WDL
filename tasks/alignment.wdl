@@ -21,6 +21,9 @@ task Align {
   set -euxo pipefail
 
   echo "Aligning ~{bam_file} and ~{ref_fasta} for ~{sample_name} using pbmm2 into ~{ofile_name}"
+  
+  pbmm2 --version
+
   pbmm2 align \
     ~{ref_to_use} \
     ~{bam_file} \
@@ -28,6 +31,7 @@ task Align {
     --sample ~{sample_name} \
     --sort -j ~{threads} \
     --unmapped \
+    --preset HIFI \
     --log-level INFO --log-file pbmm2.log
   >>>
 
@@ -55,11 +59,14 @@ task MergeBams {
     Int threads
   }
 
-  Float file_size = ceil(size(bam_files[0], "GB") * length(bam_files) + 20)
+  Float file_size = ceil(size(bam_files, "GB") * 2 + 20)
   
   command <<<
     set -euxo pipefail
     echo "merging ~{sep=' ' bam_files} into ~{sample_name + ".aligned.bam"}"
+    
+    pbmerge --version
+
     pbmerge -j ~{threads} \
       -o ~{sample_name + ".aligned.bam"} \
       ~{sep=' ' bam_files}
@@ -91,6 +98,9 @@ task IndexBam {
   command <<<
     set -euxo pipefail
     echo "indexing ~{bam}"
+    
+    samtools --version
+
     samtools index -@~{threads} ~{bam} \
       -o ~{basename(bam) + ".bai"}
   >>>
