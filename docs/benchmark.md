@@ -33,17 +33,12 @@ Truth sets were obtained from SEQC2 [website](https://sites.google.com/view/seqc
 the VCFs using [`som.py`](https://github.com/Illumina/hap.py/blob/master/doc/sompy.md). Note that this is different from the benchmarking
 method in the ClairS preprint where truth variants that do not have any supporting reads or have very low coverage in the tumor BAM are removed. We did not remove any truth variants in this benchmark.
 
-The following figure shows performance at different AF threshold comparing ClairS and 
-DeepSomatic. The ClairS `cal_af_distribution` script was used to generate the allele frequencies
-of the truthset based on the pileup of the BAM files used to generate the call. Only positions 
-with at least 1 alt allele count are considered in the benchmarking. This also allows us to bin 
-the truth allele frequencies based on the input dataset. The alternative is to directly bin the 
-truth set using the TVAF tag, but this will not be able to capture the true allele frequencies
-as they were calculated based on the original short-reads dataset.
+Figure below shows the performance of ClairS and DeepSomatic at different coverage for SNV and INDELs.
 
-![Alt text](../figures/SNV_INDEL_VAF.png)
+![Alt text](../figures/snv_recall_precision_f1.png)
 
-Table below provides the overall accuracy across all allele frequencies.
+<details>
+    <summary>Table of overall accuracy across all allele frequencies</summary>
 
 | Tumor Coverage | Normal Coverage | Purity | type     | total.truth | total.query | tp    | fp   | fn    | recall  | precision | F1     | all_errors (fp+fn) | Platform               |
 | -------------- | --------------- | ------ | -------- | ----------- | ----------- | ----- | ---- | ----- | ------- | --------- | ------ | ------------------ | ---------------------- |
@@ -59,3 +54,16 @@ Table below provides the overall accuracy across all allele frequencies.
 | 60             | 30              | 1      | indels   | 1602        | 1270        | 1180  | 90   | 422   | 0.73658 | 0.92913   | 82.17% | 512                | HiFi DeepSomatic 1.6.0 |
 | 60             | 30              | 1      | SNVs     | 39447       | 38291       | 36874 | 1417 | 2573  | 0.93477 | 0.96299   | 94.87% | 3990               | HiFi DeepSomatic 1.6.0 |
 | 60             | 30              | 1      | records  | 41049       | 39561       | 38054 | 1507 | 2995  | 0.92704 | 0.96191   | 94.42% | 4502               | HiFi DeepSomatic 1.6.0 |
+</details>
+
+<br>
+
+The following figure shows performance at different AF threshold comparing ClairS and 
+DeepSomatic. The ClairS `cal_af_distribution` script was used to generate the allele frequencies
+of the truthset based on the pileup of the BAM files used to generate the call. Only positions 
+with at least 1 alt allele count are considered in the benchmarking. This also allows us to bin 
+the truth allele frequencies based on the input dataset. The alternative is to directly bin the 
+truth set using the TVAF tag, but this will not be able to capture the true allele frequencies
+as they were calculated based on the original short-reads dataset.
+
+![Alt text](../figures/SNV_INDEL_VAF.png)
