@@ -12,12 +12,7 @@ params:
     sv_file: ""
     sv_vcf_file: ""
     cnv_file: ""
-    purity_ploidy_file: ""
-    mosdepth_tumor_file: ""
-    mosdepth_normal_file: ""
-    mut_sig_file: ""
-    mut_context_file: ""
-    dmr_promoter_file: ""
+    purity_ploidy_file: "r_promoter_file: ""
     chord_file: ""
     sample_name: ""
     # vcf_file: "../../test_data/report_test_file/COLO829_15X.somatic_small_variants.PASS.hiphase.vep.tsv"
@@ -33,7 +28,7 @@ params:
     # dmr_promoter_file: "../../test_data/report_test_file/HCC1395_60_30_hg38_genes_promoters_dmrs_intogen.nCG50_summary.tsv.gz"
     # chord_file: "../../test_data/report_test_file/HCC1395_60_30_chord_prediction.txt"
     # sample_name: "HCC1395 60X/30X"
-    version: 0.3.2
+    version: 0.3.3
 ---
 
 ```{r setup, include=FALSE}
@@ -614,13 +609,17 @@ sv <- sv %>%
             CANCER_TYPE, CGC_CANCER_GENE, \(x, y) make_unique_col(x, y)
         ))
     ) %>%
-    select(-c(CANCER_TYPE, ROLE, CGC_CANCER_GENE, CGC_GENE)) %>%
+    select(-c(CANCER_TYPE, ROLE, CGC_CANCER_GENE, CGC_GENE))
+    # If ENCODE_experiment column exist, shorten it
     # Shorten "ENCODE_experiment" column if more than 80 char
-    mutate(ENCODE_experiment = ifelse(
-        str_length(ENCODE_experiment) > 80,
-        "Too many to display",
-        ENCODE_experiment
-    ))
+    if ("ENCODE_experiment" %in% colnames(sv)) {
+        sv <- sv %>%
+            mutate(ENCODE_experiment = ifelse(
+                str_length(ENCODE_experiment) > 80,
+                "Too many to display",
+                ENCODE_experiment
+            ))
+    }
 
 # Remove columns that are all NA
 col_with_onlyNA_sv <- apply(
