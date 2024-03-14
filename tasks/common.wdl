@@ -455,7 +455,7 @@ task mutationalpattern {
   }
 
   runtime {
-      docker: "quay.io/pacbio/somatic_r_tools@sha256:49af79e7694ed5020a0884bdb95ef700f53aa93186351be48fdfada2dd0fc809"
+      docker: "quay.io/pacbio/somatic_r_tools@sha256:c5e1820b3329e13c092149015d16764e8250755c85a72838dc6ce201b2fa6876"
       cpu: threads
       memory: "~{threads * 4} GB"
       disk: file_size + " GB"

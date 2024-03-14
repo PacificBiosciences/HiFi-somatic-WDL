@@ -203,7 +203,7 @@ task report_sample {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:a046f151238a826317dc10e95e35e636a505387a267d7a03140964a2892fa35d"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:c5e1820b3329e13c092149015d16764e8250755c85a72838dc6ce201b2fa6876"
         cpu: 4
         memory: "16 GB"
         disk: file_size + " GB"
