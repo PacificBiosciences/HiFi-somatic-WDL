@@ -64,6 +64,8 @@ of the truthset based on the pileup of the BAM files used to generate the call. 
 with at least 1 alt allele count are considered in the benchmarking. This also allows us to bin 
 the truth allele frequencies based on the input dataset. The alternative is to directly bin the 
 truth set using the TVAF tag, but this will not be able to capture the true allele frequencies
-as they were calculated based on the original short-reads dataset.
+as they were calculated based on the original short-reads dataset. Note that for DeepSomatic, we replaced
+the VAF of DeepSomatic using VAF calculated by `cal_af_distribution` script ran on the DeepSomatic's
+VCF, as DeepSomatic calculates VAF differently from `cal_af_distribution`.
 
 ![Alt text](../figures/SNV_INDEL_VAF.png)
