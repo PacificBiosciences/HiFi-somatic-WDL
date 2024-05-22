@@ -103,7 +103,7 @@ curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
 The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](test_data/input.example.json).
   
 ```bash
-cp test_data/input.example.json input.json
+cp example_configs/input.example.json input.json
 ```
 
 Modify the `input.json` file by using your favourite text editor and changing all
@@ -112,7 +112,7 @@ Modify the `input.json` file by using your favourite text editor and changing al
 ## Modify the miniwdl config file
 
 ```bash
-cp test_data/miniwdl.cfg .
+cp example_configs/miniwdl.cfg .
 ```
 
 The miniwdl config file included in the repository assumes you are using Slurm. Change the line:
