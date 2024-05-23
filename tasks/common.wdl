@@ -161,7 +161,7 @@ task svpack_filter_annotated {
 task split_contigs {
   input {
     File ref_fasta_index
-    Int chunk_size
+    Int chunk_size = 75000000
     Int threads
   }
 

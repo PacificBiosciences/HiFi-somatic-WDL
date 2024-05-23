@@ -11,3 +11,8 @@ struct Patient {
 struct Cohort {
     Array[Patient] patients
 }
+
+struct IndexData {
+	File data
+	File data_index
+}

@@ -128,7 +128,7 @@ Following are the references for the tools used in the workflow, which should be
 | Amber        | v4.0   | BAF segmentation (HMFtools suite) |
 | Cobalt        | v1.16.0   | Log ratio segmentation (HMFtools suite) |
 | Purple        | v4.0   | Purity and ploidy estimate, somatic CNV (HMFtools suite) |
-| DeepSomatic        | v1.6.0   | Somatic SNV/INDELs caller |
+| DeepSomatic        | v1.6.1   | Somatic SNV/INDELs caller |
 | CHORD | v2.0.0 | HRD prediction |
 </details>
 
@@ -136,6 +136,10 @@ Following are the references for the tools used in the workflow, which should be
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.7:
+  - Updated DeepSomatic to v1.6.1.
+  - Pipeline now calls DeepSomatic in chunks.
 
 - v0.6.2:
   - Added experimental CHORD HRD (Homologous Recombination Deficiency) prediction. See [here](docs/output.md#homologous-recombination-deficiency-prediction) for details.

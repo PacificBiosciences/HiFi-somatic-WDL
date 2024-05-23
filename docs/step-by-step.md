@@ -15,6 +15,7 @@
     - [How do I restart the workflow?](#how-do-i-restart-the-workflow)
     - [Is the workflow compatible with Cromwell?](#is-the-workflow-compatible-with-cromwell)
     - [Can I run the workflow if the compute nodes do not have internet access?](#can-i-run-the-workflow-if-the-compute-nodes-do-not-have-internet-access)
+    - [I am seeing a lot of false-positives in SNV/INDEL calls. How can I reduce them?](#i-am-seeing-a-lot-of-false-positives-in-snvindel-calls-how-can-i-reduce-them)
     - [Input JSON parameters](#input-json-parameters)
 
 ## Prerequisites
@@ -100,10 +101,10 @@ curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
 
 ## Modify the input JSON file to point to the downloaded files
 
-The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](test_data/input.example.json).
+The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](example_configs/input.example.json).
   
 ```bash
-cp test_data/input.example.json input.json
+cp example_configs/input.example.json input.json
 ```
 
 Modify the `input.json` file by using your favourite text editor and changing all
@@ -112,7 +113,7 @@ Modify the `input.json` file by using your favourite text editor and changing al
 ## Modify the miniwdl config file
 
 ```bash
-cp test_data/miniwdl.cfg .
+cp example_configs/miniwdl.cfg .
 ```
 
 The miniwdl config file included in the repository assumes you are using Slurm. Change the line:
@@ -323,6 +324,10 @@ you can download the Singularity container images on a machine with internet acc
 change the `image_cache` option in the miniwdl config file to point to the directory where the Singularity container images are stored. 
 Note that miniwdl stores the image with names that replace special `/` and `:` with `_`. 
 E.g.: `quay.io/biocontainers/pbmm2:1.12.0--h9ee0642_` will become `docker___quay.io_biocontainers_pbmm2_1.12.0--h9ee0642_0.sif`.
+
+### I am seeing a lot of false-positives in SNV/INDEL calls. How can I reduce them?
+
+You may be using ClairS for SNV/INDEL calling. ClairS was optimized with higher coverage in mind (60X/30X) and the default QUAL model may deviate from what the pipeline filters at (SNV QUAL of 2 and INDEL QUAL of 11). You may want to adjust the QUAL filter value using `hifisomatic.clairs_snv_qual` and `hifisomatic.clairs_indel_qual` in the JSON file.
 
 ### Input JSON parameters
 

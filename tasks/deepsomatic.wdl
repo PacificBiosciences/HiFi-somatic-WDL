@@ -8,22 +8,32 @@ workflow run_deepsomatic {
         File normal_bam_index
         File ref_fasta
         File ref_fasta_index
-        File? contig
+        Array[File] contigs
         Int threads = 64
         String pname
     }
 
-    call call_DeepSomatic {
+    scatter (ctg in contigs){
+        call call_DeepSomatic {
+            input:
+                tumor_bam = tumor_bam,
+                normal_bam = normal_bam,
+                tumor_bam_index = tumor_bam_index,
+                normal_bam_index = normal_bam_index,
+                ref_fasta = ref_fasta,
+                ref_fasta_index = ref_fasta_index,
+                contig = ctg,
+                pname = pname,
+                threads = threads
+        }
+    }
+
+    call gather_deepsomatic {
         input:
-            tumor_bam = tumor_bam,
-            normal_bam = normal_bam,
-            tumor_bam_index = tumor_bam_index,
-            normal_bam_index = normal_bam_index,
-            ref_fasta = ref_fasta,
-            ref_fasta_index = ref_fasta_index,
-            contig = contig,
-            pname = pname,
-            threads = threads
+            deepsomatic_vcfs = call_DeepSomatic.deepsomatic_vcf,
+            deepsomatic_gvcfs = call_DeepSomatic.deepsomatic_gvcf,
+            threads = threads,
+            pname = pname
     }
 
     call call_clair3 as clair3_normal {
@@ -32,7 +42,6 @@ workflow run_deepsomatic {
             aligned_bam_index = normal_bam_index,
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
-            contig = contig,
             pname = pname + ".normal",
             threads = threads / 2
     }
@@ -51,7 +60,6 @@ workflow run_deepsomatic {
             aligned_bam_index = tumor_bam_index,
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
-            contig = contig,
             pname = pname + ".tumor",
             threads = threads / 2
     }
@@ -65,10 +73,10 @@ workflow run_deepsomatic {
     }
 
     output {
-        File deepsomatic_vcf = call_DeepSomatic.deepsomatic_vcf
-        File deepsomatic_vcf_tbi = call_DeepSomatic.deepsomatic_vcf_tbi
-        File deepsomatic_gvcf = call_DeepSomatic.deepsomatic_gvcf
-        File deepsomatic_gvcf_tbi = call_DeepSomatic.deepsomatic_gvcf_tbi
+        File deepsomatic_vcf = gather_deepsomatic.deepsomatic_vcf
+        File deepsomatic_vcf_tbi = gather_deepsomatic.deepsomatic_vcf_tbi
+        File deepsomatic_gvcf = gather_deepsomatic.deepsomatic_gvcf
+        File deepsomatic_gvcf_tbi = gather_deepsomatic.deepsomatic_gvcf_tbi
         File clair3_normal_vcf = correct_clair3_normal.output_vcf
         File clair3_normal_vcf_tbi = correct_clair3_normal.output_vcf_index
         File clair3_tumor_vcf = correct_clair3_tumor.output_vcf
@@ -128,7 +136,7 @@ task call_DeepSomatic {
     }
 
     runtime {
-        docker: "google/deepsomatic:1.6.0"
+        docker: "google/deepsomatic:1.6.1"
         cpu: threads
         memory: "~{threads * 6} GB"
         disk: file_size + " GB"
@@ -137,19 +145,99 @@ task call_DeepSomatic {
     }
 }
 
+task gather_deepsomatic {
+    input {
+        Array[File] deepsomatic_vcfs
+        Array[File] deepsomatic_gvcfs
+        Int threads
+        String pname
+    }
+
+    Float file_size = ceil((size(deepsomatic_vcfs, "GB") * 2) + (size(deepsomatic_gvcfs, "GB") * 2) + 20)
+
+    command <<<
+    set -euxo pipefail
+
+    echo "Merging deepsomatic vcfs for ~{pname}"
+
+    bcftools --version
+
+    echo '~{sep="\n" deepsomatic_vcfs}' > vcf.list
+    echo '~{sep="\n" deepsomatic_gvcfs}' > gvcf.list
+
+    # Sometimes the indices failed to be localized properly. 
+    # Reindex here to make it more robust...
+    count=0
+    for file in $(cat vcf.list)
+    do
+        cp ${file} ${count}.vcf.gz
+        tabix ${count}.vcf.gz
+        count=$((count+1))
+    done
+    countmax_vcf=${count}
+
+    count=0
+    for file in $(cat gvcf.list)
+    do
+        cp ${file} ${count}.gvcf.gz
+        tabix ${count}.gvcf.gz
+        count=$((count+1))
+    done
+    countmax_gvcf=${count}
+
+    # Create new VCF list from the copied files
+    ls *.vcf.gz > vcf.list
+    ls *.gvcf.gz > gvcf.list
+
+    bcftools concat -a -f vcf.list |\
+        bcftools sort -Oz -o ~{pname + "_deepsomatic.vcf.gz"}
+    bcftools concat -a -f gvcf.list |\
+        bcftools sort -Oz -o ~{pname + "_deepsomatic.g.vcf.gz"}
+
+    tabix -p vcf ~{pname + "_deepsomatic.vcf.gz"}
+    tabix -p vcf ~{pname + "_deepsomatic.g.vcf.gz"}
+
+    # Remove intermediate files using countmax
+    for i in $(seq 0 $((countmax_vcf-1)))
+    do
+        rm ${i}.vcf.gz ${i}.vcf.gz.tbi
+    done
+
+    for i in $(seq 0 $((countmax_gvcf-1)))
+    do
+        rm ${i}.gvcf.gz ${i}.gvcf.gz.tbi
+    done
+    >>>
+
+    output {
+        File deepsomatic_vcf = pname + "_deepsomatic.vcf.gz"
+        File deepsomatic_vcf_tbi = pname + "_deepsomatic.vcf.gz.tbi"
+        File deepsomatic_gvcf = pname + "_deepsomatic.g.vcf.gz"
+        File deepsomatic_gvcf_tbi = pname + "_deepsomatic.g.vcf.gz.tbi"
+    }
+
+    runtime {
+        docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+        cpu: threads
+        memory: "~{threads * 4} GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
+        }
+}
+
 task call_clair3 {
     input {
         File aligned_bam
         File aligned_bam_index
         File ref_fasta
         File ref_fasta_index
-        File? contig 
         String pname
         Int threads
         String clair_model = "hifi_revio"
     }
 
-    Float file_size = ceil(size(aligned_bam, "GB") * 2 + size(ref_fasta, "GB") + size(contig, "GB") + 20)
+    Float file_size = ceil(size(aligned_bam, "GB") * 2 + size(ref_fasta, "GB") + 20)
 
     command <<<
     set -euxo pipefail

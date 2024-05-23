@@ -35,7 +35,7 @@ for parameter to switch between them or to switch to Sequel IIe model for ClairS
 
 DeepSomatic is currently computationally expensive (14-18 hours for 60X/30X tumor/normal) and requires using a separate caller for germline SNV/INDELs. The workflow implements Clair3 to call germline variants in both tumor and normal in addition to somatic variants. In addition, as DeepSomatic does not currently output the depth of coverage of the variants in normal, the VCF cannot be used as an input for Purple for purity and ploidy estimation. If DeepSomatic is used, Purple will run without somatic VCF which may affect estimation in some cases.
 
-For ClairS, The workflow can split the human genome into chunks (default 50 Mbp) and calls SNV/INDELs in parallel, then gathers the output into a single VCF. This allows ClairS to scale to large genomes and large datasets. ClairS also output germline variants in the process and thus do not require using a separate caller for germline variants. 
+For both ClairS and DeepSomatic, The workflow can split the human genome into chunks (default 75 Mbp per chunk) and calls SNV/INDELs in parallel, then gathers the output into a single VCF. This allows the caller to scale to large genomes and large datasets by making use of multiple HPC nodes. Germline variants are called with Clair3 regardless of the somatic variant caller used.
 
 For annotation, we use Ensembl VEP to annotate the VCF file (`small_variant_tsv_annotated` and `small_variant_vcf_annotated` folder). As with SV, the workflow also annotates the SNV/INDELs with IntOGen Compendium of Cancer Genes (CCG) and produce a final set of SNV/INDELs in the `small_variant_tsv_CCG` folder.
 

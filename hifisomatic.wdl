@@ -36,15 +36,15 @@ workflow hifisomatic {
     Int cpg_pileup_threads = 8
     Int dss_threads = 16
     # Call small variants with deepsomatic
-    Boolean use_deepsomatic = false
+    Boolean use_deepsomatic = true
     # ClairS platform, default hifi_revio
     Boolean call_small_variants = true
     String clairs_platform = "hifi_revio"
     Int clairs_threads = 16
     Int clairs_snv_qual = 2
     Int clairs_indel_qual = 11
-    ## Deepsomatic threads
-    Int deepsomatic_threads = 64
+    ## Deepsomatic threads per task
+    Int deepsomatic_threads = 16
     # Mutational signature max delta for MutationalPattern fitting
     Float mutsig_max_delta = 0.004
     # SV-related 
@@ -62,8 +62,7 @@ workflow hifisomatic {
     Int annotsv_threads = 8
     # Default number of threads for misc tasks (4GB per thread assigned for almost all steps)
     Int def_threads = 2
-    # Scatter chunk size, default of 75 Mbp
-    # Set to 0 to disable chunking
+    # Scatter small variants calling into equal chunk per chromosome to make use of multiple nodes. Default of 75 Mbp per chromosome (total of 42 chunks for hg38)
     Int chunk_size = 75000000
     # Strip kinetics or not
     Boolean strip_kinetics = false
@@ -158,29 +157,31 @@ workflow hifisomatic {
         bam_index = MergeNormalBams.merged_aligned_bam_index,
         threads = def_threads
     }
+
+    call common.split_contigs {
+      input:
+        ref_fasta_index = ref_fasta_index,
+        chunk_size = chunk_size,
+        threads = def_threads
+    }
     
     if (call_small_variants) {
           if (use_deepsomatic){
-            call deepsomatic.run_deepsomatic {
-              input:
-                tumor_bam = MergeTumorBams.merged_aligned_bam,
-                tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
-                normal_bam = MergeNormalBams.merged_aligned_bam,
-                normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
-                ref_fasta = ref_fasta,
-                ref_fasta_index = ref_fasta_index,
-                threads = deepsomatic_threads,
-                pname = patient
-              }
+              call deepsomatic.run_deepsomatic {
+                input:
+                  tumor_bam = MergeTumorBams.merged_aligned_bam,
+                  tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
+                  normal_bam = MergeNormalBams.merged_aligned_bam,
+                  normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
+                  ref_fasta = ref_fasta,
+                  ref_fasta_index = ref_fasta_index,
+                  threads = deepsomatic_threads,
+                  pname = patient,
+                  contigs = split_contigs.contigs
+                }
           }
 
           if (!use_deepsomatic){
-            call common.split_contigs {
-              input:
-                ref_fasta_index = ref_fasta_index,
-                chunk_size = chunk_size,
-                threads = def_threads
-            }
             scatter (ctg in split_contigs.contigs) {
               call clairs.ClairS {
                 input:
