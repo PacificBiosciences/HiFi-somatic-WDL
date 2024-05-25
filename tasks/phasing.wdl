@@ -65,7 +65,7 @@ task hiphase_with_somatic {
         Int threads
     }
 
-    Float file_size = ceil(size(bam, "GB") + size(vcf, "GB") + size(ref_fasta, "GB") + 20)
+    Float file_size = ceil(size(bam, "GB") + size(vcf, "GB") + size(ref_fasta, "GB") + 100)
 
     command <<<
     set -euxo pipefail
