@@ -4,6 +4,8 @@
 
 <p align="center">A tumor-normal variant-calling workflow for HiFi data</p>
 
+<p align="center">See our tech note <a href="https://www.pacb.com/wp-content/uploads/Application-note-Robust-detection-of-somatic-variants-from-tumor-normal-samples-with-highly-accurate-long-read-whole-genome-sequencing.pdf">here</a> on somatic variant detection with HiFi sequencing.</p>
+
 ---
 
 <h1 align="center"><img width="100%" src="figures/simple_workflow_diagram.png"/></h1>
