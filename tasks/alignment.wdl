@@ -29,7 +29,7 @@ task Align {
     --sort -j ~{threads} \
     --unmapped \
     --preset HIFI \
-    --log-level INFO --log-file pbmm2.log
+    --log-level DEBUG --log-file pbmm2.log
   >>>
 
   output {
@@ -39,7 +39,7 @@ task Align {
   }
 
   runtime {
-    docker: "quay.io/biocontainers/pbmm2:1.12.0--h9ee0642_0"
+    docker: "quay.io/biocontainers/pbmm2:1.13.1--h9ee0642_0"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

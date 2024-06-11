@@ -507,7 +507,7 @@ workflow hifisomatic {
           input:
             referenceName = patient + ".normal",
             tumorName = patient + ".tumor",
-            outputDir = "./purple",
+            outputDir = "purple",
             amberOutput = Amber.outputs,
             cobaltOutput = Cobalt.outputs,
             referenceFasta = ref_fasta,
@@ -522,7 +522,7 @@ workflow hifisomatic {
           input:
             referenceName = patient + ".normal",
             tumorName = patient + ".tumor",
-            outputDir = "./purple",
+            outputDir = "purple",
             amberOutput = Amber.outputs,
             cobaltOutput = Cobalt.outputs,
             somaticVcf = select_first([gather_ClairS.output_vcf]),

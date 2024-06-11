@@ -8,7 +8,7 @@ task Amber {
         String tumorName
         File tumorBam
         File tumorBamIndex
-        String outputDir = "./amber"
+        String outputDir = "amber"
         File ensembl_data_dir_tarball
         File referenceFasta
         File referenceFastaFai
@@ -76,7 +76,7 @@ task Cobalt {
         File referenceFasta
         File referenceFastaFai
         File referenceFastaDict
-        String outputDir = "./cobalt"
+        String outputDir = "cobalt"
         File ensembl_data_dir_tarball
         Int threads
     }
@@ -132,7 +132,7 @@ task Purple {
     input {
         String referenceName
         String tumorName
-        String outputDir = "./purple"
+        String outputDir = "purple"
         Array[File]+ amberOutput
         Array[File]+ cobaltOutput
         File? somaticVcf
