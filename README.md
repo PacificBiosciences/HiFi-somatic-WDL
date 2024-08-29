@@ -16,7 +16,7 @@
 - [Installation and Dependencies](#installation-and-dependencies)
 - [Usage](#usage)
 - [Important outputs from workflow](#important-outputs-from-workflow)
-- [Demo datasets and accuracy of the workflow](#demo-datasets-and-accuracy-of-the-workflow)
+- [Demo datasets](#demo-datasets)
 - [References](#references)
 - [Tools versions](#tools-versions)
 - [Change logs](#change-logs)
@@ -65,14 +65,14 @@ The workflow will generate the following (non-exhaustive list) results in the `$
 | chord_hrd_prediction | Homologous recombination deficiency (HRD) prediction using CHORD |
 | report | HTML report summarizing the results. This can be open in any modern web browser. The report is only generated if all steps in the pipeline is carried out (e.g. small variants calling, SV annotation) |
 
-## Demo datasets and accuracy of the workflow
+## Demo datasets 
 
 There are two cancer cell lines sequenced on Revio systems, provided by PacBio:
 
 1. COLO829 (60X tumor, 60X normal): <https://downloads.pacbcloud.com/public/revio/2023Q2/COLO829>
 2. HCC1395 (60X tumor, 40X normal): <https://downloads.pacbcloud.com/public/revio/2023Q2/HCC1395/>
 
-A benchmark of both cell lines can be found [here](docs/benchmark.md).
+More datasets and benchmarking can be found on GitHub page of [Severus](https://github.com/KolmogorovLab/Severus) and DeepSomatic's [preprint](https://www.biorxiv.org/content/10.1101/2024.08.16.608331v1).
 
 ## References
 
@@ -93,8 +93,9 @@ Following are the references for the tools used in the workflow, which should be
 10. Talevich, E., Shain, A. H., Botton, T. & Bastian, B. C. CNVkit: Genome-Wide Copy Number Detection and Visualization from Targeted DNA Sequencing. PLoS Comput Biol 12, e1004873 (2016).
 11. Martínez-Jiménez, F. et al. A compendium of mutational cancer driver genes. Nat Rev Cancer 20, 555–572 (2020). <https://www.intogen.org>
 12. Manders, F. et al. MutationalPatterns: the one stop shop for the analysis of mutational processes. BMC Genomics 23, 134 (2022).
-13.  Lin, J.-H., Chen, L.-C., Yu, S.-C. & Huang, Y.-T. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics 38, 1816–1822 (2022).
-14.  HMFtools suite (Amber, Cobalt and Purple): <https://github.com/hartwigmedical/hmftools/tree/master>
+13. Lin, J.-H., Chen, L.-C., Yu, S.-C. & Huang, Y.-T. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics 38, 1816–1822 (2022).
+14. HMFtools suite (Amber, Cobalt and Purple): <https://github.com/hartwigmedical/hmftools/tree/master>.
+15. Park, J. et al. DeepSomatic: Accurate somatic small variant discovery for multiple sequencing technologies. 2024.08.16.608331 Preprint at https://doi.org/10.1101/2024.08.16.608331 (2024).
 
 </details>
 
@@ -105,11 +106,11 @@ Following are the references for the tools used in the workflow, which should be
 
 | Tool         | Version   | Purpose                                              |
 | ------------ | --------- | ---------------------------------------------------- |
-| pbmm2        | 1.12.0    | Alignment of HiFi reads                              |
+| pbmm2        | 1.14.99    | Alignment of HiFi reads                              |
 | pbtk         | 3.1.0     | Merging HiFi reads                                   |
 | samtools     | 1.17      | Various tasks manipulating BAM files                 |
 | VEP          | 110.1     | Annotation of small variants                         |
-| AnnotSV      | 3.3.6     | Annotation of structural variants                    |
+| AnnotSV      | 3.4.12    | Annotation of structural variants                    |
 | DSS          | 2.48.0    | Differential methylation                             |
 | annotatr     | 1.26.0    | Annotation of differentially methylated region (DMR) |
 | ClairS       | 0.1.6     | Somatic SNV and INDEL caller                                |
@@ -121,7 +122,7 @@ Following are the references for the tools used in the workflow, which should be
 | pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          |
 | HiPhase      | 1.1.0    | Diploid phasing using germline variants              |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                |
-| Severus      | v0.1.1 | Structural variants                             |
+| Severus      | 1.1 | Structural variants                             |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation |
 | IntOGen        | May 31 2023    | Compendium of Cancer Genes for annotation |
@@ -130,7 +131,7 @@ Following are the references for the tools used in the workflow, which should be
 | Amber        | v4.0   | BAF segmentation (HMFtools suite) |
 | Cobalt        | v1.16.0   | Log ratio segmentation (HMFtools suite) |
 | Purple        | v4.0   | Purity and ploidy estimate, somatic CNV (HMFtools suite) |
-| DeepSomatic        | v1.6.1   | Somatic SNV/INDELs caller |
+| DeepSomatic        | v1.7.0   | Somatic SNV/INDELs caller |
 | CHORD | v2.0.0 | HRD prediction |
 </details>
 
@@ -138,6 +139,21 @@ Following are the references for the tools used in the workflow, which should be
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.8:
+  - Updated DeepSomatic to v1.7.0. This resulted in a significant improve in INDEL recall. See benchmark from DeepSomatic preprint for more comparisons.
+  - Updated AnnotSV to 3.4.2. Please update AnnotSV cache by following the instructions in the step-by-step tutorial [here](docs/step-by-step.md).
+  - Updated pbmm2 to 1.14.99 (With `-A2` option for better alignment of some complex SV with short supplementary segments, e.g. truthset_41 in COLO829).
+  - Updated Severus to version 1.1.
+    - Note that in COLO829 `truthset_19` becomes a FN with Severus 1.1. See issue [here](https://github.com/KolmogorovLab/Severus/issues/15).
+  - Updated report format to become easier to read.
+  - Resource bundle now uses germline SVs called with Severus instead of the previous Sniffles2 SV set. Please update resource bundle from Zenodo.
+  - Simplified kinetics stripping directly in pbmm2.
+  - Modified Amber to use the same pcf gamma as Cobalt. It was previously using a value of 100, while Cobalt was using 1000. 
+    This change will make the segmentation more consistent between Amber and Cobalt and should improve purity/ploidy estimates.
+  - Better logic with merging BAMs in the workflow (No more redundant merging when n_bam=1).
+  - Suppressed a warning causing failures in Cobalt with CIGAR error in the BAM file. This is [known](https://github.com/hartwigmedical/hmftools/issues/535).
+  - Incorporated pull request from [here](https://github.com/PacificBiosciences/HiFi-somatic-WDL/pull/6) for Cromwell on Azure (not tested).
 
 - v0.7:
   - Updated DeepSomatic to v1.6.1.

@@ -9,7 +9,7 @@ workflow run_deepsomatic {
         File ref_fasta
         File ref_fasta_index
         Array[File] contigs
-        Int threads = 64
+        Int threads = 16
         String pname
     }
 
@@ -43,7 +43,7 @@ workflow run_deepsomatic {
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
             pname = pname + ".normal",
-            threads = threads / 2
+            threads = 8
     }
 
     call correct_vcf as correct_clair3_normal {
@@ -61,7 +61,7 @@ workflow run_deepsomatic {
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
             pname = pname + ".tumor",
-            threads = threads / 2
+            threads = 8
     }
 
     call correct_vcf as correct_clair3_tumor {
@@ -136,7 +136,7 @@ task call_DeepSomatic {
     }
 
     runtime {
-        docker: "google/deepsomatic:1.6.1"
+        docker: "google/deepsomatic@sha256:810ce485e2da3a1efb2704ca6843cabc87e75992e99b91ecfcace7ad604870f6"
         cpu: threads
         memory: "~{threads * 6} GB"
         disk: file_size + " GB"
@@ -269,7 +269,7 @@ task call_clair3 {
     runtime {
         docker: "hkubal/clair3@sha256:857af16c759b0893fc757511a17c1efdfe253cbb64dffbcc8eecac0d33a60f60"
         cpu: threads
-        memory: "~{threads * 2} GB"
+        memory: "~{threads * 4} GB"
         disk: file_size + " GB"
         maxRetries: 2
         preemptible: 1
@@ -309,7 +309,7 @@ task correct_vcf {
 
     runtime {
         docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
-        cpu: 2
+        cpu: 4
         memory: "8 GB"
         disk: file_size + " GB"
         maxRetries: 2

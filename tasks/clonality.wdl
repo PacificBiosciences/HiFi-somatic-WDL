@@ -8,7 +8,7 @@ task Amber {
         String tumorName
         File tumorBam
         File tumorBamIndex
-        String outputDir = "./amber"
+        String outputDir = "amber"
         File ensembl_data_dir_tarball
         File referenceFasta
         File referenceFastaFai
@@ -29,7 +29,7 @@ task Amber {
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
         
-        java -Xmx~{javaXmx} -jar /app/amber.jar \
+        java -Xmx~{javaXmx} -jar /app/amber.gamma1000.jar \
             -reference ~{referenceName} \
             -reference_bam ~{referenceBam} \
             -tumor ~{tumorName} \
@@ -56,7 +56,7 @@ task Amber {
     }
 
     runtime {
-        docker: "quay.io/pacbio/purple@sha256:8f9a70a1e3c6ee86b5cf41ec31fdc90c7cca744f35d84cd9caa997833245e61d"
+        docker: "quay.io/pacbio/purple@sha256:9074d56ad46f3d6804f1ae6e45a2ac8c300effc5efe120020d3dcd23edb3b063"
         cpu: threads
         memory: memory
         disk: file_size + " GB"
@@ -76,9 +76,10 @@ task Cobalt {
         File referenceFasta
         File referenceFastaFai
         File referenceFastaDict
-        String outputDir = "./cobalt"
+        String outputDir = "cobalt"
         File ensembl_data_dir_tarball
         Int threads
+        Int pcf_gamma = 1000
     }
 
     String memory = threads * 4 + "GB"
@@ -100,7 +101,8 @@ task Cobalt {
             -ref_genome ~{referenceFasta} \
             -output_dir ~{outputDir} \
             -threads ~{threads} \
-            -pcf_gamma 1000 \
+            -pcf_gamma ~{pcf_gamma} \
+            -validation_stringency SILENT \
             -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp
         
         rm -rf ensembl_data_dir
@@ -119,7 +121,7 @@ task Cobalt {
     }
 
     runtime {
-        docker: "quay.io/pacbio/purple@sha256:8f9a70a1e3c6ee86b5cf41ec31fdc90c7cca744f35d84cd9caa997833245e61d"
+        docker: "quay.io/pacbio/purple@sha256:9074d56ad46f3d6804f1ae6e45a2ac8c300effc5efe120020d3dcd23edb3b063"
         cpu: threads
         memory: memory
         disk: file_size + " GB"
@@ -132,7 +134,7 @@ task Purple {
     input {
         String referenceName
         String tumorName
-        String outputDir = "./purple"
+        String outputDir = "purple"
         Array[File]+ amberOutput
         Array[File]+ cobaltOutput
         File? somaticVcf
@@ -279,7 +281,7 @@ task Purple {
     }
 
     runtime {
-        docker: "quay.io/pacbio/purple@sha256:8f9a70a1e3c6ee86b5cf41ec31fdc90c7cca744f35d84cd9caa997833245e61d"
+        docker: "quay.io/pacbio/purple@sha256:9074d56ad46f3d6804f1ae6e45a2ac8c300effc5efe120020d3dcd23edb3b063"
         cpu: threads
         memory: memory
         disk: file_size + " GB"

@@ -34,11 +34,11 @@ task Severus_sv {
   >>>
 
   output {
-    File output_vcf = pname + "_severus/somatic_SVs/severus_somatic_" + sub(basename(tumor_bam), "\\.bam$", "") + ".vcf"
+    File output_vcf = pname + "_severus/somatic_SVs/severus_somatic" + ".vcf"
   }
 
   runtime {
-    docker: "quay.io/biocontainers/severus@sha256:1f7eb598ed310b7d676d9107f1cecdce918acd469c563d4cb47b8ac81cd86048"
+    docker: "quay.io/biocontainers/severus@sha256:0085576737dda3c507313f4029a0fe076767e8ba6cc02d01e816d8f07e7cfd17"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

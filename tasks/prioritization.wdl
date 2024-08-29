@@ -89,7 +89,7 @@ task prioritize_sv_intogen {
         /app/Compendium_Cancer_Genes.tsv \
         -f "Gene_name;SYMBOL" |\
             csvtk filter2 -t -f '$Annotation_mode == "split"' |\
-            csvtk summary -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
+            csvtk summary -l -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
                 -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
                 sed 's/:collapse//g'  > ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
     >>>
@@ -166,6 +166,7 @@ task report_sample {
         File dmr_intogen_tsv
         File chord_file
         String pname
+        File? vis_file
     }
 
     Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(purple_cnv, "GB") + size(purple_pur_ploidy, "GB") + size(mosdepth_tumor, "GB") + size(mosdepth_normal, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + size(dmr_intogen_tsv, "GB") + 10)
@@ -174,10 +175,13 @@ task report_sample {
     set -euxo pipefail
 
     cp /app/visualize_hifisomatic.qmd visualize_hifisomatic.qmd
-
+    # If vis_file is provided, copy it to the current directory
+    ~{if defined(vis_file) then "cp '" + vis_file + "' visualize_hifisomatic.qmd || true" else ""}
+    
     Rscript -e \
     'quarto::quarto_render(
         "visualize_hifisomatic.qmd",
+        output_format = "dashboard",
         execute_params = list(
             vcf_file = "~{annotated_small_variant_tsv}",
             intogen_smallvar = "~{intogen_small_var_tsv}",
@@ -203,7 +207,7 @@ task report_sample {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:c5e1820b3329e13c092149015d16764e8250755c85a72838dc6ce201b2fa6876"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:9ad9fa1a06a22878fa74cb0f2782b15659b1ec4a485bc20eb09e66b5aa9f896a"
         cpu: 4
         memory: "16 GB"
         disk: file_size + " GB"

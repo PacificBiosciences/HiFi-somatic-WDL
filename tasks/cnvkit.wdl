@@ -37,7 +37,7 @@ task cnvkit_tumor {
 
   output {
     Array[File]+ cnvkit_output = glob(pname + "_cnvkit/*")
-    File cnvkit_output_cns = pname + "_cnvkit/" + pname + ".tumor.aligned.cns"
+    File cnvkit_output_cns = pname + "_cnvkit/" + sub(basename(tumor_bam), "\\.bam$", ".cns")
   }
 
   runtime {

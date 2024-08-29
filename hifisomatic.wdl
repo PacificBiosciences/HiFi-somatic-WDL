@@ -18,6 +18,8 @@ workflow hifisomatic {
     Cohort cohort
     # Files are not aligned by default. If aligned, set skip_align to true
     Boolean skip_align = false
+    # Strip kinetics or not
+    Boolean strip_kinetics = false
     File ref_fasta
     File ref_fasta_dict
     File ref_gff
@@ -64,8 +66,6 @@ workflow hifisomatic {
     Int def_threads = 2
     # Scatter small variants calling into equal chunk per chromosome to make use of multiple nodes. Default of 75 Mbp per chromosome (total of 42 chunks for hg38)
     Int chunk_size = 75000000
-    # Strip kinetics or not
-    Boolean strip_kinetics = false
     # Calculate DMR?
     Boolean calculate_DMR = true
     # Annotate VCF. If vep_cache is not specified in JSON, VEP will not be run
@@ -79,8 +79,12 @@ workflow hifisomatic {
     # Sometimes when there's too many mutations HiPhase will run OOM. Use LongPhase
     Boolean uselongphase = false
     # Amber, Cobalt and Purple
+    # Higher value = smoother CNV, but lower resolution
+    Int pcf_gamma_value = 1000
     File? ensembl_data_dir_tarball
     Int hmftools_threads = 8
+    # Visualization script
+    File? report_vis_script
   }
 
   scatter (individual in cohort.patients) {
@@ -89,72 +93,33 @@ workflow hifisomatic {
     Array[File] patient_normal_bam_files = individual.normal_bams
     File ref_to_use = select_first([ref_fasta_mmi, ref_fasta])
 
-    if(!skip_align){
-      scatter (tumor_bam in patient_tumor_bam_files) {
-        if(strip_kinetics) {
-          call common.strip_kinetics as strip_tumor_kinetics {
-            input:
-              bam = tumor_bam,
-              threads = def_threads
-          }
-        }
-
-        call alignment.Align as TumorAlign {
-          input:
-            sample_name = patient + ".tumor",
-            bam_file = select_first([strip_tumor_kinetics.stripped_bam, tumor_bam]),
-            ref_fasta = ref_to_use,
-            ref_fasta_index = ref_fasta_index,
-            threads = pbmm2_threads
-        }
-      }
-
-      scatter (normal_bam in patient_normal_bam_files) {
-        if(strip_kinetics) {
-          call common.strip_kinetics as strip_normal_kinetics {
-            input:
-              bam = normal_bam,
-              threads = def_threads
-          }
-        }
-        call alignment.Align as NormalAlign {
-          input:
-            sample_name = patient + ".normal",
-            bam_file = select_first([strip_normal_kinetics.stripped_bam, normal_bam]),
-            ref_fasta = ref_to_use,
-            ref_fasta_index = ref_fasta_index,
-            threads = pbmm2_threads
-        }
-      }
-    }
-
-    call alignment.MergeBams as MergeTumorBams {
+    call alignment.align_all_bams {
       input:
-        sample_name = patient + ".tumor",
-        bam_files = select_first([TumorAlign.aligned_bam, patient_tumor_bam_files]),
-        threads = merge_bam_threads
-    }
-
-    call alignment.MergeBams as MergeNormalBams {
-      input:
-        sample_name = patient + ".normal",
-        bam_files = select_first([NormalAlign.aligned_bam, patient_normal_bam_files]),
-        threads = merge_bam_threads
+        patient = patient,
+        patient_tumor_bam_files = patient_tumor_bam_files,
+        patient_normal_bam_files = patient_normal_bam_files,
+        ref_fasta = ref_to_use,
+        ref_fasta_index = ref_fasta_index,
+        pbmm2_threads = 32,
+        merge_bam_threads = 8,
+        samtools_threads = 8,
+        skip_align = skip_align,
+        strip_kinetics = strip_kinetics
     }
 
     call common.mosdepth as MosdepthTumor {
       input:
         pname = patient + ".tumor",
-        bam = MergeTumorBams.merged_aligned_bam,
-        bam_index = MergeTumorBams.merged_aligned_bam_index,
+        bam = align_all_bams.tumor_bam_final,
+        bam_index = align_all_bams.tumor_bam_final_index,
         threads = def_threads
     }
 
     call common.mosdepth as MosdepthNormal {
       input:
         pname = patient + ".normal",
-        bam = MergeNormalBams.merged_aligned_bam,
-        bam_index = MergeNormalBams.merged_aligned_bam_index,
+        bam = align_all_bams.normal_bam_final,
+        bam_index = align_all_bams.normal_bam_final_index,
         threads = def_threads
     }
 
@@ -169,10 +134,10 @@ workflow hifisomatic {
           if (use_deepsomatic){
               call deepsomatic.run_deepsomatic {
                 input:
-                  tumor_bam = MergeTumorBams.merged_aligned_bam,
-                  tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
-                  normal_bam = MergeNormalBams.merged_aligned_bam,
-                  normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
+                  tumor_bam = align_all_bams.tumor_bam_final,
+                  tumor_bam_index = align_all_bams.tumor_bam_final_index,
+                  normal_bam = align_all_bams.normal_bam_final,
+                  normal_bam_index = align_all_bams.normal_bam_final_index,
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
                   threads = deepsomatic_threads,
@@ -186,10 +151,10 @@ workflow hifisomatic {
               call clairs.ClairS {
                 input:
                   pname = patient,
-                  tumor_bam = MergeTumorBams.merged_aligned_bam,
-                  tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
-                  normal_bam = MergeNormalBams.merged_aligned_bam,
-                  normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
+                  tumor_bam = align_all_bams.tumor_bam_final,
+                  tumor_bam_index = align_all_bams.tumor_bam_final_index,
+                  normal_bam = align_all_bams.normal_bam_final,
+                  normal_bam_index = align_all_bams.normal_bam_final_index,
                   contig = ctg,
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
@@ -234,8 +199,8 @@ workflow hifisomatic {
             if(uselongphase){
               call phasing.longphase_with_somatic as phaseTumorBam_longphase {
                 input:
-                  bam = MergeTumorBams.merged_aligned_bam,
-                  bam_index = MergeTumorBams.merged_aligned_bam_index,
+                  bam = align_all_bams.tumor_bam_final,
+                  bam_index = align_all_bams.tumor_bam_final_index,
                   vcf = select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf]),
                   vcf_index = select_first([run_deepsomatic.clair3_tumor_vcf_tbi, gather_ClairS_germline.output_tumor_germline_vcf_index]),
                   somatic_SNP_indel_vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
@@ -249,8 +214,8 @@ workflow hifisomatic {
             if(!uselongphase){
               call phasing.hiphase_with_somatic as phaseTumorBam {
                 input:
-                  bam = MergeTumorBams.merged_aligned_bam,
-                  bam_index = MergeTumorBams.merged_aligned_bam_index,
+                  bam = align_all_bams.tumor_bam_final,
+                  bam_index = align_all_bams.tumor_bam_final_index,
                   vcf = select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf]),
                   vcf_index = select_first([run_deepsomatic.clair3_tumor_vcf_tbi, gather_ClairS_germline.output_tumor_germline_vcf_index]),
                   somatic_SNP_indel_vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
@@ -286,8 +251,8 @@ workflow hifisomatic {
           if(size(select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf])) > 0) {
             call phasing.hiphase as phaseNormalBam {
               input:
-                bam = MergeNormalBams.merged_aligned_bam,
-                bam_index = MergeNormalBams.merged_aligned_bam_index,
+                bam = align_all_bams.normal_bam_final,
+                bam_index = align_all_bams.normal_bam_final_index,
                 vcf = select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf]),
                 vcf_index = select_first([run_deepsomatic.clair3_normal_vcf_tbi, gather_ClairS_germline.output_normal_germline_vcf_index]),
                 pname = patient,
@@ -313,16 +278,16 @@ workflow hifisomatic {
     # Calculate alignment statistics for tumor
     call common.seqkit_bamstats as bamstatsTumor {
       input:
-        bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
-        bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, MergeTumorBams.merged_aligned_bam_index]),
+        bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, align_all_bams.tumor_bam_final]),
+        bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, align_all_bams.tumor_bam_final_index]),
         threads = samtools_threads
     }
 
     # Calculate alignment statistics for normal
     call common.seqkit_bamstats as bamstatsNormal {
       input:
-        bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
-        bam_index = select_first([phaseNormalBam.hiphase_bam_index, MergeNormalBams.merged_aligned_bam_index]),
+        bam = select_first([phaseNormalBam.hiphase_bam, align_all_bams.normal_bam_final]),
+        bam_index = select_first([phaseNormalBam.hiphase_bam_index, align_all_bams.normal_bam_final_index]),
         threads = samtools_threads
     }
 
@@ -342,8 +307,8 @@ workflow hifisomatic {
     call common.cpg_pileup as pileup_tumor {
       input:
         pname = patient + ".tumor",
-        bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
-        bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, MergeTumorBams.merged_aligned_bam_index]),
+        bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, align_all_bams.tumor_bam_final]),
+        bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, align_all_bams.tumor_bam_final_index]),
         reference = ref_fasta,
         reference_index = ref_fasta_index,
         mincov = tumor_pileup_mincov,
@@ -353,8 +318,8 @@ workflow hifisomatic {
     call common.cpg_pileup as pileup_normal {
       input:
         pname = patient + ".normal",
-        bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
-        bam_index = select_first([phaseNormalBam.hiphase_bam_index, MergeNormalBams.merged_aligned_bam_index]),
+        bam = select_first([phaseNormalBam.hiphase_bam, align_all_bams.normal_bam_final]),
+        bam_index = select_first([phaseNormalBam.hiphase_bam_index, align_all_bams.normal_bam_final_index]),
         reference = ref_fasta,
         reference_index = ref_fasta_index,
         mincov = normal_pileup_mincov,
@@ -390,10 +355,10 @@ workflow hifisomatic {
     if(call_small_variants){
       call structural_variants.Severus_sv as phased_severus {
         input:
-          tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
-          tumor_bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, MergeTumorBams.merged_aligned_bam_index]),
-          normal_bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
-          normal_bam_index = select_first([phaseNormalBam.hiphase_bam_index, MergeNormalBams.merged_aligned_bam_index]),
+          tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, align_all_bams.tumor_bam_final]),
+          tumor_bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, align_all_bams.tumor_bam_final_index]),
+          normal_bam = select_first([phaseNormalBam.hiphase_bam, align_all_bams.normal_bam_final]),
+          normal_bam_index = select_first([phaseNormalBam.hiphase_bam_index, align_all_bams.normal_bam_final_index]),
           trf_bed = trf_bed,
           phased_vcf = select_first([phaseTumorBam_longphase.longphase_vcf, phaseTumorBam.hiphase_vcf]),
           pname = patient,
@@ -413,10 +378,10 @@ workflow hifisomatic {
     if(!call_small_variants){
       call structural_variants.Severus_sv as unphased_severus {
         input:
-          tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, MergeTumorBams.merged_aligned_bam]),
-          tumor_bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, MergeTumorBams.merged_aligned_bam_index]),
-          normal_bam = select_first([phaseNormalBam.hiphase_bam, MergeNormalBams.merged_aligned_bam]),
-          normal_bam_index = select_first([phaseNormalBam.hiphase_bam_index, MergeNormalBams.merged_aligned_bam_index]),
+          tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, align_all_bams.tumor_bam_final]),
+          tumor_bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, align_all_bams.tumor_bam_final_index]),
+          normal_bam = select_first([phaseNormalBam.hiphase_bam, align_all_bams.normal_bam_final]),
+          normal_bam_index = select_first([phaseNormalBam.hiphase_bam_index, align_all_bams.normal_bam_final_index]),
           trf_bed = trf_bed,
           pname = patient,
           threads = sv_threads,
@@ -458,10 +423,10 @@ workflow hifisomatic {
 
     call cnvkit.cnvkit_tumor {
       input:
-        tumor_bam = MergeTumorBams.merged_aligned_bam,
-        tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
-        normal_bam = MergeNormalBams.merged_aligned_bam,
-        normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
+        tumor_bam = align_all_bams.tumor_bam_final,
+        tumor_bam_index = align_all_bams.tumor_bam_final_index,
+        normal_bam = align_all_bams.normal_bam_final,
+        normal_bam_index = align_all_bams.normal_bam_final_index,
         ref_fasta = ref_fasta,
         ref_fasta_index = ref_fasta_index,
         refFlat = cnvkit_refflat,
@@ -473,11 +438,11 @@ workflow hifisomatic {
       call clonality.Amber {
         input:
           referenceName = patient + ".normal",
-          referenceBam = MergeNormalBams.merged_aligned_bam,
-          referenceBamIndex = MergeNormalBams.merged_aligned_bam_index,
+          referenceBam = align_all_bams.normal_bam_final,
+          referenceBamIndex = align_all_bams.normal_bam_final_index,
           tumorName = patient + ".tumor",
-          tumorBam = MergeTumorBams.merged_aligned_bam,
-          tumorBamIndex = MergeTumorBams.merged_aligned_bam_index,
+          tumorBam = align_all_bams.tumor_bam_final,
+          tumorBamIndex = align_all_bams.tumor_bam_final_index,
           ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
           referenceFasta = ref_fasta,
           referenceFastaFai = ref_fasta_index,
@@ -488,16 +453,17 @@ workflow hifisomatic {
       call clonality.Cobalt {
         input:
           referenceName = patient + ".normal",
-          referenceBam = MergeNormalBams.merged_aligned_bam,
-          referenceBamIndex = MergeNormalBams.merged_aligned_bam_index,
+          referenceBam = align_all_bams.normal_bam_final,
+          referenceBamIndex = align_all_bams.normal_bam_final_index,
           tumorName = patient + ".tumor",
-          tumorBam = MergeTumorBams.merged_aligned_bam,
-          tumorBamIndex = MergeTumorBams.merged_aligned_bam_index,
+          tumorBam = align_all_bams.tumor_bam_final,
+          tumorBamIndex = align_all_bams.tumor_bam_final_index,
           referenceFasta = ref_fasta,
           referenceFastaFai = ref_fasta_index,
           referenceFastaDict = ref_fasta_dict,
           ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
-          threads = hmftools_threads
+          threads = hmftools_threads,
+          pcf_gamma = pcf_gamma_value
       }
 
       # DeepSomatic doesn't annotate germline count, so don't supply
@@ -507,7 +473,7 @@ workflow hifisomatic {
           input:
             referenceName = patient + ".normal",
             tumorName = patient + ".tumor",
-            outputDir = "./purple",
+            outputDir = "purple",
             amberOutput = Amber.outputs,
             cobaltOutput = Cobalt.outputs,
             referenceFasta = ref_fasta,
@@ -522,7 +488,7 @@ workflow hifisomatic {
           input:
             referenceName = patient + ".normal",
             tumorName = patient + ".tumor",
-            outputDir = "./purple",
+            outputDir = "purple",
             amberOutput = Amber.outputs,
             cobaltOutput = Cobalt.outputs,
             somaticVcf = select_first([gather_ClairS.output_vcf]),
@@ -571,7 +537,8 @@ workflow hifisomatic {
               mut_reconstructed_sigs = select_first([mutationalpattern.recon_sig]),
               dmr_intogen_tsv = select_first([prioritize_dmr_intogen.promoter_file]),
               chord_file = select_first([chord_hrd.chord_prediction]),
-              pname = patient
+              pname = patient,
+              vis_file = report_vis_script
           }
       }
       }
@@ -589,14 +556,14 @@ workflow hifisomatic {
     Array[File?] tumor_germline_small_variant_vcf = select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf])
     Array[File?] normal_germline_small_variant_vcf = select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf])
     Array[File?] normal_germline_small_variant_vcf_annotated = annotateGermline.vep_annotated_vcf
-    Array[File] tumor_bams = MergeTumorBams.merged_aligned_bam
-    Array[File] tumor_bams_bai = MergeTumorBams.merged_aligned_bam_index
+    Array[File] tumor_bams = align_all_bams.tumor_bam_final
+    Array[File] tumor_bams_bai = align_all_bams.tumor_bam_final_index
     Array[File?] tumor_bams_hiphase = phaseTumorBam.hiphase_bam
     Array[Array[File]+?] tumor_bams_hiphase_stats = phaseTumorBam.hiphase_stats_summary
     Array[File?] tumor_bams_phased_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index])
     Array[File?] tumor_bams_longphase = phaseTumorBam_longphase.longphase_bam
-    Array[File] normal_bams = MergeNormalBams.merged_aligned_bam
-    Array[File] normal_bams_bai = MergeNormalBams.merged_aligned_bam_index
+    Array[File] normal_bams = align_all_bams.normal_bam_final
+    Array[File] normal_bams_bai = align_all_bams.normal_bam_final_index
     Array[File?] normal_bams_phased = phaseNormalBam.hiphase_bam
     Array[File?] normal_bams_phase_stats = phaseNormalBam.hiphase_stats
     Array[File?] normal_bams_phased_index = phaseNormalBam.hiphase_bam_index

@@ -45,7 +45,7 @@ pip install miniwdl-slurm
 
 ```bash
 # Download resource bundle needed for the workflow
-curl -LO 'https://zenodo.org/record/10404249/files/hifisomatic_resources.tar.gz'
+curl -LO 'https://zenodo.org/record/13347368/files/hifisomatic_resources.tar.gz'
 # Extract the archive
 tar -xzvf hifisomatic_resources.tar.gz
 # Check that you have the following files:
@@ -55,8 +55,8 @@ tar -xzvf hifisomatic_resources.tar.gz
 ├── GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.dict
 ├── human_GRCh38_no_alt_analysis_set.trf.bed
 ├── refFlat.hg38.txt
-├── sniffles_all_non_germline.nosamples.vcf.gz
-├── sniffles_all_non_germline.nosamples.vcf.gz.tbi
+├── severus.jasmine.AN10.AC4.nosample.vcf.gz
+├── severus.jasmine.AN10.AC4.nosample.vcf.gz
 └── ensembl.GRCh38.101.reformatted.gff3.gz
 ```
 
@@ -77,7 +77,7 @@ mv AnnotSV_annotations AnnotSV
 tar -czvf annotsv_cache.tar.gz AnnotSV
 
 # Download VEP bundle
-wget 'https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_refseq_vep_110_GRCh38.tar.gz'
+wget 'https://ftp.ensembl.org/pub/release-112/variation/indexed_vep_cache/homo_sapiens_refseq_vep_112_GRCh38.tar.gz'
 
 # Download hmftools resource
 wget 'https://storage.googleapis.com/hmf-public/HMFtools-Resources/dna_pipeline/v5_33/38/hmf_dna_pipeline_resources.38_v5.33.tar.gz'
@@ -94,9 +94,9 @@ Or you can download a small demo dataset here that contains the region with trut
 
 ```bash
 # Download tumor demo
-curl -LO 'https://zenodo.org/record/10404249/files/COLO829.30X.SV_region.bam'
+curl -LO 'https://zenodo.org/record/13347368/files/COLO829.30X.SV_region.bam'
 # Download matched normal demo
-curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
+curl -LO 'https://zenodo.org/record/13347368/files/COLO829BL.30X.SV_region.bam'
 ```
 
 ## Modify the input JSON file to point to the downloaded files

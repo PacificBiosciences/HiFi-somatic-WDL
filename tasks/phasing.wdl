@@ -45,7 +45,7 @@ task hiphase {
         docker: "quay.io/pacbio/hiphase@sha256:c46c8493be8b308c0433441cbafcc1b6ac999dfa6e85001d466ebd551c4a8cf0"
         cpu: threads
         memory: "~{threads * 6} GB"
-        disk: file_size
+        disk: file_size + "GB"
         maxRetries: 2
         preemptible: 1
     }
@@ -101,7 +101,7 @@ task hiphase_with_somatic {
         docker: "quay.io/pacbio/hiphase@sha256:c46c8493be8b308c0433441cbafcc1b6ac999dfa6e85001d466ebd551c4a8cf0"
         cpu: threads
         memory: "~{threads * 6} GB"
-        disk: file_size
+        disk: file_size + "GB"
         maxRetries: 2
         preemptible: 1
     }
@@ -171,7 +171,7 @@ task longphase_with_somatic {
         docker: "quay.io/pacbio/longphase@sha256:2d57c35da90fc74f56574c439e1a44f74c7f787f3812de3c402cf9206c9d4be3"
         cpu: threads
         memory: "~{threads * 6} GB"
-        disk: file_size
+        disk: file_size + "GB"
         maxRetries: 2
         preemptible: 1
     }

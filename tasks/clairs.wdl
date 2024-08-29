@@ -57,7 +57,7 @@ task ClairS {
   }
 
   runtime {
-    docker: "hkubal/clairs@sha256:e53731a10a0cee50fa46388f412168697e7e87e5921fbac7c2672d2a45e15389"
+    docker: "hkubal/clairs@sha256:dc5ed3f646827d8a7619e73c08e51a4c18441dbdba6981053bce8f369a538c88"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

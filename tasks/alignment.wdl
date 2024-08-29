@@ -1,5 +1,114 @@
 version 1.0
 
+workflow align_all_bams {
+
+    input {
+        String patient
+        Array[File] patient_tumor_bam_files
+        Array[File] patient_normal_bam_files
+        File ref_fasta
+        File ref_fasta_index
+        Int pbmm2_threads = 64
+        Int merge_bam_threads = 8
+        Int samtools_threads = 8
+        Boolean skip_align = false
+        Boolean strip_kinetics = false
+        String additional_pbmm2_args = "-A 2"
+    }
+
+     if(!skip_align){
+      scatter (tumor_bam in patient_tumor_bam_files) {
+
+        call Align as TumorAlign {
+          input:
+            sample_name = patient + ".tumor",
+            bam_file = tumor_bam,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            additional_args = additional_pbmm2_args,
+            strip_kinetics = strip_kinetics,
+            threads = pbmm2_threads
+        }
+      }
+
+      scatter (normal_bam in patient_normal_bam_files) {
+        call Align as NormalAlign {
+          input:
+            sample_name = patient + ".normal",
+            bam_file = normal_bam,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            additional_args = additional_pbmm2_args,
+            strip_kinetics = strip_kinetics,
+            threads = pbmm2_threads
+        }
+      }
+    }
+
+    # If more than one BAM, merge them
+      if (!skip_align && length(patient_tumor_bam_files) > 1) {
+        call MergeBams as MergeTumorAlignBams {
+          input:
+            sample_name = patient + ".tumor",
+            bam_files = select_first([TumorAlign.aligned_bam]),
+            threads = merge_bam_threads
+        }
+      }
+
+      if (!skip_align && length(patient_normal_bam_files) > 1) {
+        call MergeBams as MergeNormalAlignBams {
+          input:
+            sample_name = patient + ".normal",
+            bam_files = select_first([NormalAlign.aligned_bam]),
+            threads = merge_bam_threads
+        }
+      }
+
+      # If skip align, merge if more than one BAM
+      if (skip_align && length(patient_tumor_bam_files) > 1) {
+        call MergeBams as MergeTumorSkipAlignBams {
+          input:
+            sample_name = patient + ".tumor",
+            bam_files = patient_tumor_bam_files,
+            threads = merge_bam_threads
+        }
+      }
+
+      if (skip_align && length(patient_normal_bam_files) > 1) {
+        call MergeBams as MergeNormalSkipAlignBams {
+          input:
+            sample_name = patient + ".normal",
+            bam_files = patient_normal_bam_files,
+            threads = merge_bam_threads
+        }
+      }
+
+      # If skip align and one bam, index the bam
+      if (skip_align && length(patient_tumor_bam_files) == 1) {
+        call IndexBam as indexTumorBam {
+          input:
+            bam = select_first(patient_tumor_bam_files),
+            threads = samtools_threads
+        }
+      }
+
+      if (skip_align && length(patient_normal_bam_files) == 1) {
+        call IndexBam as indexNormalBam {
+          input:
+            bam = select_first(patient_normal_bam_files),
+            threads = samtools_threads
+        }
+      }
+
+    # Note that the index 0 below is in the case where there's only one BAM after alignment (no skipalign), so the bams aren't merged
+    output {
+      File tumor_bam_final = select_first([MergeTumorAlignBams.merged_aligned_bam, MergeTumorSkipAlignBams.merged_aligned_bam, TumorAlign.aligned_bam[0], indexTumorBam.out_bam])
+      File tumor_bam_final_index = select_first([MergeTumorAlignBams.merged_aligned_bam_index, MergeTumorSkipAlignBams.merged_aligned_bam_index, TumorAlign.aligned_bam_index[0], indexTumorBam.out_bam_index])
+      File normal_bam_final = select_first([MergeNormalAlignBams.merged_aligned_bam, MergeNormalSkipAlignBams.merged_aligned_bam, NormalAlign.aligned_bam[0], indexNormalBam.out_bam])
+      File normal_bam_final_index = select_first([MergeNormalAlignBams.merged_aligned_bam_index, MergeNormalSkipAlignBams.merged_aligned_bam_index, NormalAlign.aligned_bam_index[0], indexNormalBam.out_bam_index])
+    }
+}
+
 # Align using pbmm2
 task Align {
   input {
@@ -7,6 +116,8 @@ task Align {
     File ref_fasta
     File ref_fasta_index
     String sample_name
+    String? additional_args
+    Boolean strip_kinetics
     Int threads
   }
 
@@ -28,18 +139,20 @@ task Align {
     --sample ~{sample_name} \
     --sort -j ~{threads} \
     --unmapped \
+    ~{if(strip_kinetics) then "--strip" else ""} \
     --preset HIFI \
+    ~{additional_args} \
     --log-level INFO --log-file pbmm2.log
   >>>
 
   output {
     File aligned_bam = ofile_name
-    File? aligned_bam_index = ofile_name_index
-    File? align_log = "pbmm2.log"
+    File aligned_bam_index = ofile_name_index
+    File align_log = "pbmm2.log"
   }
 
   runtime {
-    docker: "quay.io/biocontainers/pbmm2:1.12.0--h9ee0642_0"
+    docker: "quay.io/biocontainers/pbmm2@sha256:19ca8f306b0c1c61aad0bf914c2a291b9ea9b8437e28dbdb5d76f93b81a0dbdf"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
@@ -105,7 +218,8 @@ task IndexBam {
   >>>
 
   output {
-    File merged_aligned_bam_index_bai = basename(bam) + ".bai"
+    File out_bam = bam
+    File out_bam_index = basename(bam) + ".bai"
   }
 
   runtime {

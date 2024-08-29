@@ -55,7 +55,7 @@ task vep_annotate {
     }
 
     runtime {
-        docker: "ensemblorg/ensembl-vep@sha256:70d64039e7b575801390296fa77bd78b983c94ab204baaa656425d8d4b738dac"
+        docker: "ensemblorg/ensembl-vep@sha256:e7612ab7c2923f2b9a78592b939e74874cd29f7494d70ee7135c8303841b03a8"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -106,7 +106,7 @@ task annotsv {
     }
 
     runtime {
-        docker: "quay.io/biocontainers/annotsv:3.3.6--py311hdfd78af_0"
+        docker: "quay.io/biocontainers/annotsv@sha256:09cc20a86b61fc44b7c1a5d90af8a88fb5e8cacbe56c9938301f2c5fc6ae71fb"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
