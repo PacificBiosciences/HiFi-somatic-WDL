@@ -100,9 +100,9 @@ workflow hifisomatic {
         patient_normal_bam_files = patient_normal_bam_files,
         ref_fasta = ref_to_use,
         ref_fasta_index = ref_fasta_index,
-        pbmm2_threads = 32,
-        merge_bam_threads = 8,
-        samtools_threads = 8,
+        pbmm2_threads = pbmm2_threads,
+        merge_bam_threads = merge_bam_threads,
+        samtools_threads = samtools_threads,
         skip_align = skip_align,
         strip_kinetics = strip_kinetics
     }
