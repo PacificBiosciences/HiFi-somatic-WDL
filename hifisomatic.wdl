@@ -74,6 +74,8 @@ workflow hifisomatic {
     Int vep_threads = 8
     # Annotate germline variants?
     Boolean annotate_germline = false
+    # Run SAVANA sv call too?
+    Boolean run_savana = false
     # Minimum number of CG to prioritize
     Int ncg_to_filter = 50
     # Sometimes when there's too many mutations HiPhase will run OOM. Use LongPhase
@@ -229,9 +231,16 @@ workflow hifisomatic {
             
             # Annotate somatic VCF
             if(size(select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf])) > 0 && defined(vep_cache)){
-              call annotation.vep_annotate as annotateSomatic {
+              call annotation.bcftools_norm as normSomatic {
                 input:
                   input_vcf = select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf]),
+                  ref_fasta = ref_fasta,
+                  ref_fasta_index = ref_fasta_index,
+                  threads = samtools_threads
+              }
+              call annotation.vep_annotate as annotateSomatic {
+                input:
+                  input_vcf = normSomatic.norm_vcf,
                   vep_cache = select_first([vep_cache]),
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
@@ -360,7 +369,7 @@ workflow hifisomatic {
           normal_bam = select_first([phaseNormalBam.hiphase_bam, align_all_bams.normal_bam_final]),
           normal_bam_index = select_first([phaseNormalBam.hiphase_bam_index, align_all_bams.normal_bam_final_index]),
           trf_bed = trf_bed,
-          phased_vcf = select_first([phaseTumorBam_longphase.longphase_vcf, phaseTumorBam.hiphase_vcf]),
+          phased_vcf = phaseNormalBam.hiphase_vcf,
           pname = patient,
           threads = sv_threads,
           min_supp_reads = severus_min_reads
@@ -372,6 +381,24 @@ workflow hifisomatic {
           small_variant_vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
           sv_vcf = select_first([phased_severus.output_vcf]),
           pname = patient
+      }
+      
+      # Call SAVANA?
+      if(run_savana){
+        call structural_variants.SAVANA_sv {
+          input:
+            pname = patient,
+            tumor_bam = select_first([phaseTumorBam_longphase.longphase_bam, phaseTumorBam.hiphase_bam, align_all_bams.tumor_bam_final]),
+            tumor_bam_index = select_first([phaseTumorBam_longphase.longphase_bam_index, phaseTumorBam.hiphase_bam_index, align_all_bams.tumor_bam_final_index]),
+            normal_bam = select_first([phaseNormalBam.hiphase_bam, align_all_bams.normal_bam_final]),
+            normal_bam_index = select_first([phaseNormalBam.hiphase_bam_index, align_all_bams.normal_bam_final_index]),
+            phased_vcf = phaseNormalBam.hiphase_vcf,
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            min_supp_reads = 3,
+            min_af = 0.05,
+            threads = pbmm2_threads
+        }
       }
     }
 
@@ -598,5 +625,6 @@ workflow hifisomatic {
     Array[Array[File]+?] Purple_outputs = select_first([purple_nosomatic.outputs, purple_withsomatic.outputs])
     Array[Array[File]+?] Purple_plots = select_first([purple_nosomatic.plots, purple_withsomatic.plots])
     Array[File?] report = report_sample.summary_report
+    Array[Array[File]+?] SAVANA_output = SAVANA_sv.savana_output
   }
 }

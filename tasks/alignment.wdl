@@ -87,7 +87,7 @@ workflow align_all_bams {
       if (skip_align && length(patient_tumor_bam_files) == 1) {
         call IndexBam as indexTumorBam {
           input:
-            bam = select_first(patient_tumor_bam_files),
+            bam = patient_tumor_bam_files[0],
             threads = samtools_threads
         }
       }
@@ -95,21 +95,34 @@ workflow align_all_bams {
       if (skip_align && length(patient_normal_bam_files) == 1) {
         call IndexBam as indexNormalBam {
           input:
-            bam = select_first(patient_normal_bam_files),
+            bam = patient_normal_bam_files[0],
             threads = samtools_threads
         }
       }
 
+      # Array[File?] all_final_tumor_bams = [indexTumorBam.out_bam, MergeTumorSkipAlignBams.merged_aligned_bam, MergeTumorAlignBams.merged_aligned_bam, TumorAlign.aligned_bam[0]]
+      # Array[File?] all_final_tumor_bam_indexes = [indexTumorBam.out_bam_index, MergeTumorSkipAlignBams.merged_aligned_bam_index, MergeTumorAlignBams.merged_aligned_bam_index, TumorAlign.aligned_bam_index[0]]
+      # Array[File?] all_final_normal_bams = [indexNormalBam.out_bam, MergeNormalSkipAlignBams.merged_aligned_bam, MergeNormalAlignBams.merged_aligned_bam, NormalAlign.aligned_bam[0]]
+      # Array[File?] all_final_normal_bam_indexes = [indexNormalBam.out_bam_index, MergeNormalSkipAlignBams.merged_aligned_bam_index, MergeNormalAlignBams.merged_aligned_bam_index, NormalAlign.aligned_bam_index[0]]
+
+      Array[File?] all_final_tumor_bams = if (skip_align) then [indexTumorBam.out_bam, MergeTumorSkipAlignBams.merged_aligned_bam] else [MergeTumorAlignBams.merged_aligned_bam, TumorAlign.aligned_bam[0]]
+      Array[File?] all_final_tumor_bam_indexes = if (skip_align) then [indexTumorBam.out_bam_index, MergeTumorSkipAlignBams.merged_aligned_bam_index] else [MergeTumorAlignBams.merged_aligned_bam_index, TumorAlign.aligned_bam_index[0]]
+      Array[File?] all_final_normal_bams = if (skip_align) then [indexNormalBam.out_bam, MergeNormalSkipAlignBams.merged_aligned_bam] else [MergeNormalAlignBams.merged_aligned_bam, NormalAlign.aligned_bam[0]]
+      Array[File?] all_final_normal_bam_indexes = if (skip_align) then [indexNormalBam.out_bam_index, MergeNormalSkipAlignBams.merged_aligned_bam_index] else [MergeNormalAlignBams.merged_aligned_bam_index, NormalAlign.aligned_bam_index[0]]
+
     # Note that the index 0 below is in the case where there's only one BAM after alignment (no skipalign), so the bams aren't merged
     output {
-      File tumor_bam_final = select_first([MergeTumorAlignBams.merged_aligned_bam, MergeTumorSkipAlignBams.merged_aligned_bam, TumorAlign.aligned_bam[0], indexTumorBam.out_bam])
-      File tumor_bam_final_index = select_first([MergeTumorAlignBams.merged_aligned_bam_index, MergeTumorSkipAlignBams.merged_aligned_bam_index, TumorAlign.aligned_bam_index[0], indexTumorBam.out_bam_index])
-      File normal_bam_final = select_first([MergeNormalAlignBams.merged_aligned_bam, MergeNormalSkipAlignBams.merged_aligned_bam, NormalAlign.aligned_bam[0], indexNormalBam.out_bam])
-      File normal_bam_final_index = select_first([MergeNormalAlignBams.merged_aligned_bam_index, MergeNormalSkipAlignBams.merged_aligned_bam_index, NormalAlign.aligned_bam_index[0], indexNormalBam.out_bam_index])
+      File tumor_bam_final = select_first(all_final_tumor_bams)
+      File tumor_bam_final_index = select_first(all_final_tumor_bam_indexes)
+      File normal_bam_final = select_first(all_final_normal_bams)
+      File normal_bam_final_index = select_first(all_final_normal_bam_indexes)
     }
 }
 
-# Align using pbmm2
+# Align using pbmm2. If prefer to use a different version, change the SHA in the runtime section, e.g.:
+# Version 1.12 (minimap2 2.17) SHA: d16e5df5bfab75ff2defd2984ec6cb7665473e383045e2a075ea1261ae188861
+# Version 1.14.99 (minimap2 2.26) SHA: 19ca8f306b0c1c61aad0bf914c2a291b9ea9b8437e28dbdb5d76f93b81a0dbdf
+# Version 1.16.0 (minimap2 2.26) SHA: 4a01f9a3ede68cd018d8d2e79f8773f331f21b35c764ac48b8595709dbd417f7
 task Align {
   input {
     File bam_file
@@ -139,10 +152,10 @@ task Align {
     --sample ~{sample_name} \
     --sort -j ~{threads} \
     --unmapped \
-    ~{if(strip_kinetics) then "--strip" else ""} \
     --preset HIFI \
-    ~{additional_args} \
-    --log-level INFO --log-file pbmm2.log
+    --log-level INFO --log-file pbmm2.log \
+    ~{if(strip_kinetics) then "--strip" else ""} \
+    ~{additional_args}
   >>>
 
   output {

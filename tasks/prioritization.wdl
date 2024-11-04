@@ -84,14 +84,19 @@ task prioritize_sv_intogen {
     
     csvtk version
 
+    # Remove any quote from the file
+    sed 's/"//g' ~{annotSV_tsv} > ~{basename(annotSV_tsv)}_noquote.tsv
+
     csvtk join -t \
-        ~{annotSV_tsv} \
+        ~{basename(annotSV_tsv)}_noquote.tsv \
         /app/Compendium_Cancer_Genes.tsv \
         -f "Gene_name;SYMBOL" |\
             csvtk filter2 -t -f '$Annotation_mode == "split"' |\
-            csvtk summary -l -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
+            csvtk summary -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
                 -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
                 sed 's/:collapse//g'  > ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
+
+    rm -f ~{basename(annotSV_tsv)}_noquote.tsv
     >>>
 
     output {

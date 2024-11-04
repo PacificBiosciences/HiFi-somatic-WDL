@@ -1,5 +1,48 @@
 version 1.0
 
+task bcftools_norm {
+    input {
+        File input_vcf
+        File ref_fasta
+        File ref_fasta_index
+        Int threads
+    }
+
+    Float file_size = ceil(size(input_vcf, "GB") + size(ref_fasta, "GB") + size(ref_fasta_index, "GB"))
+
+    command <<<
+        set -euxo pipefail
+
+        bcftools index --threads ~{threads - 1} ~{input_vcf}
+        
+        # sed below is to make sure bcftools decompose AD field properly
+        bcftools view ~{input_vcf} |\
+            sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |\
+            bcftools norm \
+            --threads ~{threads - 1} \
+            --multiallelics \
+            - \
+            --output-type b \
+            --fasta-ref ~{ref_fasta} |\
+            bcftools sort -Oz -o ~{sub(basename(input_vcf), "\\.vcf.gz$", "")}.norm.vcf.gz
+            
+        bcftools index --threads ~{threads - 1} -t ~{sub(basename(input_vcf), "\\.vcf.gz$", "")}.norm.vcf.gz
+    >>>
+
+    output {
+        File norm_vcf = sub(basename(input_vcf), "\\.vcf.gz$", "") + ".norm.vcf.gz"
+        File norm_vcf_index = sub(basename(input_vcf), "\\.vcf.gz$", "") + ".norm.vcf.gz.tbi"
+    }
+
+	runtime {
+		docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+		cpu: 4
+		memory: "16 GB"
+		disk: file_size + " GB"
+		disks: "local-disk " + file_size + " HDD"
+	}
+}
+
 task vep_annotate {
     input {
         File input_vcf
@@ -78,6 +121,31 @@ task annotsv {
     command <<<
         set -euxo pipefail
 
+        # Process VCF to move BND alt to INFO field
+        # Check if it ends in gz. Unzip it if it's the case
+        if [[ ~{sv_vcf} == *.gz ]]; then
+            gunzip -c ~{sv_vcf} > tmp.vcf
+        else
+            cp ~{sv_vcf} tmp.vcf
+        fi
+        
+        awk -F'\t' -v OFS='\t' '
+        BEGIN {
+            print "##INFO=<ID=SV_ALT,Number=1,Type=String,Description=\"Square bracketed notation for BND event\">"
+        }
+        {
+            if ($0 ~ /^#/) {
+                print $0;  # Print header lines as is
+            } else {
+                if ($8 ~ /SVTYPE=BND/) {
+                    $8 = $8 ";SV_ALT=" $5;  # Append ALT to INFO as SV_ALT
+                    $5 = "<BND>";  # Change ALT to <BND>
+                }
+                print $0;
+            }
+        }' tmp.vcf | \
+        perl -pe 's/^##INFO=<ID=SV_ALT.*$/##INFO=<ID=SV_ALT,Number=1,Type=String,Description="Square bracketed notation for BND event">/' > tmp_processed.vcf
+
         mkdir -p annotsv_cache_dir
         # If annotsv_cache is not provided, fail
         if [ ! -f ~{annotsv_cache} ]; then
@@ -91,7 +159,7 @@ task annotsv {
 
         AnnotSV \
             -annotationsDir annotsv_cache_dir/AnnotSV/ \
-            -SVinputFile ~{sv_vcf} \
+            -SVinputFile tmp_processed.vcf \
             -outputDir . \
             -outputFile ~{sub(basename(sv_vcf), "\\.vcf.gz$", "")}.annotsv.tsv \
             -SVinputInfo 1 \

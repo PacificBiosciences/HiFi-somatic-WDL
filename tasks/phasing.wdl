@@ -98,7 +98,7 @@ task hiphase_with_somatic {
     }
 
     runtime {
-        docker: "quay.io/pacbio/hiphase@sha256:c46c8493be8b308c0433441cbafcc1b6ac999dfa6e85001d466ebd551c4a8cf0"
+        docker: "quay.io/pacbio/hiphase@sha256:47fe7d42aea6b1b2e6d3c7401bc35a184464c3f647473d0525c00f3c968b40ad"
         cpu: threads
         memory: "~{threads * 6} GB"
         disk: file_size + "GB"

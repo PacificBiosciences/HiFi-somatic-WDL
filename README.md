@@ -96,6 +96,11 @@ Following are the references for the tools used in the workflow, which should be
 13. Lin, J.-H., Chen, L.-C., Yu, S.-C. & Huang, Y.-T. LongPhase: an ultra-fast chromosome-scale phasing algorithm for small and large variants. Bioinformatics 38, 1816–1822 (2022).
 14. HMFtools suite (Amber, Cobalt and Purple): <https://github.com/hartwigmedical/hmftools/tree/master>.
 15. Park, J. et al. DeepSomatic: Accurate somatic small variant discovery for multiple sequencing technologies. 2024.08.16.608331 Preprint at https://doi.org/10.1101/2024.08.16.608331 (2024).
+16. Elrick, H. et al. SAVANA: reliable analysis of somatic structural variants and copy number aberrations in clinical samples using long-read sequencing. 2024.07.25.604944 Preprint at https://doi.org/10.1101/2024.07.25.604944 (2024).
+17. Nguyen, L., W. M. Martens, J., Van Hoeck, A. & Cuppen, E. Pan-cancer landscape of homologous recombination deficiency. Nat Commun 11, 5584 (2020).
+18. Keskus, A. et al. Severus: accurate detection and characterization of somatic structural variation in tumor genomes using long reads. 2024.03.22.24304756 Preprint at https://doi.org/10.1101/2024.03.22.24304756 (2024).
+
+
 
 </details>
 
@@ -104,35 +109,36 @@ Following are the references for the tools used in the workflow, which should be
 <details>
   <summary>Tools used in the workflow</summary>
 
-| Tool         | Version   | Purpose                                              |
-| ------------ | --------- | ---------------------------------------------------- |
-| pbmm2        | 1.14.99    | Alignment of HiFi reads                              |
-| pbtk         | 3.1.0     | Merging HiFi reads                                   |
-| samtools     | 1.17      | Various tasks manipulating BAM files                 |
-| VEP          | 110.1     | Annotation of small variants                         |
-| AnnotSV      | 3.4.12    | Annotation of structural variants                    |
-| DSS          | 2.48.0    | Differential methylation                             |
-| annotatr     | 1.26.0    | Annotation of differentially methylated region (DMR) |
-| ClairS       | 0.1.6     | Somatic SNV and INDEL caller                                |
-| bcftools     | 1.17      | Manipulation of VCF                                  |
-| CNVKit       | 0.9.10    | Copy number segmentation                             |
-| Truvari      | 4.0.0     | Filtering of control structural variants (Deprecated, using svpack instead)             |
-| bedtools     | 2.31.0    | Splitting genome intervals for parallelization       |
-| mosdepth     | 0.3.4     | Calculating depth of coverage                        |
-| pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          |
-| HiPhase      | 1.1.0    | Diploid phasing using germline variants              |
-| slivar       | 0.3.0     | Selecting/filtering variants from VCF                |
-| Severus      | 1.1 | Structural variants                             |
-| seqkit       | 2.5.1     | Aligned BAM statistics                               |
-| csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation |
-| IntOGen        | May 31 2023    | Compendium of Cancer Genes for annotation |
-| MutationalPattern        | 3.10.0   | Mutational signatures based on SNV |
-| Longphase        | v1.5.2   | Optional phasing tool |
-| Amber        | v4.0   | BAF segmentation (HMFtools suite) |
-| Cobalt        | v1.16.0   | Log ratio segmentation (HMFtools suite) |
-| Purple        | v4.0   | Purity and ploidy estimate, somatic CNV (HMFtools suite) |
-| DeepSomatic        | v1.7.0   | Somatic SNV/INDELs caller |
-| CHORD | v2.0.0 | HRD prediction |
+| Tool         | Version   | Purpose                                              | Container |
+| ------------ | --------- | ---------------------------------------------------- | --------- |
+| pbmm2        | 1.14.99    | Alignment of HiFi reads                              | [quay.io](https://quay.io/repository/biocontainers/pbmm2) |
+| pbtk         | 3.1.0     | Merging HiFi reads                                   | [quay.io](https://quay.io/repository/biocontainers/pbtk) |
+| samtools     | 1.17      | Various tasks manipulating BAM files                 | [quay.io](https://quay.io/repository/biocontainers/samtools) |
+| VEP          | 110.1     | Annotation of small variants                         | [docker](ensemblorg/ensembl-vep) |
+| AnnotSV     | 3.4.12    | Annotation of structural variants                    | [quay.io](https://quay.io/repository/biocontainers/annotsv) |
+| DSS          | 2.48.0    | Differential methylation                             | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
+| annotatr     | 1.26.0    | Annotation of differentially methylated region (DMR) | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
+| ClairS       | 0.3.0     | Somatic SNV and INDEL caller                         | [docker](https://hub.docker.com/r/hkubal/clairs/tags) |
+| bcftools     | 1.17      | Manipulation of VCF                                  | [quay.io](https://quay.io/repository/biocontainers/bcftools) |
+| CNVKit       | 0.9.10    | Copy number segmentation                             | [quay.io](https://quay.io/repository/biocontainers/cnvkit) |
+| Truvari      | 4.0.0     | Filtering of control structural variants (Deprecated, using svpack instead) | [quay.io](https://quay.io/repository/biocontainers/truvari) |
+| bedtools     | 2.31.0    | Splitting genome intervals for parallelization       | [quay.io](https://quay.io/repository/biocontainers/bedtools) |
+| mosdepth     | 0.3.4     | Calculating depth of coverage                        | [quay.io](https://quay.io/repository/biocontainers/mosdepth) |
+| pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          | [quay.io](https://quay.io/pacbio/pb-cpg-tools) |
+| HiPhase      | 1.4.5     | Diploid phasing using germline variants              | [quay.io](https://quay.io/repository/biocontainers/hiphase) |
+| slivar       | 0.3.0     | Selecting/filtering variants from VCF                | [quay.io](https://quay.io/repository/biocontainers/slivar) |
+| Severus      | 1.2       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
+| seqkit       | 2.5.1     | Aligned BAM statistics                               | [quay.io](https://quay.io/repository/biocontainers/seqkit) |
+| csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation | [quay.io](https://quay.io/repository/biocontainers/csvtk) |
+| IntOGen      | May 31 2023 | Compendium of Cancer Genes for annotation          | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
+| MutationalPattern | 3.10.0 | Mutational signatures based on SNV                 | [quay.io](https://quay.io/pacbio/somatic_r_tools) |
+| Longphase    | v1.5.2    | Optional phasing tool                                | [quay.io](https://quay.io/repository/biocontainers/longphase) |
+| Amber        | v4.0      | BAF segmentation (HMFtools suite)                    | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
+| Cobalt       | v1.16.0   | Log ratio segmentation (HMFtools suite)              | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
+| Purple       | v4.0      | Purity and ploidy estimate, somatic CNV (HMFtools suite) | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
+| DeepSomatic  | v1.7.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
+| CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
+| SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
 </details>
 
 ## Change logs
@@ -140,6 +146,17 @@ Following are the references for the tools used in the workflow, which should be
 <details>
   <summary>Click to expand changelogs:</summary>
 
+- v0.8.1:
+  - Move BND square bracket annotation for VCF to INFO field to avoid
+    AnnotSV from harmonizing the BND format (Does not work well with long-reads SVs).
+  - Fixed a bug preventing `skip_align` from working properly.
+  - Added option to produce [SAVANA](https://github.com/cortes-ciriano-lab/savana) output. This is experimental and can be enabled with `hifisomatic.run_savana` in the input JSON.
+    - Note that currrently the output for SAVANA is not annotated or used for any further downstream processing.
+  - Updated Severus to 1.2.0.
+  - `bcftools norm` on small variants before annotation.
+  - Updated HiPhase to 1.4.5.
+  - Updated reference list.
+  
 - v0.8:
   - Updated DeepSomatic to v1.7.0. This resulted in a significant improve in INDEL recall. See benchmark from DeepSomatic preprint for more comparisons.
   - Updated AnnotSV to 3.4.2. Please update AnnotSV cache by following the instructions in the step-by-step tutorial [here](docs/step-by-step.md).

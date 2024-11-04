@@ -350,3 +350,5 @@ You may be using ClairS for SNV/INDEL calling. ClairS was optimized with higher 
 - Annotating germline variants can be slow, so by default it is switched off. You can switch on germline variants annotation using `"hifisomatic.annotate_germline" = true`. Note that only germline variants in the normal sample will be annotated.
 
 - `hifisomatic.uselongphase` will use longphase to phase SNV/INDELs and haplotag BAM files with longphase instead of the default hiphase. This is often unnecessary.
+
+- (Experimental) `hifisomatic.run_savana` will run the SAVANA SV caller in addition to the other SV callers. This is experimental and may not be as well-optimized as the other SV callers.
