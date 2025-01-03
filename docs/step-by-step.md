@@ -94,9 +94,9 @@ Or you can download a small demo dataset here that contains the region with trut
 
 ```bash
 # Download tumor demo
-curl -LO 'https://zenodo.org/record/13347368/files/COLO829.30X.SV_region.bam'
+curl -LO 'https://zenodo.org/record/10404249/files/COLO829.30X.SV_region.bam'
 # Download matched normal demo
-curl -LO 'https://zenodo.org/record/13347368/files/COLO829BL.30X.SV_region.bam'
+curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
 ```
 
 ## Modify the input JSON file to point to the downloaded files
