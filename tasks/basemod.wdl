@@ -14,8 +14,8 @@ task DSS_DMR {
         set -euxo pipefail
 
         # Extract methylation info from bed files for DSS
-        cut -f1,2,6,7 ~{tumor_bed} > ~{basename(tumor_bed) + ".tmp"}
-        cut -f1,2,6,7 ~{normal_bed} > ~{basename(normal_bed) + ".tmp"}
+        gunzip -c ~{tumor_bed} | cut -f1,2,6,7 > ~{basename(tumor_bed) + ".tmp"}
+        gunzip -c ~{normal_bed} | cut -f1,2,6,7 > ~{basename(normal_bed) + ".tmp"}
 
         # Run DSS
         Rscript --vanilla /app/DSS_tumor_normal.R \
@@ -32,7 +32,7 @@ task DSS_DMR {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:9ad9fa1a06a22878fa74cb0f2782b15659b1ec4a485bc20eb09e66b5aa9f896a"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -65,7 +65,7 @@ task annotate_DMR {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:9ad9fa1a06a22878fa74cb0f2782b15659b1ec4a485bc20eb09e66b5aa9f896a"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"

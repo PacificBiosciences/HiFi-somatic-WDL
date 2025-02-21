@@ -130,8 +130,9 @@ task annotsv {
         fi
         
         awk -F'\t' -v OFS='\t' '
-        BEGIN {
-            print "##INFO=<ID=SV_ALT,Number=1,Type=String,Description=\"Square bracketed notation for BND event\">"
+        { if (NR==2) {
+                print "##INFO=<ID=SV_ALT,Number=1,Type=String,Description=\"Square bracketed notation for BND event\">"
+            }
         }
         {
             if ($0 ~ /^#/) {
@@ -143,8 +144,7 @@ task annotsv {
                 }
                 print $0;
             }
-        }' tmp.vcf | \
-        perl -pe 's/^##INFO=<ID=SV_ALT.*$/##INFO=<ID=SV_ALT,Number=1,Type=String,Description="Square bracketed notation for BND event">/' > tmp_processed.vcf
+        }' tmp.vcf > tmp_processed.vcf
 
         mkdir -p annotsv_cache_dir
         # If annotsv_cache is not provided, fail

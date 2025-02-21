@@ -4,8 +4,8 @@ workflow align_all_bams {
 
     input {
         String patient
-        Array[File] patient_tumor_bam_files
-        Array[File] patient_normal_bam_files
+        String suffix = "tumor"
+        Array[File] bam_files
         File ref_fasta
         File ref_fasta_index
         Int pbmm2_threads = 64
@@ -16,13 +16,12 @@ workflow align_all_bams {
         String additional_pbmm2_args = "-A 2"
     }
 
-     if(!skip_align){
-      scatter (tumor_bam in patient_tumor_bam_files) {
-
-        call Align as TumorAlign {
+     if(!skip_align && length(bam_files) > 1){
+      scatter (bam in bam_files) {
+        call Align as align_multiple_bams {
           input:
-            sample_name = patient + ".tumor",
-            bam_file = tumor_bam,
+            sample_name = patient + "." + suffix,
+            bam_file = bam,
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
             additional_args = additional_pbmm2_args,
@@ -31,91 +30,50 @@ workflow align_all_bams {
         }
       }
 
-      scatter (normal_bam in patient_normal_bam_files) {
-        call Align as NormalAlign {
+      call MergeBams as MergeAlignBams {
           input:
-            sample_name = patient + ".normal",
-            bam_file = normal_bam,
+            sample_name = patient + "." + suffix,
+            bam_files = align_multiple_bams.aligned_bam,
+            threads = merge_bam_threads
+        }
+     }
+
+     # If one bam, align it without merging
+     if (!skip_align && length(bam_files) == 1) {
+        call Align as align_single_bam {
+          input:
+            sample_name = patient + "." + suffix,
+            bam_file = bam_files[0],
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
             additional_args = additional_pbmm2_args,
             strip_kinetics = strip_kinetics,
             threads = pbmm2_threads
         }
-      }
-    }
-
-    # If more than one BAM, merge them
-      if (!skip_align && length(patient_tumor_bam_files) > 1) {
-        call MergeBams as MergeTumorAlignBams {
-          input:
-            sample_name = patient + ".tumor",
-            bam_files = select_first([TumorAlign.aligned_bam]),
-            threads = merge_bam_threads
-        }
-      }
-
-      if (!skip_align && length(patient_normal_bam_files) > 1) {
-        call MergeBams as MergeNormalAlignBams {
-          input:
-            sample_name = patient + ".normal",
-            bam_files = select_first([NormalAlign.aligned_bam]),
-            threads = merge_bam_threads
-        }
-      }
+     }
 
       # If skip align, merge if more than one BAM
-      if (skip_align && length(patient_tumor_bam_files) > 1) {
-        call MergeBams as MergeTumorSkipAlignBams {
+      if (skip_align && length(bam_files) > 1) {
+        call MergeBams as MergeSkipAlignBams {
           input:
-            sample_name = patient + ".tumor",
-            bam_files = patient_tumor_bam_files,
-            threads = merge_bam_threads
-        }
-      }
-
-      if (skip_align && length(patient_normal_bam_files) > 1) {
-        call MergeBams as MergeNormalSkipAlignBams {
-          input:
-            sample_name = patient + ".normal",
-            bam_files = patient_normal_bam_files,
+            sample_name = patient + "." + suffix,
+            bam_files = bam_files,
             threads = merge_bam_threads
         }
       }
 
       # If skip align and one bam, index the bam
-      if (skip_align && length(patient_tumor_bam_files) == 1) {
+      if (skip_align && length(bam_files) == 1) {
         call IndexBam as indexTumorBam {
           input:
-            bam = patient_tumor_bam_files[0],
+            bam = bam_files[0],
             threads = samtools_threads
         }
       }
 
-      if (skip_align && length(patient_normal_bam_files) == 1) {
-        call IndexBam as indexNormalBam {
-          input:
-            bam = patient_normal_bam_files[0],
-            threads = samtools_threads
-        }
-      }
-
-      # Array[File?] all_final_tumor_bams = [indexTumorBam.out_bam, MergeTumorSkipAlignBams.merged_aligned_bam, MergeTumorAlignBams.merged_aligned_bam, TumorAlign.aligned_bam[0]]
-      # Array[File?] all_final_tumor_bam_indexes = [indexTumorBam.out_bam_index, MergeTumorSkipAlignBams.merged_aligned_bam_index, MergeTumorAlignBams.merged_aligned_bam_index, TumorAlign.aligned_bam_index[0]]
-      # Array[File?] all_final_normal_bams = [indexNormalBam.out_bam, MergeNormalSkipAlignBams.merged_aligned_bam, MergeNormalAlignBams.merged_aligned_bam, NormalAlign.aligned_bam[0]]
-      # Array[File?] all_final_normal_bam_indexes = [indexNormalBam.out_bam_index, MergeNormalSkipAlignBams.merged_aligned_bam_index, MergeNormalAlignBams.merged_aligned_bam_index, NormalAlign.aligned_bam_index[0]]
-
-      Array[File?] all_final_tumor_bams = if (skip_align) then [indexTumorBam.out_bam, MergeTumorSkipAlignBams.merged_aligned_bam] else [MergeTumorAlignBams.merged_aligned_bam, TumorAlign.aligned_bam[0]]
-      Array[File?] all_final_tumor_bam_indexes = if (skip_align) then [indexTumorBam.out_bam_index, MergeTumorSkipAlignBams.merged_aligned_bam_index] else [MergeTumorAlignBams.merged_aligned_bam_index, TumorAlign.aligned_bam_index[0]]
-      Array[File?] all_final_normal_bams = if (skip_align) then [indexNormalBam.out_bam, MergeNormalSkipAlignBams.merged_aligned_bam] else [MergeNormalAlignBams.merged_aligned_bam, NormalAlign.aligned_bam[0]]
-      Array[File?] all_final_normal_bam_indexes = if (skip_align) then [indexNormalBam.out_bam_index, MergeNormalSkipAlignBams.merged_aligned_bam_index] else [MergeNormalAlignBams.merged_aligned_bam_index, NormalAlign.aligned_bam_index[0]]
-
-    # Note that the index 0 below is in the case where there's only one BAM after alignment (no skipalign), so the bams aren't merged
     output {
-      File tumor_bam_final = select_first(all_final_tumor_bams)
-      File tumor_bam_final_index = select_first(all_final_tumor_bam_indexes)
-      File normal_bam_final = select_first(all_final_normal_bams)
-      File normal_bam_final_index = select_first(all_final_normal_bam_indexes)
+      File bam_final = if (skip_align) then select_first([indexTumorBam.out_bam, MergeSkipAlignBams.merged_aligned_bam]) else select_first([MergeAlignBams.merged_aligned_bam, align_single_bam.aligned_bam])
+      File bam_final_index = if (skip_align) then select_first([indexTumorBam.out_bam_index, MergeSkipAlignBams.merged_aligned_bam_index]) else select_first([MergeAlignBams.merged_aligned_bam_index, align_single_bam.aligned_bam_index])
     }
 }
 

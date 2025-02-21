@@ -1,0 +1,32 @@
+{
+    "hifisomatic.cohort": {
+      "patients": [
+        {
+          "patient_names": "TUMOR_NAME",
+          "tumor_bams": [
+            "/path/to/tumor.bam"
+          ]
+        }
+      ]
+    },
+    "hifisomatic.ref_fasta": "/path/to/GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.fasta",
+    "hifisomatic.ref_fasta_index": "/path/to/GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.fasta.fai",
+    "hifisomatic.ref_fasta_dict": "/path/to/GCA_000001405.15_GRCh38_no_alt_analysis_set_maskedGRC_exclusions_v2.dict",
+    "hifisomatic.ref_gff": "/path/to/Homo_sapiens.GRCh38.112.chr.reformatted.gff3",
+    "hifisomatic.ref_bed": "/path/to/chr.bed",
+    "hifisomatic.control_vcf": "/path/to/severus.jasmine.AN10.AC4.nosample.vcf.gz",
+    "hifisomatic.control_vcf_index": "/path/to/severus.jasmine.AN10.AC4.nosample.vcf.gz.tbi",
+    "hifisomatic.skip_align": false,
+    "hifisomatic.pbmm2_threads": 24,
+    "hifisomatic.merge_bam_threads": 8,
+    "hifisomatic.samtools_threads": 8,
+    "hifisomatic.chunk_size": 75000000,
+    "hifisomatic.sv_threads": 16,
+    "hifisomatic.trf_bed": "/path/to/human_GRCh38_no_alt_analysis_set.trf.bed",
+    "hifisomatic.call_small_variants": true,
+    "hifisomatic.vep_cache": "/path/to/homo_sapiens_refseq_vep_112_GRCh38.tar.gz",
+    "hifisomatic.annotsv_cache": "/path/to/annotsv.tar.gz",
+    "hifisomatic.ensembl_data_dir_tarball": "/path/to/hmf_dna_pipeline_resources.38_v5.33.tar.gz",
+    "hifisomatic.use_deepsomatic": true,
+    "hifisomatic.severus_pon_tsv": "/path/to/PoN_1000G_hg38_extended.tsv.gz"
+  }

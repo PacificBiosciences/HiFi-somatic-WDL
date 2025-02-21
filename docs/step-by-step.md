@@ -45,7 +45,7 @@ pip install miniwdl-slurm
 
 ```bash
 # Download resource bundle needed for the workflow
-curl -LO 'https://zenodo.org/record/13347368/files/hifisomatic_resources.tar.gz'
+curl -LO 'https://zenodo.org/record/14847828/files/hifisomatic_resources.tar.gz'
 # Extract the archive
 tar -xzvf hifisomatic_resources.tar.gz
 # Check that you have the following files:
@@ -57,7 +57,11 @@ tar -xzvf hifisomatic_resources.tar.gz
 ├── refFlat.hg38.txt
 ├── severus.jasmine.AN10.AC4.nosample.vcf.gz
 ├── severus.jasmine.AN10.AC4.nosample.vcf.gz
-└── ensembl.GRCh38.101.reformatted.gff3.gz
+└── Homo_sapiens.GRCh38.112.chr.reformatted.gff3
+
+# Download 1000G panel of normal from Severus GitHub (optional, please see Severus GitHub for citation)
+# this is used for tumor-only calling
+wget 'https://github.com/KolmogorovLab/Severus/raw/refs/heads/main/pon/PoN_1000G_hg38_extended.tsv.gz'
 ```
 
 ## Download the annotation and hmftools databases
@@ -90,7 +94,7 @@ Download the full COLO829 and HCC1395 dataset here:
 1. COLO829 (60X tumor, 60X normal): <https://downloads.pacbcloud.com/public/revio/2023Q2/COLO829>
 2. HCC1395 (60X tumor, 40X normal): <https://downloads.pacbcloud.com/public/revio/2023Q2/HCC1395/>
 
-Or you can download a small demo dataset here that contains the region with truth SVs from Valle-Inclan et. al. 2022. Running this dataset should produce 57/62 (90%) of the truth SVs from the paper. Note that because of the sub-sampling, a duplication in chromosome 8 is called as an inversion. For more details on accuracy please refer to [benchmarking](benchmark.md).
+Or you can download a small demo dataset here that contains the region with truth SVs from Valle-Inclan et. al. 2022.
 
 ```bash
 # Download tumor demo
@@ -101,7 +105,7 @@ curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
 
 ## Modify the input JSON file to point to the downloaded files
 
-The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](example_configs/input.example.json).
+The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](example_configs/input.example.json). For tumor-only workflow, use [input.example.TO.json](example_configs/input.example.TO.json). The main difference in the tumor-only `json` is the absence of the normal bams and the addition of `severus_pon_tsv` for PON-based filtering in Severus.
   
 ```bash
 cp example_configs/input.example.json input.json
@@ -131,9 +135,16 @@ by changing the path to the path of your Singularity installation. Finally, the 
 ## Run the workflow
 
 ```bash
-# Run the workflow
+# Run the tumor/normal workflow
 miniwdl run \
-  wdl-hifisomatic/hifisomatic.wdl \
+  hifisomatic.wdl \
+  --input input.json \
+  -d /path/to/working/directory/COLO829_demo \
+  --cfg miniwdl.cfg
+
+# Run the tumor-only workflow
+miniwdl run \
+  hifisomatic_tumor_only.wdl \
   --input input.json \
   -d /path/to/working/directory/COLO829_demo \
   --cfg miniwdl.cfg

@@ -8,6 +8,15 @@ struct Patient {
     String? sex
 }
 
+struct TumorOnlyPatient {
+    String patient_names
+    Array[File] tumor_bams
+}
+
+struct TumorOnlyCohort {
+    Array[TumorOnlyPatient] patients
+}
+
 struct Cohort {
     Array[Patient] patients
 }

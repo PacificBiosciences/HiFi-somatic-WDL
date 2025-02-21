@@ -2,7 +2,7 @@
 
 <h1 align="center">HiFi somatic WDL</h1>
 
-<p align="center">A tumor-normal variant-calling workflow for HiFi data</p>
+<p align="center">A somatic variant-calling workflow (tumor-only or matched tumor/normal) for HiFi data</p>
 
 <p align="center">See our tech note <a href="https://www.pacb.com/wp-content/uploads/Application-note-Robust-detection-of-somatic-variants-from-tumor-normal-samples-with-highly-accurate-long-read-whole-genome-sequencing.pdf">here</a> on somatic variant detection with HiFi sequencing.</p>
 
@@ -16,6 +16,11 @@
 - [Installation and Dependencies](#installation-and-dependencies)
 - [Usage](#usage)
 - [Important outputs from workflow](#important-outputs-from-workflow)
+  - [Small Variants (SNVs/INDELs)](#small-variants-snvsindels)
+  - [Structural Variants and Copy Number](#structural-variants-and-copy-number)
+  - [Methylation](#methylation)
+  - [Other Analyses](#other-analyses)
+  - [QC and Alignment Stats](#qc-and-alignment-stats)
 - [Demo datasets](#demo-datasets)
 - [References](#references)
 - [Tools versions](#tools-versions)
@@ -32,38 +37,56 @@ A step-by-step tutorial demonstrating usage and an FAQ can be found [here](docs/
 
 ## Important outputs from workflow
 
-The workflow will generate the following (non-exhaustive list) results in the `$OUTDIR/_LAST/out` folder. Please refer to [output](docs/output.md) for a more detailed description of the outputs. An example of final HTML report from COLO829 dataset can be found [here](examples/COLO829_60-30_summary_report.html?raw=1) (Right click to save the file and double click to open it in a web browser).
+The workflow will generate the following results in the `$OUTDIR/_LAST/out` folder. Please refer to [output](docs/output.md) for a more detailed description of the outputs. In the table below, "Tumor/Normal" indicates the output is specific to tumor/normal mode and will not exist in the tumor-only mode. An example of final HTML report from COLO829 dataset can be found [here](examples/COLO829_60-30_summary_report.html?raw=1) (Right click to save the file and double click to open it in a web browser).
 
-| Folder                            | Types of results                                                                  |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| AnnotatedSeverusSV                | Severus structural variants annotated with AnnotSV (TSV, see [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf))                          |
-| Annotated*SV_intogen               | Structural variants annotated with AnnotSV (TSV) overlapping with the Compendium of Cancer Genes (IntOGen May 23)  |
-| small_variant_vcf_annotated       | DeepSomatic or ClairS SNV/INDEL annotated with VEP (VCF, single entry per variant with `--pick`, see [VEP documentation](https://asia.ensembl.org/info/docs/tools/vep/script/vep_options.html))                                         |
-| small_variant_tsv_annotated       | VEP annotation for SNV/INDEL in TSV format                                         |
-| small_variant_tsv_CCG       | SNV/INDEL that are in the Compendium of Cancer Genes (IntOGen May 23)                                        |
-| mutsig_SNV_profile       | Mutational profile plot (MutationalPattern)                                        |
-| mutsig_SNV       | Mutational signature in TSV format (MutationalPattern)                                        |
-| normal_germline_small_variant_vcf_annotated       | ClairS/Clair3 germline SNV/INDEL (In normal sample) annotated with VEP (Optional, see [input JSON parameters](docs/step-by-step.md#input-json-parameters))                                         |
-| DMR_annotated                     | Differentially methylated region annotated with genes/introns/promoters etc (TSV) |
-| DMR_results                       | Raw differentially methylated region from DSS (Unannotated, TSV)                               |
-| DMR_annotated_CCG                       | Annotated DMR (>50 CpG sites) overlapping with the Compendium of Cancer Genes (IntOGen May 23)                               |
-| mosdepth_normal_summary           | Depth of coverage of normal (TXT)                                                 |
-| mosdepth_tumor_summary            | Depth of coverage of tumor (TXT)                                                  |
-| normal_bams_phased                | Phased normal BAM file (Hiphase)                                                           |
-| tumor_bams_hiphase                 | Phased tumor BAM file (Hiphase)                                                            |
-| tumor_bams_longphase                 | Phased tumor BAM file (Optionally, use Longphase for phasing. See [input JSON parameters](docs/step-by-step.md#input-json-parameters))                                                            |
-| overall_(tumor\|normal)_alignment_stats      | Alignment overall statistics (Mapped %)                                                    |
-| per_alignment_(tumor\|normal)_stats| Statistics (accuracy/n_mismatches/length) for each alignment                     |
-| aligned_RL_summary_(tumor\|normal)| Aligned read length N50, mean and median                     |
-| normal_germline_small_variant_vcf | Germline variants in normal (VCF)                                                 |
-| tumor_germline_small_variant_vcf  | Germline variants in tumor (VCF)                                                  |
-| pileup_(normal\/tumor)_bed                 | Summarized 5mC probability  in normal and tumor (BED, see [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools) for format description)                                        |
-| cnvkit_cns_with_major_minor_CN                     | Copy number segments adjusted with purity and ploidy estimate, see cnvkit_output for raw CNVKit result (BED)                                                        |
-| Severus_filtered_vcf            | Severus structural variants (filtered with control VCF and has simple annotation based on `svpack`)                                     |
-| small_variant_vcf                 | DeepSomatic or ClairS SNV/INDEL (Unannotated VCF)                                                |
-| Purple_outputs | Purity and ploidy estimate + allele-specific copy number calls from HMFtools suite |
-| chord_hrd_prediction | Homologous recombination deficiency (HRD) prediction using CHORD |
-| report | HTML report summarizing the results. This can be open in any modern web browser. The report is only generated if all steps in the pipeline is carried out (e.g. small variants calling, SV annotation) |
+### Small Variants (SNVs/INDELs)
+| Folder | Description | Mode |
+|--------|-------------|------|
+| small_variant_vcf | DeepSomatic or ClairS SNV/INDEL (Unannotated VCF) | Both |
+| small_variant_vcf_annotated | VEP-annotated SNV/INDEL (VCF format) | Both |
+| small_variant_tsv_annotated | VEP annotation in TSV format | Both |
+| small_variant_tsv_CCG | Variants in Cancer Genes (IntOGen Sep 24) | Both |
+| normal_germline_small_variant_vcf | Germline variants in normal sample | Tumor/Normal |
+| tumor_germline_small_variant_vcf | Germline variants in tumor sample | Both |
+| normal_germline_small_variant_vcf_annotated | VEP-annotated germline variants | Tumor/Normal |
+
+### Structural Variants and Copy Number
+| Folder | Description | Mode |
+|--------|-------------|------|
+| AnnotatedSeverusSV | Annotated structural variants (AnnotSV TSV) | Both |
+| Annotated*SV_intogen | SVs overlapping Cancer Genes | Both |
+| Severus_filtered_vcf | Filtered Severus structural variants | Both |
+| Severus_breakpoint_cluster(_all) | Breakpoint clusters (somatic/all) | Both |
+| Severus_cluster_plots | Clusters visualization (HTML) | Both |
+| cnvkit_cns_with_major_minor_CN | Copy number segments with purity/ploidy | Tumor/Normal |
+| Purple_outputs | Purity, ploidy and allele-specific CNVs | Tumor/Normal |
+| wakhan_cnv | Alternative CNV calls | Both |
+
+### Methylation
+| Folder | Description | Mode |
+|--------|-------------|------|
+| DMR_results | Raw differentially methylated regions | Tumor/Normal |
+| DMR_annotated | Annotated methylated regions | Tumor/Normal |
+| DMR_annotated_CCG | DMRs in Cancer Genes | Tumor/Normal |
+| pileup_(normal/tumor)_bed | 5mC probability summaries | Tumor/Normal |
+
+### Other Analyses
+| Folder | Description | Mode |
+|--------|-------------|------|
+| mutsig_SNV_profile | Mutational profile plots | Both |
+| mutsig_SNV | Mutational signatures (TSV) | Both |
+| chord_hrd_prediction | HRD prediction results | Tumor/Normal |
+| report | Summary HTML report | Both |
+
+### QC and Alignment Stats
+| Folder | Description | Mode |
+|--------|-------------|------|
+| mosdepth_*_summary | Coverage depth statistics | Both |
+| overall_*_alignment_stats | Mapping statistics | Both |
+| per_alignment_*_stats | Per-read alignment metrics | Both |
+| aligned_RL_summary_* | Read length statistics | Both |
+| normal_bams_phased | Phased normal BAM (Hiphase) | Tumor/Normal |
+| tumor_bams_hiphase | Phased tumor BAM (Hiphase) | Both |
 
 ## Demo datasets 
 
@@ -118,7 +141,7 @@ Following are the references for the tools used in the workflow, which should be
 | AnnotSV     | 3.4.12    | Annotation of structural variants                    | [quay.io](https://quay.io/repository/biocontainers/annotsv) |
 | DSS          | 2.48.0    | Differential methylation                             | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
 | annotatr     | 1.26.0    | Annotation of differentially methylated region (DMR) | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
-| ClairS       | 0.3.0     | Somatic SNV and INDEL caller                         | [docker](https://hub.docker.com/r/hkubal/clairs/tags) |
+| ClairS       | 0.4.1     | Somatic SNV and INDEL caller                         | [docker](https://hub.docker.com/r/hkubal/clairs/tags) |
 | bcftools     | 1.17      | Manipulation of VCF                                  | [quay.io](https://quay.io/repository/biocontainers/bcftools) |
 | CNVKit       | 0.9.10    | Copy number segmentation                             | [quay.io](https://quay.io/repository/biocontainers/cnvkit) |
 | Truvari      | 4.0.0     | Filtering of control structural variants (Deprecated, using svpack instead) | [quay.io](https://quay.io/repository/biocontainers/truvari) |
@@ -127,18 +150,19 @@ Following are the references for the tools used in the workflow, which should be
 | pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          | [quay.io](https://quay.io/pacbio/pb-cpg-tools) |
 | HiPhase      | 1.4.5     | Diploid phasing using germline variants              | [quay.io](https://quay.io/repository/biocontainers/hiphase) |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                | [quay.io](https://quay.io/repository/biocontainers/slivar) |
-| Severus      | 1.2       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
+| Severus      | 1.3       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               | [quay.io](https://quay.io/repository/biocontainers/seqkit) |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation | [quay.io](https://quay.io/repository/biocontainers/csvtk) |
-| IntOGen      | May 31 2023 | Compendium of Cancer Genes for annotation          | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
+| IntOGen      | Sep 30 2024 | Compendium of Cancer Genes for annotation          | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
+| Mitelman database | Jan 15 2025 | Database of chromosomal aberrations in cancer (`MCGENE.TXT` file used)      | [self-hosted on quay.io](https://quay.io/pacbio/somatic_general_tools) |
 | MutationalPattern | 3.10.0 | Mutational signatures based on SNV                 | [quay.io](https://quay.io/pacbio/somatic_r_tools) |
-| Longphase    | v1.5.2    | Optional phasing tool                                | [quay.io](https://quay.io/repository/biocontainers/longphase) |
 | Amber        | v4.0      | BAF segmentation (HMFtools suite)                    | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
 | Cobalt       | v1.16.0   | Log ratio segmentation (HMFtools suite)              | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
 | Purple       | v4.0      | Purity and ploidy estimate, somatic CNV (HMFtools suite) | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
 | DeepSomatic  | v1.7.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
 | CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
 | SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
+| Wakhan | v0.1.0 | Copy number variants caller | [docker](https://hub.docker.com/mkolmogo/wakhan) |
 </details>
 
 ## Change logs
@@ -146,6 +170,22 @@ Following are the references for the tools used in the workflow, which should be
 <details>
   <summary>Click to expand changelogs:</summary>
 
+- v0.9:
+  - Tumor-only workflow is now supported. See [here](docs/step-by-step.md) for instructions.
+  - Updated Severus to 1.3.
+  - BND pairs can sometimes be missing due to svpack filtering just one of the pairs. The missing pair is now added back to the VCF.
+  - Diploid phasing should now work on the DeepSomatic's VCF.
+  - Added back MODERATE impact SNV/INDELs to the report.
+  - Updated Compendium of Cancer Gene to 2024-9-30.
+  - Added circos plot for structural variants BND events.
+  - Removed Longphase as an optional phasing tool (HiPhase no longer fails due to OOM errors).
+  - Added Wakhan output for CNV calling in both tumor-only and tumor/normal workflow. This is experimental and you can find the output
+    in the `wakhan_cnv` folder.
+  - Updated ClairS to 0.4.1 (Uses `hifi_revio_ssrs` model by default).
+
+- v0.8.2:
+  - Fixed a small bug in the report that causes the report to fail to render when there's zero variants.
+  
 - v0.8.1:
   - Move BND square bracket annotation for VCF to INFO field to avoid
     AnnotSV from harmonizing the BND format (Does not work well with long-reads SVs).

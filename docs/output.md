@@ -4,6 +4,7 @@
   - [QC results](#qc-results)
   - [Structural variants](#structural-variants)
   - [SNV/INDEL (Somatic and germline)](#snvindel-somatic-and-germline)
+  - [Phasing](#phasing)
   - [Homologous-recombination deficiency prediction](#homologous-recombination-deficiency-prediction)
   - [Differentially methylated region](#differentially-methylated-region)
   - [Somatic SNV/INDEL annotation](#somatic-snvindel-annotation)
@@ -24,9 +25,13 @@ Depth of coverage for both tumor and normal can be found in the `mosdepth_normal
 The pipeline incorporates the structural variants caller [Severus](https://github.com/KolmogorovLab/Severus) with default parameters. The results from Severus are also
 filtered with a set of germline structural variants VCF (from the Human Pangenome Reference Consortium) to remove false positives. The filtering was performed using `svpack`. `svpack` also provides simple annotation based on Ensembl GFF (v101), and the filtered VCF can be found in the folder `Severus_filtered_vcf`.
 
+Severus also provides visualization of complex SV clusters. The HTML outputs of all clusters are compressed into a single zip at `Severus_cluster_plots`.
+
 `AnnotSV` is used to further annotate the structural variants into a TSV file, (`AnnotatedSeverusSV`). The TSV file format is described in [AnnotSV README](https://github.com/lgmgeo/AnnotSV/blob/master/README.AnnotSV_latest.pdf). This provides more detailed annotation than `svpack`.
 
 Lastly, to help with prioritizing variants relevant to cancer, the workflow also annotates the SVs with IntOGen Compendium of Cancer Genes (CCG) and produces a final set of structural variants in the `Annotated*SV_intogen` folder.
+
+In the `SV_circos` folder, we generate a circos plot of all BND events that are at least 100 kbp apart. The circos plot is useful for visualizing large-scale rearrangements in the genome. Red color denotes fusion pairs that have been recorded in the Mitelman fusion database, whereas black color denotes fusions involving known genes in the GFF supplied to `svpack`. Grey color denotes fusions that are not in the Mitelman database or the GFF file.
 
 ## SNV/INDEL (Somatic and germline)
 
@@ -38,6 +43,10 @@ DeepSomatic is currently computationally expensive (14-18 hours for 60X/30X tumo
 For both ClairS and DeepSomatic, The workflow can split the human genome into chunks (default 75 Mbp per chunk) and calls SNV/INDELs in parallel, then gathers the output into a single VCF. This allows the caller to scale to large genomes and large datasets by making use of multiple HPC nodes. Germline variants are called with Clair3 regardless of the somatic variant caller used.
 
 For annotation, we use Ensembl VEP to annotate the VCF file (`small_variant_tsv_annotated` and `small_variant_vcf_annotated` folder). As with SV, the workflow also annotates the SNV/INDELs with IntOGen Compendium of Cancer Genes (CCG) and produce a final set of SNV/INDELs in the `small_variant_tsv_CCG` folder.
+
+## Phasing
+
+The workflow uses hiphase to phase both germline and somatic variants. As hiphase is a diploid phasing tool, somatic variants will be forced into parental haplotypes instead of the poly-clonal nature of the tumor. This is still useful for understanding the haplotype structure of the tumor. In the final VCF, `PS` tag represents the phase blocks. I.e. if two variants have the same `PS` tag, they belong to the same haplotype (within the phase block). In addition, we manually modified all the genotypes for called somatic variants to `0/1` (DeepSomatic by default assigns `1/1` to all somatic variants). This is done to allow HiPhase to phase the somatic variants.
 
 ## Homologous-recombination deficiency prediction
 
@@ -99,13 +108,15 @@ There are two folders in the output:
 
 ## Purity and ploidy estimation
 
-The workflow currently implements the HMFtools suite to estimate purity and ploidy based on Amber, Cobalt and Purple. 
+The workflow currently implements the HMFtools suite to estimate purity and ploidy based on Amber, Cobalt and Purple for tumor/normal workflow. 
 For Cobalt, due to noises in long-reads based read-depth and B-allele frequency, we set PCF gamma to 1000 to allow for 
 better segmentation. See [GitHub issue](https://github.com/hartwigmedical/hmftools/issues/485) for discussion. Practically, this means
 that the CNV calls may miss smaller focal events, but those should be picked up by the SV caller.
 
 The purity and ploidy estimates were found to be reasonably robust in our experience with HCC1395 and COLO829, 
 but should be used with caution. Purity and ploidy estimates can be found in the `*.purity.tsv` file in `Purple_outputs` folder.
+
+Purity and ploidy are also estimated by Wakhan, see section below on copy number variation.
 
 ## Copy number variation
 
@@ -115,6 +126,8 @@ to estimate allele-specific major and minor copy numbers in the `cnvkit_cns_with
 
 A downside of CNVKit is that the recall mode requires integer ploidy, which can fail in cases where there are subclonal CNV.
 Purple also calls allele-specific copy numbers and is able to account for non-integer ploidy (subclonal CNV). The CNV segments from Purple can be found in the `Purple_outputs` folder and has the suffix `tumor.purple.cnv.somatic.tsv`. We visualize the results from Purple in the final report.
+
+Lastly, we also include [Wakhan](https://github.com/KolmogorovLab/Wakhan) as an alternative CNV caller for both tumor/normal and tumor-only workflow. Wakhan calls haplotype-specific CNV and also estimates the purity and ploidy of the sample. The results can be found in the `wakhan_cnv` folder. We only choose the best purity and ploidy solutions in the final results folder, but the full results including alternative solutions picked by Wakhan can be found by extracting the `tar.gz` file. As of version 0.9, Wakhan is still in active development so we report `Purple` results by default for tumor/normal workflow. For tumor-only workflow, `Wakhan` is used in the final report as Purple has not been tested for tumor-only workflow.
 
 ## Report html
 
