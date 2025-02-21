@@ -62,7 +62,7 @@ task prioritize_dmr_intogen {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:6d8c96585ef32007d7fd375984cb6c85dade282e018982254521ee0c685a0166"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -104,7 +104,7 @@ task prioritize_sv_intogen {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:6d8c96585ef32007d7fd375984cb6c85dade282e018982254521ee0c685a0166"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -147,7 +147,7 @@ task prioritize_small_variants {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:6d8c96585ef32007d7fd375984cb6c85dade282e018982254521ee0c685a0166"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -162,19 +162,21 @@ task report_sample {
         File intogen_small_var_tsv
         File sv_intogen_tsv
         File sv_vcf
-        File purple_cnv 
-        File purple_pur_ploidy
+        File cnv 
+        File purity_ploidy
         File mosdepth_tumor
         File mosdepth_normal
         File mutsig_tsv
         File mut_reconstructed_sigs
         File dmr_intogen_tsv
         File chord_file
+        File circos_png
         String pname
         File? vis_file
+        String cnv_tool
     }
 
-    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(purple_cnv, "GB") + size(purple_pur_ploidy, "GB") + size(mosdepth_tumor, "GB") + size(mosdepth_normal, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + size(dmr_intogen_tsv, "GB") + 10)
+    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(cnv, "GB") + size(purity_ploidy, "GB") + size(mosdepth_tumor, "GB") + size(mosdepth_normal, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + size(dmr_intogen_tsv, "GB") + 10)
 
     command <<<
     set -euxo pipefail
@@ -182,6 +184,8 @@ task report_sample {
     cp /app/visualize_hifisomatic.qmd visualize_hifisomatic.qmd
     # If vis_file is provided, copy it to the current directory
     ~{if defined(vis_file) then "cp '" + vis_file + "' visualize_hifisomatic.qmd || true" else ""}
+
+    cp ~{circos_png} circos.png
     
     Rscript -e \
     'quarto::quarto_render(
@@ -192,14 +196,77 @@ task report_sample {
             intogen_smallvar = "~{intogen_small_var_tsv}",
             sv_file = "~{sv_intogen_tsv}",
             sv_vcf_file = "~{sv_vcf}",
-            cnv_file = "~{purple_cnv}",
-            purity_ploidy_file = "~{purple_pur_ploidy}",
+            cnv_file = "~{cnv}",
+            purity_ploidy_file = "~{purity_ploidy}",
             mosdepth_tumor_file = "~{mosdepth_tumor}",
             mosdepth_normal_file = "~{mosdepth_normal}",
             mut_sig_file = "~{mutsig_tsv}",
             mut_context_file = "~{mut_reconstructed_sigs}",
             dmr_promoter_file = "~{dmr_intogen_tsv}",
             chord_file = "~{chord_file}",
+            sample_name = "~{pname}",
+            cnv_tool = "~{cnv_tool}"
+        )
+    )'
+
+    mv visualize_hifisomatic.html ~{pname}_summary_report.html
+    >>>
+
+    output {
+        File summary_report = pname + "_summary_report.html"
+    }
+
+    runtime {
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
+        cpu: 8
+        memory: "32 GB"
+        disk: file_size + " GB"
+        maxRetries: 2
+        preemptible: 1
+    } 
+}
+
+task report_sample_TO {
+    input {
+        File annotated_small_variant_tsv
+        File intogen_small_var_tsv
+        File sv_intogen_tsv
+        File sv_vcf
+        File mosdepth_tumor
+        File purity_ploidy
+        File cnv
+        File mutsig_tsv
+        File mut_reconstructed_sigs
+        File circos_png
+        String pname
+        File? vis_file
+    }
+
+    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(mosdepth_tumor, "GB") + size(cnv, "GB") + size(purity_ploidy, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + 10)
+
+    command <<<
+    set -euxo pipefail
+
+    cp /app/visualize_hifisomatic_tumor_only.qmd visualize_hifisomatic.qmd
+    # If vis_file is provided, copy it to the current directory
+    ~{if defined(vis_file) then "cp '" + vis_file + "' visualize_hifisomatic.qmd || true" else ""}
+
+    cp ~{circos_png} circos.png
+    
+    Rscript -e \
+    'quarto::quarto_render(
+        "visualize_hifisomatic.qmd",
+        output_format = "dashboard",
+        execute_params = list(
+            vcf_file = "~{annotated_small_variant_tsv}",
+            intogen_smallvar = "~{intogen_small_var_tsv}",
+            sv_file = "~{sv_intogen_tsv}",
+            sv_vcf_file = "~{sv_vcf}",
+            cnv_file = "~{cnv}",
+            purity_ploidy_file = "~{purity_ploidy}",
+             mosdepth_tumor_file = "~{mosdepth_tumor}",
+            mut_sig_file = "~{mutsig_tsv}",
+            mut_context_file = "~{mut_reconstructed_sigs}",
             sample_name = "~{pname}"
         )
     )'
@@ -212,9 +279,9 @@ task report_sample {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:9ad9fa1a06a22878fa74cb0f2782b15659b1ec4a485bc20eb09e66b5aa9f896a"
-        cpu: 4
-        memory: "16 GB"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
+        cpu: 8
+        memory: "32 GB"
         disk: file_size + " GB"
         maxRetries: 2
         preemptible: 1

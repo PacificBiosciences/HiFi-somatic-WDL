@@ -1,0 +1,907 @@
+---
+title: "Somatic variants report"
+format:
+    dashboard:
+        scrolling: false
+        embed-resources: true
+theme: cosmo
+params:
+    vcf_file: ""
+    intogen_smallvar: ""
+    sv_file: ""
+    sv_vcf_file: ""
+    cnv_file: ""
+    purity_ploidy_file: ""
+    mosdepth_tumor_file: ""
+    mut_sig_file: ""
+    mut_context_file: ""
+    sample_name: ""
+    # vcf_file: "../../test_data/report_test_file/HCC1395_60_30_deepsomatic.hiphase.vep.tsv.gz"
+    # intogen_smallvar: "../../test_data/report_test_file/HCC1395_60_30_deepsomatic.hiphase.vep_intogenCCG.tsv"
+    # sv_file: "../../test_data/report_test_file/severus_somatic.svpack.annotsv_intogenCCG.tsv"
+    # sv_vcf_file: "../../test_data/report_test_file/severus_somatic.svpack.vcf.gz"
+    # cnv_file: "../../test_data/report_test_file/HCC1395_60_30.tumor.purple.cnv.somatic.tsv"
+    # purity_ploidy_file: "../../test_data/report_test_file/HCC1395_60_30.tumor.purple.purity.tsv"
+    # mosdepth_tumor_file: "../../test_data/report_test_file/HCC1395_60_30.tumor.mosdepth.summary.txt"
+    # mosdepth_normal_file: "../../test_data/report_test_file/HCC1395_60_30.normal.mosdepth.summary.txt"
+    # mut_sig_file: "../../test_data/report_test_file/HCC1395_60_30.mut_sigs.tsv"
+    # mut_context_file: "../../test_data/report_test_file/HCC1395_60_30.reconstructed_sigs.tsv"
+    # dmr_promoter_file: "../../test_data/report_test_file/HCC1395_60_30_hg38_genes_promoters_dmrs_intogen.nCG50_summary.tsv.gz"
+    # chord_file: "../../test_data/report_test_file/HCC1395_60_30_chord_prediction.txt"
+    # sample_name: "HCC1395 60X/30X"
+    version: 0.9.0
+---
+
+
+```{=html}
+<div style="position: absolute; top: 10px; right: 10px; font-size: 0.8em;">
+Last updated: `r format(Sys.time(), '%Y-%m-%d')`
+Version: `r params$version`
+</div>
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+# Load packages
+library(dplyr)
+library(stringr)
+library(purrr)
+library(tidyr)
+library(ggplot2)
+library(cowplot)
+library(DT)
+library(qualpalr)
+library(quarto)
+library(readr)
+library(tinytable)
+# library(ape)
+# library(data.table)
+theme_set(theme_bw(base_size = 14))
+font.size = 10
+
+
+# params = list(
+#     vcf_file = "../../test_data/report_test_file/HCC1395_60_30_deepsomatic.hiphase.vep.tsv.gz",
+#     intogen_smallvar = "../../test_data/report_test_file/HCC1395_60_30_deepsomatic.hiphase.vep_intogenCCG.tsv",
+#     sv_file = "../../test_data/report_test_file/severus_somatic.svpack.annotsv_intogenCCG.tsv",
+#     sv_vcf_file = "../../test_data/report_test_file/severus_somatic.svpack.vcf.gz",
+#     cnv_file = "../../test_data/report_test_file/HCC1395_60_30_2.54_1.0_0.89_copynumbers_segments.bed",
+#     purity_ploidy_file = "../../test_data/report_test_file/purity_ploidy.tsv",
+#     mosdepth_tumor_file = "../../test_data/report_test_file/HCC1395_60_30.tumor.mosdepth.summary.txt",
+#     mut_sig_file = "../../test_data/report_test_file/HCC1395_60_30.mut_sigs.tsv",
+#     mut_context_file = "../../test_data/report_test_file/HCC1395_60_30.reconstructed_sigs.tsv",
+#     sample_name = "HCC1395 60X/30X"
+# )
+
+# Function to count SV type
+count_sv <- function(vcf) {
+    vcf <- read_tsv(vcf, comment = "#", col_names = FALSE)
+    sv_types <- vcf %>%
+        mutate(
+            sv_type = str_extract(X3, "(?i)SEVERUS_([A-Z]+)\\d+_*", group = 1),
+            sv_id = str_extract(X3, "(?i)SEVERUS_([A-Z]+\\d+)_*", group = 1)
+        )
+    # Group by sv_id
+    sv_count <- sv_types %>%
+        group_by(sv_id) %>%
+        summarise(sv_type = unique(sv_type))
+    # Count sv_type
+    sv_count <- sv_count %>%
+        count(sv_type)
+}
+
+make_unique_col <- function(x, y) {
+    # Split x and y by semicolon, then
+    # paste together and remove duplicates
+    x <- str_split(x, ";")
+    y <- str_split(y, ";")
+    x <- unlist(x)
+    y <- unlist(y)
+    z <- paste0(x, ":", y)
+    z <- unique(z)
+    # Remove anything with "False". This is for
+    # linking CGC_CANCER_GENE with cancer_type
+    z <- z[!str_detect(z, "False")]
+    z <- str_c(z, collapse = ";")
+    if (z == ":") {
+        return("")
+    }
+    return(z)
+}
+
+# Remember to change back to /app after testing!
+source(
+    "/app/references/copy_number_functions.R"
+    # "./copy_number_functions.R"
+)
+
+cytoband <-
+    load_cytoband(
+        "/app/references/cytoBand_hg38.txt.gz"
+        # "./cytoBand_hg38.txt.gz"
+    )
+```
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+# Load files
+vcf <- read_tsv(params$vcf_file)
+vcf_intogen <- read_tsv(params$intogen_smallvar) %>%
+    select(SYMBOL, CANCER_TYPE, ROLE, CGC_CANCER_GENE) %>%
+    unique()
+sv <- read_tsv(params$sv_file)
+cnv <- read_tsv(params$cnv_file, comment="#",
+    col_names = c("chromosome", "start", "end", "coverage", "CN", "hap")) %>%
+    mutate(chromosome = str_replace(chromosome, "chr", "")) %>%
+    pivot_wider(
+        names_from = hap,
+        values_from = c("CN", "coverage")
+    ) %>%
+    rename(
+        cn1 = CN_1,
+        cn2 = CN_2,
+        coverage1 = coverage_1,
+        coverage2 = coverage_2,
+    ) %>%
+    mutate(cn = cn1 + cn2)
+
+purity_ploidy <- read_tsv(params$purity_ploidy_file)
+
+mut_sig <- read_tsv(params$mut_sig_file)
+colnames(mut_sig) <- c("Signature", "Contribution")
+# Convert to proportion
+mut_sig <- mut_sig %>%
+    mutate(Contribution = Contribution / sum(Contribution)) %>%
+    arrange(desc(Contribution)) %>%
+    filter(Contribution > 0)
+mut_sig$Signature <-
+    factor(mut_sig$Signature, levels = mut_sig$Signature)
+mut_context <- read_tsv(params$mut_context_file)
+colnames(mut_context) <- c("Context", "Contribution")
+mut_context <- mut_context %>%
+    mutate(type = str_extract(Context, "^[ATCG]\\[(.*)\\][ATCG]$", group = 1)) %>%
+    arrange(type)
+mut_context$Context <-
+    factor(mut_context$Context, levels = mut_context$Context)
+
+# Split the column after the column "FORMAT" according to "FORMAT"
+# where "FORMAT" describes the format of the data in the subsequent columns
+# E.g. AD:DP means the data in the subsequent columns are allelic depth and read depth
+# separated by a colon. Each row may have different format
+col_after_format <-
+    colnames(vcf)[which(colnames(vcf) == "FORMAT") + 1]
+format <- str_split(vcf$FORMAT, ":")
+# Use map function
+split_sample <- map(vcf[[col_after_format]], \(x) str_split_1(x,
+    pattern =
+        ":"
+))
+
+assign_name <- function(x, y) {
+    names(x) <- y
+    return(x)
+}
+
+split_sample <-
+    map2(split_sample, format, \(x, y) assign_name(x, y))
+split_sample <- bind_rows(split_sample)
+
+vcf <-
+    bind_cols(vcf, split_sample) %>% select(-all_of(c(col_after_format, "FORMAT")))
+# Mutate DP and VAF to numeric
+vcf <- vcf %>%
+    separate(AD, into = c("ref_AD", "alt_AD"), sep = ",")
+
+# Check if VAF column exist. If not, calculate VAF using alt_AD and and ref_AD
+# This is for ClairS where VAF is called AF, but there are other AF columns
+# from gnomAD and other databases so it can be unpredictable
+if (!"VAF" %in% colnames(vcf)) {
+    vcf <- vcf %>%
+        mutate(VAF = as.numeric(alt_AD) / (as.numeric(alt_AD) + as.numeric(ref_AD)))
+}
+
+vcf <- vcf %>% 
+    mutate_at(
+        vars(ref_AD, alt_AD, DP, VAF, MAX_AF),
+        as.numeric
+    ) %>%
+    left_join(vcf_intogen,
+        by = c("SYMBOL")
+    ) %>%
+    mutate_at(
+        vars(Consequence, IMPACT),
+        as.factor
+    )
+
+# Replace NA with 0 for MAX_AF
+vcf$MAX_AF[is.na(vcf$MAX_AF)] <- 0
+
+# Clean up VCF INFO column by removing * after semicolon "CLUSTERID=*;*"
+sv <- sv %>%
+    # mutate(INFO = str_replace(INFO, "(.*CLUSTERID=.*?);.*", "\\1")) %>%
+    mutate_at(
+        vars(SV_type),
+        as.factor
+    )
+
+```
+
+# Summary and quality control (QC) metrics
+
+## Row {height=40%}
+
+:::{.card title="Coverage and total number of variants"}
+- Sample name: `r params$sample_name`
+- Mean tumor coverage (fold): `r read_tsv(params$mosdepth_tumor_file)  %>% filter(chrom == "total") %>% pull(mean)`
+- Total number of small variants: `r nrow(vcf)`
+    - Total number of SNV: `r nrow(vcf %>% filter(VARIANT_CLASS == "SNV"))`
+    - Total number of small deletion: `r nrow(vcf %>% filter(VARIANT_CLASS == "deletion"))`
+    - Total number of small insertion: `r nrow(vcf %>% filter(VARIANT_CLASS == "insertion"))`
+- Total number of structural variants (SV): `r nrow(read_tsv(params$sv_vcf_file, comment = "#", col_names = FALSE))`
+`r count_sv(params$sv_vcf_file) %>% rename("SV Type" = 1, "Counts" = 2) %>% pivot_wider(names_from = "SV Type", values_from = Counts) %>% tt()`
+:::
+
+::: {.card title="Tumor purity and ploidy"}
+- Note that purity and ploidy estimation can be unreliable at low coverage (<30X) and low tumor purity (<50%)
+- Estimated tumor purity and ploidy solutions from Wakhan:
+`r tt(purity_ploidy %>% select(-folder_name))`
+:::
+
+## Row2 {height=60%}
+
+### cnv_tab {.tabset}
+
+:::{.card title="Whole-genome copy number profile (Wakhan)"}
+- For visualization purpose, if the major copy number is more than 5, the plot is capped at 5.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-width: 12
+#| fig-height: 5
+cnv_plot <-
+    set_absolute_pos(cnv, cytoband_length = cytoband$cytoband_length)
+
+# If cn is more than 5, set to 5 and add a label column for plotting
+cnv_plot <- cnv_plot %>%
+    mutate(
+        cn_cut = ifelse(cn > 5, 5, cn),
+        cn1_cut = ifelse(cn1 > 5, 5, cn1),
+        cn2_cut = ifelse(cn2 > 5, 5, cn2),
+        label = ifelse(cn1_cut == 5, "Major CN >= 5", "")
+    )
+
+plot_cn <- ggplot(cnv_plot, aes(x = Start)) +
+    geom_segment(
+        aes(
+            x = Start,
+            xend = End,
+            y = cn1_cut,
+            yend = cn1_cut
+        ),
+        show.legend = FALSE,
+        linewidth = 1,
+        color = "red",
+        alpha = 0.5
+    ) +
+    geom_segment(
+        aes(
+            x = Start,
+            xend = End,
+            y = cn2_cut,
+            yend = cn2_cut
+        ),
+        show.legend = FALSE,
+        linewidth = 1,
+        color = "blue",
+        alpha = 0.5
+    ) +
+    scale_x_continuous(
+        breaks = cytoband$cytoband_arm$midpoint,
+        labels = cytoband$cytoband_arm$chromosome,
+        minor_breaks = NULL,
+        limits = c(
+            min(cytoband$cytoband_arm$Start_p),
+            max(cytoband$cytoband_arm$End_q)
+        ),
+        # No left and right padding with expand
+        expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+        breaks = c(0, 1, 2, 3, 4, 5),
+        limits = c(-0.5, 5.5),
+        expand = c(0, 0)
+    ) +
+    geom_vline(
+        xintercept = unique(
+            cytoband$cytoband_arm$Start_p,
+            cytoband$cytoband_arm$End_q
+        ),
+        linetype = 2,
+        alpha = 0.5
+    ) +
+    labs(
+        x = "",
+        y = "Copy Number",
+        title = paste0(
+            "Purity: ",
+            round(purity_ploidy$purity[1], 3),
+            " Ploidy: ",
+            round(purity_ploidy$ploidy[1], 3)
+        )
+    ) +
+    theme(axis.text.x = element_text(
+        hjust = 0.5,
+        vjust = 0.5,
+        angle = -40
+    ))
+
+plot_grid(plot_cn)
+```
+:::
+
+:::{.card title="Copy number profile table"}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Display everything except those added by the above section
+datatable(
+    cnv,
+    extensions = "Buttons",
+    options = list(
+        pageLength = 100,
+        paging = TRUE,
+        lengthMenu = c(100, 200),
+        search = list(regex = TRUE, caseInsensitive = TRUE),
+        scrollX = TRUE,
+        scrollY = "800px",
+        autoWidth = TRUE,
+        dom = "Blfrtip",
+        buttons = list(
+            c("copy", "csv", "excel", "pdf", "colvis")
+        ),
+        initComplete = htmlwidgets::JS(
+            "function(settings, json) {",
+            paste0(
+                "$(this.api().table().container()).css({'font-size': '",
+                font.size,
+                "'});"
+            ),
+            "}"
+        )
+    ),
+    filter = list(position = "top", clear = FALSE)
+)
+
+```
+:::
+
+# Small variants (SNV/INDEL) {scrolling=true}
+
+## Row1 {height=35%}
+
+:::{.card title="Small variants (SNV/INDEL) coverage and variant allele frequency (VAF) distribution"}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-width: 12
+#| fig-height: 5
+
+# Visualize VAF of variants
+plot_VAF <- ggplot(vcf, aes(x = VAF)) +
+    geom_histogram(binwidth = 0.025, alpha = 0.75) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    labs(
+        x = "Variant allele frequency of somatic SNV/INDELs",
+        y = "Count"
+    ) +
+    # Add vertical line at median VAF and label it
+    geom_vline(
+        xintercept = median(vcf$VAF),
+        linetype = "dashed",
+        color = "red"
+    ) +
+    annotate(
+        "text",
+        x = median(vcf$VAF),
+        y = 0,
+        label = paste0("Median VAF: ", round(median(vcf$VAF), 3)),
+        vjust = 1.5,
+        color = "red"
+    ) +
+    scale_x_continuous(
+        breaks = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1),
+        limits = c(0, 1)
+    )
+
+# Visualize DP of variants
+# Add a new column whereby all depth above 100 is set to 100
+# Then plot the histogram with the 100 labelled as "above 100"
+vcf <- vcf %>% mutate(DP_100 = ifelse(DP > 100, 100, DP))
+plot_DP <- ggplot(vcf, aes(x = DP_100)) +
+    geom_histogram(binwidth = 5, alpha = 0.75) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    labs(
+        x = "Read depth of somatic SNV/INDELs",
+        y = "Count"
+    ) +
+    scale_x_continuous(
+        breaks = seq(0, 100, 10),
+        limits = c(0, 110),
+        labels = c(seq(0, 90, 10), ">100")
+    ) +
+    # Label median dp
+    geom_vline(
+        xintercept = median(vcf$DP),
+        linetype = "dashed",
+        color = "red"
+    ) +
+    annotate(
+        "text",
+        x = median(vcf$DP),
+        y = 0,
+        label = paste0("Median DP: ", round(median(vcf$DP), 3)),
+        vjust = 1.5,
+        color = "red"
+    )
+
+plot_grid(plot_VAF, plot_DP, ncol = 2)
+```
+:::
+
+:::{.card title="Mutational signatures"}
+- Mutational signature is estimated using R package `MutationalPattern` based on 
+  SNVs only (INDELs are ignored).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#| fig-width: 12
+#| fig-height: 5
+
+plot_mut_sig <- ggplot(mut_sig) +
+    geom_bar(
+        aes(x = "Signature", y = Contribution, fill = Signature),
+        stat = "identity",
+        position = "stack"
+    ) +
+    # Annotate percentage
+    geom_text(
+        aes(
+            x = "Signature",
+            y = rev(Contribution),
+            label = paste0(round(rev(Contribution * 100), 1), "%")
+        ),
+        position = position_stack(vjust = 0.5),
+        size = 3
+    ) +
+    labs(
+        x = "Signature",
+        y = "Contribution"
+    ) +
+    theme(axis.text.x = element_blank()) +
+    scale_fill_manual(values = rownames(qualpal(length(
+        unique(mut_sig$Signature)
+    ))$HSL))
+
+# Create label for each panel
+label_panel <- tibble(
+    x = seq(16, 96, 16) - 8,
+    label = unique(mut_context$type)
+)
+
+plot_mut_context <- ggplot(mut_context) +
+    geom_bar(aes(x = Context, y = Contribution, fill = type),
+        stat = "identity",
+        show.legend = FALSE
+    ) +
+    scale_fill_manual(values = rownames(qualpal(length(
+        unique(mut_context$type)
+    ))$HSL)) +
+    # Draw vlines every 16 bars
+    geom_vline(
+        xintercept = seq(16, 96, 16) + 0.5,
+        linetype = 2,
+        alpha = 0.5
+    ) +
+    # Label type in each panel top
+    geom_text(
+        data = label_panel,
+        aes(x = x, y = Inf, label = label),
+        size = 3,
+        vjust = 1.5
+    ) +
+    theme(axis.text.x = element_text(
+        angle = 90,
+        hjust = 0,
+        vjust = 0.5,
+        size = 5
+    ))
+
+plot_grid(plot_mut_sig,
+    plot_mut_context,
+    ncol = 2,
+    rel_widths = c(0.3, 0.7)
+)
+```
+:::
+
+## Row2 {height=15%}
+
+:::{.card title="Notes on small variants (SNV/INDEL) filtering"}
+
+- Variants are filtered with any of the following criteria:
+    - IMPACT is HIGH or MODERATE
+    - CLIN_SIG contains pathogenic (Pathogenic intron variants will be retained)
+    - CANCER_TYPE is not NA (variants that are in IntOGen Cancer Gene Census)
+    - MAX_AF (maximum population allele frequency) is less than 3%
+- CANCER_TYPE_ROLE and CANCER_TYPE_CGC_GENE are merged columns from CANCER_TYPE, ROLE and CGC_CANCER_GENE. These columns are collapsed into single entries separated by semicolon. E.g. CANCER_TYPE = "Breast;Prostate" and ROLE - "LoF;Act" means that the gene is a LoF in breast cancer and an Act in prostate cancer. This is done so that the table is more readable.
+:::
+
+## Row3 {height=50%}
+::: {.card title="Small variants (SNV/INDEL) table"}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Merge CHROM POS REF ALT
+vcf <- vcf %>%
+    mutate(Mutation = paste0(CHROM, ":", POS, "__", REF, " > ", ALT))
+
+# Filter variants.
+table_to_disp <- vcf %>%
+    filter(
+        IMPACT %in% c("MODERATE", "HIGH") |
+            str_detect(CLIN_SIG, "pathogenic")
+    ) %>%
+    filter(MAX_AF < 0.03)
+
+# Merge CANCER_TYPE, ROLE and CGC_GENE into single column
+table_to_disp <- table_to_disp %>%
+    mutate(
+        CANCER_TYPE = ifelse(is.na(CANCER_TYPE),
+            "",
+            CANCER_TYPE
+        ),
+        ROLE = ifelse(is.na(ROLE),
+            "",
+            ROLE
+        ),
+        CGC_CANCER_GENE = ifelse(is.na(CGC_CANCER_GENE),
+            "",
+            CGC_CANCER_GENE
+        ),
+        CANCER_TYPE_ROLE = unlist(map2(
+            CANCER_TYPE, ROLE, \(x, y) make_unique_col(x, y)
+        )),
+        CANCER_TYPE_CGC_GENE = unlist(map2(
+            CANCER_TYPE, CGC_CANCER_GENE, \(x, y) make_unique_col(x, y)
+        ))
+    ) %>%
+    select(-c(CANCER_TYPE, ROLE, CGC_CANCER_GENE)) %>%
+    # For PUBMED column, reduce to "Too many to display" if
+    # the str length is more than 80
+    mutate(PUBMED = ifelse(str_length(PUBMED) > 80,
+        "Too many to display",
+        PUBMED
+    ))
+
+# Select a few columns to put in the beginning of the table
+# and the rest of the columns to be put at the end of the table
+cols_to_highlight <- c(
+    "Mutation",
+    "SYMBOL",
+    "HGVSc",
+    "HGVSp",
+    "Consequence",
+    "CLIN_SIG",
+    "CANCER_TYPE_CGC_GENE",
+    "CANCER_TYPE_ROLE",
+    "VAF",
+    "IMPACT",
+    "EXON",
+    "Protein_position",
+    "Amino_acids",
+    "Existing_variation",
+    "CANONICAL",
+    "MAX_AF"
+)
+
+# Everything else after the columns above
+rest_of_cols <- setdiff(
+    colnames(table_to_disp),
+    cols_to_highlight
+)
+
+# Find columns where there's only "."
+col_with_onlyNA <- apply(
+    table_to_disp[, rest_of_cols],
+    2,
+    function(x) {
+        all(x == ".")
+    }
+)
+col_with_onlyNA <- names(col_with_onlyNA[col_with_onlyNA == TRUE])
+col_with_onlyNA <- unique(col_with_onlyNA, c(
+            "CHROM",
+            "POS",
+            "REF",
+            "ALT",
+            "STRAND",
+            "FLAGS",
+            "PICK",
+            "HGNC_ID",
+            "DP_100"
+        ))
+
+# Select only relevant cols
+table_to_disp <- table_to_disp %>%
+    select(
+        cols_to_highlight,
+        rest_of_cols
+    ) %>%
+    select(!all_of(col_with_onlyNA))
+
+# Find column where it's all empty
+empty_cols <- sapply(table_to_disp, function(x) all(is.na(x)))
+
+# Also hide REF and ALT columns (if empty_cols is not empty)
+if (length(empty_cols) > 0) {
+    columns2hide <- c(which(empty_cols))
+} else {
+    columns2hide <- c()
+}
+
+long_cols <- apply(table_to_disp, 2, function(x) any(nchar(x) > 60))
+
+# Sort SNV table. first priority if "CANCER_TYPE_CGC_GENE" is not empty, then
+# "CANCER_TYPE_ROLE", then "IMPACT" (HIGH, then MODERATE, then LOW), then "MAX_AF" (ascending)
+table_to_disp <- table_to_disp %>%
+    arrange(
+        desc(CANCER_TYPE_CGC_GENE != ""),
+        desc(CANCER_TYPE_ROLE != ""),
+        match(IMPACT, c("HIGH", "MODERATE", "LOW")),
+        MAX_AF
+    )
+
+if(nrow(table_to_disp) == 0){
+    print("No variants fitting the filter criteria found")
+} else {
+    datatable(
+        table_to_disp,
+        extensions = "Buttons",
+        options = list(
+            pageLength = 100,
+            paging = TRUE,
+            lengthMenu = c(20, 50, 100, 200),
+            search = list(regex = TRUE, caseInsensitive = TRUE),
+            scrollX = TRUE,
+            scrollY = "800px",
+            autoWidth = TRUE,
+            dom = "Blfrtip",
+            buttons = list(
+                c("copy", "csv", "excel", "pdf", "colvis")
+            ),
+            initComplete = htmlwidgets::JS(
+                "function(settings, json) {",
+                paste0(
+                    "$(this.api().table().container()).css({'font-size': '",
+                    font.size,
+                    "'});"
+                ),
+                "}"
+            ),
+            # Truncate long strings
+            columnDefs = list(list(
+                targets = unname(c(which(long_cols))),
+                render = JS("$.fn.dataTable.render.ellipsis( 60 )")
+            ), list(visible=FALSE, targets=unname(columns2hide)))
+        ),
+        filter = list(position = "top", clear = FALSE),
+        plugins = "ellipsis"
+    )
+}
+```
+:::
+
+# Structural variants (SVs)
+
+## Row1 {height=20%}
+
+:::{.card title="Notes on structural variants (SVs)"}
+- SVs are filtered to only those that are part of the IntOGen Cancer Gene Census (CGC)
+- Annotation based on AnnotSV. However to make the output readable some columns with very long information (e.g. "_coord" and "_source") are removed. Please refer to original AnnotSV output for more information.
+    - AnnotSV converts square bracketed notation using the harmonization rule from [variant-extractor](https://github.com/EUCANCan/variant-extractor), which may result in wrong conversion, especially in BND to DEL conversion.
+- Capital letter columns are from IntOGen CGC. Please see README from the IntOGen [release](https://www.intogen.org/download) for more information.
+    - CANCER_TYPE_ROLE and CANCER_TYPE_CGC_GENE are merged columns from CANCER_TYPE, ROLE and CGC_CANCER_GENE. These columns are collapsed into single entries separated by semicolon. E.g. CANCER_TYPE = "Breast;Prostate" and ROLE - "LoF;Act" means that the gene is a LoF in breast cancer and an Act in prostate cancer. This is done so that the table is more readable.
+- Each SV can affect multiple genes. AnnotSV "splits" the different genes into different 
+  entries. This is why there are multiple rows with the same `AnnotSV_ID`.
+- ALT allele for insertion is hidden as "Too long" in the table. Please refer to the original AnnotSV output for more information.
+- Note that Severus can call duplication as BND event, and AnnotSV has a tendency to annotate these as DEL event since it doesn't make use of the "STRAND" information. Therefore, the "SV_type" column is not very accurate for BND events (You will recognize these with SEVERUS_BND in the ID column)
+- The "SAMPLE" column represents the FORMAT column in the VCF. For Severus this is "GT:GQ:VAF:hVAF:DR:DV"
+:::
+
+## Row2 {height=80%}
+
+### tabs2 {.tabset}
+
+:::{.card title="Structural variants (SVs) table"}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Change ALT for INS SV_type to "Too long"
+# sv$ALT[sv$SV_type == "INS"] <- "Too long"
+
+# If INFO field contains SV_ALT=, extract to "BND_ALT" column
+sv$BND_ALT <- ifelse(
+    str_detect(sv$INFO, "SV_ALT="),
+    str_extract(sv$INFO, "SV_ALT=(.*?)$"),
+    NA_character_
+)
+
+# Merge CANCERTYPE, ROLE and CGC_GENE into single column
+sv <- sv %>%
+    mutate(
+        CANCER_TYPE = ifelse(is.na(CANCER_TYPE),
+            "",
+            CANCER_TYPE
+        ),
+        ROLE = ifelse(is.na(ROLE),
+            "",
+            ROLE
+        ),
+        CGC_CANCER_GENE = ifelse(is.na(CGC_CANCER_GENE),
+            "",
+            CGC_CANCER_GENE
+        ),
+        CANCER_TYPE_ROLE = unlist(map2(
+            CANCER_TYPE, ROLE, \(x, y) make_unique_col(x, y)
+        )),
+        CANCER_TYPE_CGC_GENE = unlist(map2(
+            CANCER_TYPE, CGC_CANCER_GENE, \(x, y) make_unique_col(x, y)
+        ))
+    ) %>%
+    select(-c(CANCER_TYPE, ROLE, CGC_CANCER_GENE, CGC_GENE))
+
+# Prioritize important cols
+cols_to_highlight <- c(
+    "AnnotSV_ID", "ACMG_class", "AnnotSV_ranking_score", "Gene_name",
+    "CANCER_TYPE_CGC_GENE", "CANCER_TYPE_ROLE",
+    "INFO", "QUAL", "FORMAT", "BND_ALT",
+    colnames(sv)[str_detect(colnames(sv), col_after_format)], "Location", "Location2","GenCC_disease", "OMIM_inheritance", "GenCC_moi"
+)
+
+# Sort by CANCER_TYPE_CGC_GENE, CANCER_TYPE_ROLE, AnnotSV_ranking_score if columns exist
+if ("CANCER_TYPE_CGC_GENE" %in% colnames(sv)) {
+    sv <- sv %>%
+        arrange(
+            desc(CANCER_TYPE_CGC_GENE != ""),
+            desc(CANCER_TYPE_ROLE != ""),
+            desc(AnnotSV_ranking_score)
+        )
+}
+
+rest_of_cols <- setdiff(
+    colnames(sv),
+    cols_to_highlight
+)
+
+sv <- sv %>%
+    select(
+        any_of(c(cols_to_highlight, rest_of_cols))
+    )
+
+# If ENCODE_experiment column exist, shorten it
+# Shorten "ENCODE_experiment" column if more than 80 char
+if ("ENCODE_experiment" %in% colnames(sv)) {
+    sv <- sv %>%
+        mutate(ENCODE_experiment = ifelse(
+            str_length(ENCODE_experiment) > 80,
+            "Too many to display",
+            ENCODE_experiment
+        ))
+}
+
+# Remove columns that are all NA
+col_with_onlyNA_sv <- apply(
+    sv,
+    2,
+    function(x) {
+        all(is.na(x))
+    }
+)
+col_with_onlyNA_sv <-
+    names(col_with_onlyNA_sv[col_with_onlyNA_sv == TRUE])
+
+# Columns with only a single unique value
+col_with_single_value <- apply(
+    sv,
+    2,
+    function(x) {
+        length(unique(x)) == 1
+    }
+)
+col_with_single_value_sv <-
+    names(col_with_single_value[col_with_single_value == TRUE])
+
+# If there's only a single row, don't use col_with_single_value_sv
+if (nrow(sv) == 1) {
+    col_with_single_value_sv <- c()
+}
+
+table_to_disp <- sv %>%
+            select(!all_of(
+                    c(col_with_onlyNA_sv,
+                    col_with_single_value_sv)
+                )
+            ) %>%
+            select(!contains(
+                c(
+                    "_coord",
+                    "_source",
+                    "GenCC_pmid",
+                    "COHORT",
+                    "TRANSCRIPT",
+                    "DOMAINS",
+                    "2D_CLUSTERS",
+                    "3D_CLUSTERS",
+                    "Samples_ID",
+                    "MUTATIONS",
+                    "_phen"
+                ))
+            )
+
+# Find column where it's all empty
+empty_cols <- sapply(table_to_disp, function(x) all(is.na(x)))
+
+# Also hide REF and ALT columns (if empty_cols is not empty)
+if (length(empty_cols) > 0) {
+    columns2hide <- c(which(empty_cols))
+} else {
+    columns2hide <- c()
+}
+
+long_cols <- apply(table_to_disp, 2, function(x) any(nchar(x) > 60))
+
+if(nrow(sv) == 0){
+    print("No SVs fitting the filter criteria found")
+} else {
+    datatable(
+        table_to_disp,
+        extensions = "Buttons",
+        options = list(
+            pageLength = 25,
+            paging = TRUE,
+            lengthMenu = c(5, 10, 25, 50),
+            search = list(regex = TRUE, caseInsensitive = TRUE),
+            scrollX = TRUE,
+            scrollY = "800px",
+            autoWidth = TRUE,
+            dom = "Blfrtip",
+            buttons = list(
+                c("copy", "csv", "excel", "pdf", "colvis")
+            ),
+            initComplete = htmlwidgets::JS(
+                "function(settings, json) {",
+                paste0(
+                    "$(this.api().table().container()).css({'font-size': '",
+                    font.size,
+                    "'});"
+                ),
+                "}"
+            ),
+            # Truncate long strings
+            columnDefs = list(list(
+                targets = unname(c(which(long_cols))),
+                render = JS("$.fn.dataTable.render.ellipsis( 60 )")
+            ), list(visible=FALSE, targets=unname(columns2hide)))
+        ),
+        filter = list(position = "top", clear = FALSE),
+        plugins = "ellipsis"
+    )
+}
+```
+:::
+
+:::{.card title="Circos plot of translocation events"}
+- Translocations are defined as all BND pairs that are at least 100kbp apart:
+  - Limitation: It is possible for large duplication or deletion events to be called as BND events.
+
+- BND pairs are connected by a line:
+  - Red line: BND pairs that are in the Mitelman fusion database.
+  - Black line: BND pairs involving known genes supplied to svpack GFF.
+  - Grey line: All other BND pairs.
+
+::: {tab-content}
+![](circos.png){fig-alt="circos plot" height=800 width=800}
+:::
+:::

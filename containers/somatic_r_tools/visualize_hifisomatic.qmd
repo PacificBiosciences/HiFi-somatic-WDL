@@ -19,20 +19,8 @@ params:
     dmr_promoter_file: ""
     chord_file: ""
     sample_name: ""
-    # vcf_file: "../../test_data/report_test_file/HCC1395_60_30_deepsomatic.hiphase.vep.tsv.gz"
-    # intogen_smallvar: "../../test_data/report_test_file/HCC1395_60_30_deepsomatic.hiphase.vep_intogenCCG.tsv"
-    # sv_file: "../../test_data/report_test_file/severus_somatic.svpack.annotsv_intogenCCG.tsv"
-    # sv_vcf_file: "../../test_data/report_test_file/severus_somatic.svpack.vcf.gz"
-    # cnv_file: "../../test_data/report_test_file/HCC1395_60_30.tumor.purple.cnv.somatic.tsv"
-    # purity_ploidy_file: "../../test_data/report_test_file/HCC1395_60_30.tumor.purple.purity.tsv"
-    # mosdepth_tumor_file: "../../test_data/report_test_file/HCC1395_60_30.tumor.mosdepth.summary.txt"
-    # mosdepth_normal_file: "../../test_data/report_test_file/HCC1395_60_30.normal.mosdepth.summary.txt"
-    # mut_sig_file: "../../test_data/report_test_file/HCC1395_60_30.mut_sigs.tsv"
-    # mut_context_file: "../../test_data/report_test_file/HCC1395_60_30.reconstructed_sigs.tsv"
-    # dmr_promoter_file: "../../test_data/report_test_file/HCC1395_60_30_hg38_genes_promoters_dmrs_intogen.nCG50_summary.tsv.gz"
-    # chord_file: "../../test_data/report_test_file/HCC1395_60_30_chord_prediction.txt"
-    # sample_name: "HCC1395 60X/30X"
-    version: 0.4.1
+    cnv_tool: ""
+    version: 0.9.0
 ---
 
 
@@ -72,13 +60,16 @@ font.size = 10
 #     sv_vcf_file = "../../test_data/report_test_file/severus_somatic.svpack.vcf.gz",
 #     cnv_file = "../../test_data/report_test_file/HCC1395_60_30.tumor.purple.cnv.somatic.tsv",
 #     purity_ploidy_file = "../../test_data/report_test_file/HCC1395_60_30.tumor.purple.purity.tsv",
+#     # cnv_file = "../../test_data/report_test_file/HCC1395_60_30_2.54_1.0_0.89_copynumbers_segments.bed",
+#     # purity_ploidy_file = "../../test_data/report_test_file/purity_ploidy.tsv",
 #     mosdepth_tumor_file = "../../test_data/report_test_file/HCC1395_60_30.tumor.mosdepth.summary.txt",
 #     mosdepth_normal_file = "../../test_data/report_test_file/HCC1395_60_30.normal.mosdepth.summary.txt",
 #     mut_sig_file = "../../test_data/report_test_file/HCC1395_60_30.mut_sigs.tsv",
 #     mut_context_file = "../../test_data/report_test_file/HCC1395_60_30.reconstructed_sigs.tsv",
 #     dmr_promoter_file = "../../test_data/report_test_file/HCC1395_60_30_hg38_genes_promoters_dmrs_intogen.nCG50_summary.tsv.gz",
 #     chord_file = "../../test_data/report_test_file/HCC1395_60_30_chord_prediction.txt",
-#     sample_name = "HCC1395 60X/30X"
+#     sample_name = "HCC1395 60X/30X",
+#     cnv_tool = "Purple"
 # )
 
 # Remember to change back to /app after testing!
@@ -137,11 +128,35 @@ vcf_intogen <- read_tsv(params$intogen_smallvar) %>%
     select(SYMBOL, CANCER_TYPE, ROLE, CGC_CANCER_GENE) %>%
     unique()
 sv <- read_tsv(params$sv_file)
-cnv <- read_tsv(params$cnv_file) %>%
-    mutate(chromosome = str_replace(chromosome, "chr", "")) %>% 
-    rename(cn1 = "majorAlleleCopyNumber", cn2 = "minorAlleleCopyNumber", cn = copyNumber)
+if (params$cnv_tool == "Wakhan"){
+    cnv <- read_tsv(
+        params$cnv_file, comment="#",
+        col_names = c("chromosome", "start", "end", "coverage", "CN", "hap")
+        ) %>%
+        mutate(chromosome = str_replace(chromosome, "chr", "")) %>%
+        pivot_wider(
+            names_from = hap,
+            values_from = c("CN", "coverage")
+        ) %>%
+        rename(
+            cn1 = CN_1,
+            cn2 = CN_2,
+            coverage1 = coverage_1,
+            coverage2 = coverage_2,
+        ) %>%
+        mutate(cn = cn1 + cn2)
+        purity_ploidy <- read_tsv(params$purity_ploidy_file) %>%
+            select(-folder_name)
+} else if (params$cnv_tool == "Purple"){
+    cnv <- read_tsv(params$cnv_file) %>%
+        mutate(chromosome = str_replace(chromosome, "chr", "")) %>% 
+        rename(cn1 = "majorAlleleCopyNumber", cn2 = "minorAlleleCopyNumber", cn = copyNumber)
+    purity_ploidy <- read_tsv(params$purity_ploidy_file) %>%
+        select(purity, ploidy, gender, wholeGenomeDuplication)
+} else{
+    print("CNV tool not recognized")
+}
 
-purity_ploidy <- read_tsv(params$purity_ploidy_file)
 mut_sig <- read_tsv(params$mut_sig_file)
 colnames(mut_sig) <- c("Signature", "Contribution")
 # Convert to proportion
@@ -242,10 +257,8 @@ sv <- sv %>%
 
 ::: {.card title="Tumor purity and ploidy"}
 - Note that purity and ploidy estimation can be unreliable at low coverage (<30X) and low tumor purity (<50%)
-- Estimated tumor purity (Purple): `r purity_ploidy$purity[1]`
-- Estimated tumor ploidy (Purple): `r purity_ploidy$ploidy[1]`
-- Inferred gender (Purple): `r purity_ploidy$gender[1]`
-- Whole-genome doubling (Purple): `r purity_ploidy$wholeGenomeDuplication[1]`
+- Estimated tumor purity and ploidy solutions from `r params$cnv_tool`:
+`r tt(purity_ploidy)`
 :::
 
 ## Row2 {height = 20%}
@@ -273,17 +286,20 @@ tt(chord_pred)
 
 ## Row3 {height=50%}
 
-:::{.card title="Whole-genome copy number profile (Purple)"}
+### cnv_tab {.tabset}
+
+:::{.card title="Whole-genome copy number profile"}
 - For visualization purpose, if the major copy number is more than 5, the plot is capped at 5.
+- CNV tool used: `r params$cnv_tool`.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #| fig-width: 12
 #| fig-height: 5
-cnv <-
+cnv_plot <-
     set_absolute_pos(cnv, cytoband_length = cytoband$cytoband_length)
 
 # If cn is more than 5, set to 5 and add a label column for plotting
-cnv <- cnv %>%
+cnv_plot <- cnv_plot %>%
     mutate(
         cn_cut = ifelse(cn > 5, 5, cn),
         cn1_cut = ifelse(cn1 > 5, 5, cn1),
@@ -291,7 +307,7 @@ cnv <- cnv %>%
         label = ifelse(cn1_cut == 5, "Major CN >= 5", "")
     )
 
-plot_cn <- ggplot(cnv, aes(x = Start)) +
+plot_cn <- ggplot(cnv_plot, aes(x = Start)) +
     geom_segment(
         aes(
             x = Start,
@@ -357,6 +373,40 @@ plot_cn <- ggplot(cnv, aes(x = Start)) +
     ))
 
 plot_grid(plot_cn)
+```
+:::
+
+:::{.card title="Copy number profile table"}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Display everything except those added by the above section
+datatable(
+    cnv,
+    extensions = "Buttons",
+    options = list(
+        pageLength = 100,
+        paging = TRUE,
+        lengthMenu = c(100, 200),
+        search = list(regex = TRUE, caseInsensitive = TRUE),
+        scrollX = TRUE,
+        scrollY = "800px",
+        autoWidth = TRUE,
+        dom = "Blfrtip",
+        buttons = list(
+            c("copy", "csv", "excel", "pdf", "colvis")
+        ),
+        initComplete = htmlwidgets::JS(
+            "function(settings, json) {",
+            paste0(
+                "$(this.api().table().container()).css({'font-size': '",
+                font.size,
+                "'});"
+            ),
+            "}"
+        )
+    ),
+    filter = list(position = "top", clear = FALSE)
+)
+
 ```
 :::
 
@@ -511,9 +561,8 @@ plot_grid(plot_mut_sig,
 :::{.card title="Notes on small variants (SNV/INDEL) filtering"}
 
 - Variants are filtered with any of the following criteria:
-    - IMPACT is HIGH
-    - Existing_variation contains COS (COSMIC variants)
-    - CLIN_SIG contains pathogenic
+    - IMPACT is HIGH or MODERATE
+    - CLIN_SIG contains pathogenic (Pathogenic intron variants will be retained)
     - CANCER_TYPE is not NA (variants that are in IntOGen Cancer Gene Census)
     - MAX_AF (maximum population allele frequency) is less than 3%
 - CANCER_TYPE_ROLE and CANCER_TYPE_CGC_GENE are merged columns from CANCER_TYPE, ROLE and CGC_CANCER_GENE. These columns are collapsed into single entries separated by semicolon. E.g. CANCER_TYPE = "Breast;Prostate" and ROLE - "LoF;Act" means that the gene is a LoF in breast cancer and an Act in prostate cancer. This is done so that the table is more readable.
@@ -529,10 +578,8 @@ vcf <- vcf %>%
 # Filter variants.
 table_to_disp <- vcf %>%
     filter(
-        IMPACT == "HIGH" |
-            str_detect(Existing_variation, "COS") |
-            str_detect(CLIN_SIG, "pathogenic") |
-            !is.na(CANCER_TYPE)
+        IMPACT %in% c("MODERATE", "HIGH") |
+            str_detect(CLIN_SIG, "pathogenic")
     ) %>%
     filter(MAX_AF < 0.03)
 
@@ -570,11 +617,14 @@ table_to_disp <- table_to_disp %>%
 # and the rest of the columns to be put at the end of the table
 cols_to_highlight <- c(
     "Mutation",
-    "HGVSc",
-    "CLIN_SIG",
     "SYMBOL",
-    "VAF",
+    "HGVSc",
+    "HGVSp",
     "Consequence",
+    "CLIN_SIG",
+    "CANCER_TYPE_CGC_GENE",
+    "CANCER_TYPE_ROLE",
+    "VAF",
     "IMPACT",
     "EXON",
     "Protein_position",
@@ -622,10 +672,24 @@ table_to_disp <- table_to_disp %>%
 # Find column where it's all empty
 empty_cols <- sapply(table_to_disp, function(x) all(is.na(x)))
 
-# Also hide REF and ALT columns
-columns2hide <- c(which(empty_cols))
+# Also hide REF and ALT columns (if empty_cols is not empty)
+if (length(empty_cols) > 0) {
+    columns2hide <- c(which(empty_cols))
+} else {
+    columns2hide <- c()
+}
 
 long_cols <- apply(table_to_disp, 2, function(x) any(nchar(x) > 60))
+
+# Sort SNV table. first priority if "CANCER_TYPE_CGC_GENE" is not empty, then
+# "CANCER_TYPE_ROLE", then "IMPACT" (HIGH, then MODERATE, then LOW), then "MAX_AF" (ascending)
+table_to_disp <- table_to_disp %>%
+    arrange(
+        desc(CANCER_TYPE_CGC_GENE != ""),
+        desc(CANCER_TYPE_ROLE != ""),
+        match(IMPACT, c("HIGH", "MODERATE", "LOW")),
+        MAX_AF
+    )
 
 if(nrow(table_to_disp) == 0){
     print("No variants fitting the filter criteria found")
@@ -686,10 +750,19 @@ if(nrow(table_to_disp) == 0){
 
 ## Row2 {height=80%}
 
+### tabs2 {.tabset}
+
 :::{.card title="Structural variants (SVs) table"}
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Change ALT for INS SV_type to "Too long"
 # sv$ALT[sv$SV_type == "INS"] <- "Too long"
+
+# If INFO field contains SV_ALT=, extract to "BND_ALT" column
+sv$BND_ALT <- ifelse(
+    str_detect(sv$INFO, "SV_ALT="),
+    str_extract(sv$INFO, "SV_ALT=(.*?)$"),
+    NA_character_
+)
 
 # Merge CANCERTYPE, ROLE and CGC_GENE into single column
 sv <- sv %>%
@@ -714,6 +787,36 @@ sv <- sv %>%
         ))
     ) %>%
     select(-c(CANCER_TYPE, ROLE, CGC_CANCER_GENE, CGC_GENE))
+
+# Prioritize important cols
+cols_to_highlight <- c(
+    "AnnotSV_ID", "ACMG_class", "AnnotSV_ranking_score", "Gene_name",
+    "CANCER_TYPE_CGC_GENE", "CANCER_TYPE_ROLE",
+    "INFO", "QUAL", "FORMAT", "BND_ALT",
+    colnames(sv)[str_detect(colnames(sv), col_after_format)], "Location", "Location2","GenCC_disease", "OMIM_inheritance", "GenCC_moi"
+)
+
+# Sort by CANCER_TYPE_CGC_GENE, CANCER_TYPE_ROLE, AnnotSV_ranking_score if columns exist
+if ("CANCER_TYPE_CGC_GENE" %in% colnames(sv)) {
+    sv <- sv %>%
+        arrange(
+            desc(CANCER_TYPE_CGC_GENE != ""),
+            desc(CANCER_TYPE_ROLE != ""),
+            desc(AnnotSV_ranking_score)
+        )
+}
+
+rest_of_cols <- setdiff(
+    colnames(sv),
+    cols_to_highlight
+)
+
+sv <- sv %>%
+    select(
+        any_of(
+            c(cols_to_highlight, rest_of_cols)
+        )
+    )
 
 # If ENCODE_experiment column exist, shorten it
 # Shorten "ENCODE_experiment" column if more than 80 char
@@ -778,8 +881,12 @@ table_to_disp <- sv %>%
 # Find column where it's all empty
 empty_cols <- sapply(table_to_disp, function(x) all(is.na(x)))
 
-# Also hide REF and ALT columns
-columns2hide <- c(which(empty_cols))
+# Also hide REF and ALT columns (if empty_cols is not empty)
+if (length(empty_cols) > 0) {
+    columns2hide <- c(which(empty_cols))
+} else {
+    columns2hide <- c()
+}
 
 long_cols <- apply(table_to_disp, 2, function(x) any(nchar(x) > 60))
 
@@ -821,6 +928,20 @@ if(nrow(sv) == 0){
     )
 }
 ```
+:::
+
+:::{.card title="Circos plot of translocation events"}
+- Translocations are defined as all BND pairs that are at least 100kbp apart:
+  - Limitation: It is possible for large duplication or deletion events to be called as BND events.
+
+- BND pairs are connected by a line:
+  - Red line: BND pairs that are in the Mitelman fusion database.
+  - Black line: BND pairs involving known genes supplied to svpack GFF.
+  - Grey line: All other BND pairs.
+
+::: {tab-content}
+![](circos.png){fig-alt="circos plot" height=800 width=800}
+:::
 :::
 
 # Differentially methylated regions (DMRs)
@@ -911,7 +1032,7 @@ table_to_disp <- dmr_promoter %>%
 # Find column where it's all empty
 empty_cols <- sapply(table_to_disp, function(x) all(is.na(x)))
 
-# Also hide REF and ALT columns
+# Also hide REF and ALT columns (if empty_cols is not empty)
 columns2hide <- c(which(empty_cols))
 
 long_cols <- apply(table_to_disp, 2, function(x) any(nchar(x) > 60))
@@ -962,3 +1083,4 @@ if (nrow(dmr_promoter) == 0) {
 }
 ```
 :::
+

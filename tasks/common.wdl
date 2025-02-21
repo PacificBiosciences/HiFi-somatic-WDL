@@ -157,6 +157,72 @@ task svpack_filter_annotated {
 	}
 }
 
+# Use bcftools to add missing BND mate back after svpack filtering
+task recover_mate_bnd {
+  input {
+    File sv_vcf_original
+    File sv_svpack_filtered
+  }
+
+  Float file_size = ceil(size(sv_vcf_original, "GB") + size(sv_svpack_filtered, "GB") + 10)
+
+  command <<<
+  set -euxo pipefail
+
+  bcftools --version
+
+  # Copy the VCF here and index them
+  cp ~{sv_svpack_filtered} ~{basename(sv_svpack_filtered)}
+  tabix ~{basename(sv_svpack_filtered)}
+
+  # For original VCF, bgzip if not already, then index
+  cp ~{sv_vcf_original} ~{basename(sv_vcf_original)}
+  if [[ ~{basename(sv_vcf_original)} == *.vcf ]];
+  then
+    bgzip ~{sv_vcf_original}
+    tabix ~{sv_vcf_original}.gz
+  else
+    tabix ~{basename(sv_vcf_original)}
+  fi
+
+  comm -13 \
+    <(bcftools query -f '%ID\t%MATE_ID\n' ~{basename(sv_svpack_filtered)} | rg -v '\.' | cut -f1 | sort) \
+    <(bcftools query -f '%ID\t%MATE_ID\n' ~{basename(sv_svpack_filtered)} | rg -v '\.' | cut -f2 | sort) \
+    > missing_mate.txt
+
+  # Extract the missing BNDs
+  bcftools view \
+    -i 'ID=@missing_mate.txt' \
+    ~{basename(sv_vcf_original)} |\
+      bcftools sort -Oz -o missing_mate.vcf.gz
+
+  # Add the missing BNDs back to the filtered VCF
+  bcftools concat \
+    ~{basename(sv_svpack_filtered)} \
+    missing_mate.vcf.gz |\
+      bcftools sort -Oz -o tmp.vcf.gz
+
+  mv tmp.vcf.gz ~{basename(sv_svpack_filtered)}
+  rm -f ~{basename(sv_svpack_filtered)}.tbi
+
+  tabix -p vcf ~{basename(sv_svpack_filtered)}
+  >>>
+
+  output {
+    File output_vcf = basename(sv_svpack_filtered)
+    File output_vcf_index = basename(sv_svpack_filtered) + ".tbi"
+  }
+
+  runtime {
+    docker: "quay.io/biocontainers/bcftools:1.17--h3cc50cf_1"
+    cpu: 4
+    memory: "16 GB"
+    disk: file_size + " GB"
+    maxRetries: 2
+    preemptible: 1
+  }
+}
+
 # Use bedtools to split contigs
 task split_contigs {
   input {
@@ -269,14 +335,24 @@ task cpg_pileup {
     --min-mapq 1 \
     --min-coverage ~{mincov} \
     --model "$PILEUP_MODEL_DIR"/pileup_calling_model.v1.tflite
+
+  # gzip all bed
+  gzip ~{output_prefix}.combined.bed
+  # If hap1 and hap2 beds are present, gzip them
+  if [ -f ~{output_prefix}.hap1.bed ]; then
+    gzip ~{output_prefix}.hap1.bed
+  fi
+  if [ -f ~{output_prefix}.hap2.bed ]; then
+    gzip ~{output_prefix}.hap2.bed
+  fi
   >>>
 
   output {
-    Array[File] pileup_beds = glob("~{output_prefix}.*.bed")
+    Array[File] pileup_beds = glob("~{output_prefix}.*.bed.gz")
 		Array[File] pileup_bigwigs = glob("~{output_prefix}.*.bw")
-    File pileup_combined_beds = output_prefix + ".combined.bed"
-    File? pileup_hap1_bed = output_prefix + ".hap1.bed"
-    File? pileup_hap2_bed = output_prefix + ".hap2.bed"
+    File pileup_combined_beds = output_prefix + ".combined.bed.gz"
+    File? pileup_hap1_bed = output_prefix + ".hap1.bed.gz"
+    File? pileup_hap2_bed = output_prefix + ".hap2.bed.gz"
   }
 
   runtime {
@@ -455,7 +531,7 @@ task mutationalpattern {
   }
 
   runtime {
-      docker: "quay.io/pacbio/somatic_r_tools@sha256:9ad9fa1a06a22878fa74cb0f2782b15659b1ec4a485bc20eb09e66b5aa9f896a"
+      docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
       cpu: threads
       memory: "~{threads * 4} GB"
       disk: file_size + " GB"

@@ -3,9 +3,9 @@ version 1.0
 workflow run_deepsomatic {
     input {
         File tumor_bam
-        File normal_bam
+        File? normal_bam
         File tumor_bam_index
-        File normal_bam_index
+        File? normal_bam_index
         File ref_fasta
         File ref_fasta_index
         Array[File] contigs
@@ -13,45 +13,62 @@ workflow run_deepsomatic {
         String pname
     }
 
-    scatter (ctg in contigs){
-        call call_DeepSomatic {
-            input:
-                tumor_bam = tumor_bam,
-                normal_bam = normal_bam,
-                tumor_bam_index = tumor_bam_index,
-                normal_bam_index = normal_bam_index,
-                ref_fasta = ref_fasta,
-                ref_fasta_index = ref_fasta_index,
-                contig = ctg,
-                pname = pname,
-                threads = threads
+        if (defined(normal_bam)) {
+                scatter (ctg in contigs){
+                    call call_DeepSomatic as deepsomatic_paired {
+                        input:
+                            tumor_bam = tumor_bam,
+                            normal_bam = select_first([normal_bam]),
+                            tumor_bam_index = tumor_bam_index,
+                            normal_bam_index = select_first([normal_bam_index]),
+                            ref_fasta = ref_fasta,
+                            ref_fasta_index = ref_fasta_index,
+                            contig = ctg,
+                            pname = pname,
+                            threads = threads
+                    }
+                }
+
+             call call_clair3 as clair3_normal {
+                input:
+                    aligned_bam = select_first([normal_bam]),
+                    aligned_bam_index = select_first([normal_bam_index]),
+                    ref_fasta = ref_fasta,
+                    ref_fasta_index = ref_fasta_index,
+                    pname = pname + ".normal",
+                    threads = 8
+            }
+
+            call correct_vcf as correct_clair3_normal {
+                input:
+                    vcf = clair3_normal.clair3_vcf,
+                    vcf_index = clair3_normal.clair3_vcf_tbi,
+                    reference = ref_fasta,
+                    reference_index = ref_fasta_index
+            }
         }
-    }
+
+        if (!defined(normal_bam)) {
+            scatter (ctg in contigs){
+                call call_DeepSomatic as deepsomatic_tumor_only {
+                    input:
+                        tumor_bam = tumor_bam,
+                        tumor_bam_index = tumor_bam_index,
+                        ref_fasta = ref_fasta,
+                        ref_fasta_index = ref_fasta_index,
+                        contig = ctg,
+                        pname = pname,
+                        threads = threads
+                }
+            }
+        }
 
     call gather_deepsomatic {
         input:
-            deepsomatic_vcfs = call_DeepSomatic.deepsomatic_vcf,
-            deepsomatic_gvcfs = call_DeepSomatic.deepsomatic_gvcf,
+            deepsomatic_vcfs = select_first([deepsomatic_paired.deepsomatic_vcf, deepsomatic_tumor_only.deepsomatic_vcf]),
+            deepsomatic_gvcfs = select_first([deepsomatic_paired.deepsomatic_gvcf, deepsomatic_tumor_only.deepsomatic_gvcf]),
             threads = threads,
             pname = pname
-    }
-
-    call call_clair3 as clair3_normal {
-        input:
-            aligned_bam = normal_bam,
-            aligned_bam_index = normal_bam_index,
-            ref_fasta = ref_fasta,
-            ref_fasta_index = ref_fasta_index,
-            pname = pname + ".normal",
-            threads = 8
-    }
-
-    call correct_vcf as correct_clair3_normal {
-        input:
-            vcf = clair3_normal.clair3_vcf,
-            vcf_index = clair3_normal.clair3_vcf_tbi,
-            reference = ref_fasta,
-            reference_index = ref_fasta_index
     }
 
     call call_clair3 as clair3_tumor {
@@ -77,8 +94,8 @@ workflow run_deepsomatic {
         File deepsomatic_vcf_tbi = gather_deepsomatic.deepsomatic_vcf_tbi
         File deepsomatic_gvcf = gather_deepsomatic.deepsomatic_gvcf
         File deepsomatic_gvcf_tbi = gather_deepsomatic.deepsomatic_gvcf_tbi
-        File clair3_normal_vcf = correct_clair3_normal.output_vcf
-        File clair3_normal_vcf_tbi = correct_clair3_normal.output_vcf_index
+        File? clair3_normal_vcf = correct_clair3_normal.output_vcf
+        File? clair3_normal_vcf_tbi = correct_clair3_normal.output_vcf_index
         File clair3_tumor_vcf = correct_clair3_tumor.output_vcf
         File clair3_tumor_vcf_tbi = correct_clair3_tumor.output_vcf_index
     }
@@ -87,14 +104,14 @@ workflow run_deepsomatic {
 task call_DeepSomatic {
     input {
         File tumor_bam
-        File normal_bam
+        File? normal_bam
         File tumor_bam_index
-        File normal_bam_index
+        File? normal_bam_index
         File ref_fasta
         File ref_fasta_index
         File? contig 
         String pname
-        Int threads
+        Int threads = 16
     }
 
     Float file_size = ceil(size(tumor_bam, "GB") * 2 + size(normal_bam, "GB") * 2 + size(ref_fasta, "GB") + size(contig, "GB") + 20)
@@ -107,9 +124,10 @@ task call_DeepSomatic {
     /opt/deepvariant/bin/deepsomatic/run_deepsomatic --version
 
     /opt/deepvariant/bin/deepsomatic/run_deepsomatic \
-        --model_type=PACBIO \
+        --model_type=~{if (defined(normal_bam)) then "PACBIO" else "PACBIO_TUMOR_ONLY"} \
+        ~{if defined(normal_bam) then "" else "--use_default_pon_filtering=true"} \
         --ref=~{ref_fasta} \
-        --reads_normal=~{normal_bam} \
+        ~{if (defined(normal_bam)) then "--reads_normal=~{normal_bam}" else ""} \
         --reads_tumor=~{tumor_bam} \
         --output_vcf=deepvariant_~{pname}/~{pname + "_deepsomatic.vcf.gz"} \
         --output_gvcf=deepvariant_~{pname}/~{pname + "_deepsomatic.g.vcf.gz"} \
@@ -138,7 +156,7 @@ task call_DeepSomatic {
     runtime {
         docker: "google/deepsomatic@sha256:810ce485e2da3a1efb2704ca6843cabc87e75992e99b91ecfcace7ad604870f6"
         cpu: threads
-        memory: "~{threads * 6} GB"
+        memory: "~{threads * 8} GB"
         disk: file_size + " GB"
         maxRetries: 2
         preemptible: 1
@@ -190,6 +208,8 @@ task gather_deepsomatic {
     ls *.gvcf.gz > gvcf.list
 
     bcftools concat -a -f vcf.list |\
+        # Set GT to 0/1 for somatic variants as DeepSomatic set 1/1 which will not be phased by HiPhase
+        bcftools +setGT -- -t q -n c:"0/1" -i 'FMT/GT="1/1"' |\
         bcftools sort -Oz -o ~{pname + "_deepsomatic.vcf.gz"}
     bcftools concat -a -f gvcf.list |\
         bcftools sort -Oz -o ~{pname + "_deepsomatic.g.vcf.gz"}
