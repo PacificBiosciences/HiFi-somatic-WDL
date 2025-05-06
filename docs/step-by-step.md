@@ -105,7 +105,7 @@ curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
 
 ## Modify the input JSON file to point to the downloaded files
 
-The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](example_configs/input.example.json). For tumor-only workflow, use [input.example.TO.json](example_configs/input.example.TO.json). The main difference in the tumor-only `json` is the absence of the normal bams and the addition of `severus_pon_tsv` for PON-based filtering in Severus.
+The input to the workflow is a JSON file describing input parameters and the location of BAM files. An example of an input JSON file can be found at [input.example.json](../example_configs/input.example.json). For tumor-only workflow, use [input.example.TO.json](../example_configs/input.example.TO.json). The main difference in the tumor-only `json` is the absence of the normal bams and the addition of `severus_pon_tsv` for PON-based filtering in Severus.
   
 ```bash
 cp example_configs/input.example.json input.json
