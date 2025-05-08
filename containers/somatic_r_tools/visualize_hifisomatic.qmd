@@ -645,7 +645,7 @@ col_with_onlyNA <- apply(
     table_to_disp[, rest_of_cols],
     2,
     function(x) {
-        all(x == ".")
+        all(x %in% c(".",NA))
     }
 )
 col_with_onlyNA <- names(col_with_onlyNA[col_with_onlyNA == TRUE])
