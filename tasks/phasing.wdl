@@ -29,6 +29,7 @@ task hiphase {
         -r ~{ref_fasta} \
         --stats-file ~{sub(basename(bam), "\\.bam$", ".hiphase.stats")} \
         --summary-file ~{sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")} \
+        --blocks-file ~{sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")} \
         --ignore-read-groups
     >>>
 
@@ -38,6 +39,7 @@ task hiphase {
         File hiphase_vcf = sub(basename(vcf), "\\.vcf.gz$", ".hiphase.vcf.gz")
         File hiphase_stats = sub(basename(bam), "\\.bam$", ".hiphase.stats")
         File hiphase_summary = sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")
+        File hiphase_blocks = sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")
         Array[File] hiphase_stats_summary = [hiphase_stats, hiphase_summary]
     }
 
@@ -84,6 +86,7 @@ task hiphase_with_somatic {
         -r ~{ref_fasta} \
         --stats-file ~{sub(basename(bam), "\\.bam$", ".hiphase.stats")} \
         --summary-file ~{sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")} \
+        --blocks-file ~{sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")} \
         --ignore-read-groups
     >>>
 
@@ -93,6 +96,7 @@ task hiphase_with_somatic {
         File hiphase_vcf = sub(basename(vcf), "\\.vcf.gz$", ".hiphase.vcf.gz")
         File hiphase_somatic_small_variants_vcf = sub(basename(somatic_SNP_indel_vcf), "\\.vcf.gz$", ".hiphase.vcf.gz")
         File hiphase_stats = sub(basename(bam), "\\.bam$", ".hiphase.stats")
+        File hiphase_blocks = sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")
         File hiphase_summary = sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")
         Array[File] hiphase_stats_summary = [hiphase_stats, hiphase_summary]
     }

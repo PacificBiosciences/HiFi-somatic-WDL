@@ -217,7 +217,7 @@ task report_sample {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:68dc04908a37e26b30dc9795fa6cc0e85a238c8695afe805ad164a071193fb48"
         cpu: 8
         memory: "32 GB"
         disk: file_size + " GB"
@@ -279,7 +279,7 @@ task report_sample_TO {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_r_tools@sha256:960fbc5871d6810ec9d4ae211fc397e7fc7bd325fda60caed715175e36bc0273"
+        docker: "quay.io/pacbio/somatic_r_tools@sha256:68dc04908a37e26b30dc9795fa6cc0e85a238c8695afe805ad164a071193fb48"
         cpu: 8
         memory: "32 GB"
         disk: file_size + " GB"

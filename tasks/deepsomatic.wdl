@@ -154,7 +154,7 @@ task call_DeepSomatic {
     }
 
     runtime {
-        docker: "google/deepsomatic@sha256:810ce485e2da3a1efb2704ca6843cabc87e75992e99b91ecfcace7ad604870f6"
+        docker: "google/deepsomatic@sha256:d9797b8950bf615ec7010d1336b7ee0a2f12ea09323dc3585f7e9fe39b082bde"
         cpu: threads
         memory: "~{threads * 8} GB"
         disk: file_size + " GB"

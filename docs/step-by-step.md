@@ -84,7 +84,7 @@ tar -czvf annotsv_cache.tar.gz AnnotSV
 wget 'https://ftp.ensembl.org/pub/release-112/variation/indexed_vep_cache/homo_sapiens_refseq_vep_112_GRCh38.tar.gz'
 
 # Download hmftools resource
-wget 'https://storage.googleapis.com/hmf-public/HMFtools-Resources/dna_pipeline/v5_33/38/hmf_dna_pipeline_resources.38_v5.33.tar.gz'
+wget 'https://storage.googleapis.com/hmf-public/HMFtools-Resources/pipeline/oncoanalyser/2.0/38/hmf_pipeline_resources.38_v2.0.0--3.tar.gz'
 ```
 
 ## Download demo dataset (COLO829)
@@ -93,15 +93,6 @@ Download the full COLO829 and HCC1395 dataset here:
 
 1. COLO829 (60X tumor, 60X normal): <https://downloads.pacbcloud.com/public/revio/2023Q2/COLO829>
 2. HCC1395 (60X tumor, 40X normal): <https://downloads.pacbcloud.com/public/revio/2023Q2/HCC1395/>
-
-Or you can download a small demo dataset here that contains the region with truth SVs from Valle-Inclan et. al. 2022.
-
-```bash
-# Download tumor demo
-curl -LO 'https://zenodo.org/record/10404249/files/COLO829.30X.SV_region.bam'
-# Download matched normal demo
-curl -LO 'https://zenodo.org/record/10404249/files/COLO829BL.30X.SV_region.bam'
-```
 
 ## Modify the input JSON file to point to the downloaded files
 

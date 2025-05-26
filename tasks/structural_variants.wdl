@@ -53,7 +53,7 @@ task Severus_sv {
   }
 
   runtime {
-    docker: "quay.io/biocontainers/severus@sha256:fb4471e0504d564de78215ae15c081a1bb2022ad51e993eba92bc6fa5052a05d"
+    docker: "quay.io/biocontainers/severus@sha256:9aaf81a02cc7f8be5dd9bb3bece00b9097f08368cebce297aba9aa7fc932b42e"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
