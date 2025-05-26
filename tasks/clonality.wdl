@@ -38,7 +38,7 @@ task Amber {
             -threads ~{threads} \
             -ref_genome ~{referenceFasta} \
             -ref_genome_version ~{ref_genome_version} \
-            -loci ensembl_data_dir/copy_number/GermlineHetPon.*.vcf.gz
+            -loci ensembl_data_dir/hmf*/dna/copy_number/AmberGermlineSites.*.tsv.gz
 
         rm -rf ensembl_data_dir
     }
@@ -103,7 +103,7 @@ task Cobalt {
             -threads ~{threads} \
             -pcf_gamma ~{pcf_gamma} \
             -validation_stringency SILENT \
-            -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp
+            -gc_profile ensembl_data_dir/hmf*/dna/copy_number/GC_profile.*.cnp
         
         rm -rf ensembl_data_dir
     }
@@ -183,11 +183,11 @@ task Purple {
                 -output_dir ~{outputDir} \
                 -amber ~{sub(amberOutput[0], basename(amberOutput[0]), "")} \
                 -cobalt ~{sub(cobaltOutput[0], basename(cobaltOutput[0]), "")} \
-                -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp \
+                -gc_profile ensembl_data_dir/hmf*/dna/copy_number/GC_profile.*.cnp \
                 -somatic_vcf tmp.vcf.gz \
                 -ref_genome ~{referenceFasta} \
                 -ref_genome_version 38 \
-                -ensembl_data_dir ensembl_data_dir/common/ensembl_data \
+                -ensembl_data_dir ensembl_data_dir/hmf*/common/ensembl_data \
                 ~{"-somatic_hotspots " + somaticHotspots} \
                 ~{"-run_drivers -driver_gene_panel " + driverGenePanel} \
                 ~{"-highly_diploid_percentage " + highlyDiploidPercentage} \
@@ -207,10 +207,10 @@ task Purple {
                 -output_dir ~{outputDir} \
                 -amber ~{sub(amberOutput[0], basename(amberOutput[0]), "")} \
                 -cobalt ~{sub(cobaltOutput[0], basename(cobaltOutput[0]), "")} \
-                -gc_profile ensembl_data_dir/copy_number/GC_profile.*.cnp \
+                -gc_profile ensembl_data_dir/hmf*/dna/copy_number/GC_profile.*.cnp \
                 -ref_genome ~{referenceFasta} \
                 -ref_genome_version 38 \
-                -ensembl_data_dir ensembl_data_dir/common/ensembl_data \
+                -ensembl_data_dir ensembl_data_dir/hmf*/common/ensembl_data \
                 ~{"-somatic_hotspots " + somaticHotspots} \
                 ~{"-run_drivers -driver_gene_panel " + driverGenePanel} \
                 ~{"-highly_diploid_percentage " + highlyDiploidPercentage} \
