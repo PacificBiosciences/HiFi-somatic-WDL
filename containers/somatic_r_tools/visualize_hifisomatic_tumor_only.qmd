@@ -29,7 +29,7 @@ params:
     # dmr_promoter_file: "../../test_data/report_test_file/HCC1395_60_30_hg38_genes_promoters_dmrs_intogen.nCG50_summary.tsv.gz"
     # chord_file: "../../test_data/report_test_file/HCC1395_60_30_chord_prediction.txt"
     # sample_name: "HCC1395 60X/30X"
-    version: 0.9.0
+    version: 0.9.2
 ---
 
 
@@ -609,7 +609,7 @@ col_with_onlyNA <- apply(
     table_to_disp[, rest_of_cols],
     2,
     function(x) {
-        all(x == ".")
+        all(x %in% c(".",NA))
     }
 )
 col_with_onlyNA <- names(col_with_onlyNA[col_with_onlyNA == TRUE])

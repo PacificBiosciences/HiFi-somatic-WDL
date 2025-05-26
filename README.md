@@ -150,7 +150,7 @@ Following are the references for the tools used in the workflow, which should be
 | pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          | [quay.io](https://quay.io/pacbio/pb-cpg-tools) |
 | HiPhase      | 1.4.5     | Diploid phasing using germline variants              | [quay.io](https://quay.io/repository/biocontainers/hiphase) |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                | [quay.io](https://quay.io/repository/biocontainers/slivar) |
-| Severus      | 1.3       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
+| Severus      | 1.5       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               | [quay.io](https://quay.io/repository/biocontainers/seqkit) |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation | [quay.io](https://quay.io/repository/biocontainers/csvtk) |
 | IntOGen      | Sep 30 2024 | Compendium of Cancer Genes for annotation          | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
@@ -159,7 +159,7 @@ Following are the references for the tools used in the workflow, which should be
 | Amber        | v4.0      | BAF segmentation (HMFtools suite)                    | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
 | Cobalt       | v1.16.0   | Log ratio segmentation (HMFtools suite)              | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
 | Purple       | v4.0      | Purity and ploidy estimate, somatic CNV (HMFtools suite) | [self-hosted on quay.io](https://quay.io/pacbio/purple) |
-| DeepSomatic  | v1.7.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
+| DeepSomatic  | v1.9.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
 | CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
 | SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
 | Wakhan | v0.1.0 | Copy number variants caller | [docker](https://hub.docker.com/mkolmogo/wakhan) |
@@ -170,6 +170,14 @@ Following are the references for the tools used in the workflow, which should be
 <details>
   <summary>Click to expand changelogs:</summary>
 
+- v0.9.2
+  - Updated DeepSomatic to 1.9.0. This should fixed the empty region issue with demo BAM.
+  - Updated Severus to v1.5.0.
+  - Fixed HMFtools database URL.
+  - Fixed reporting bug reported by [Rhett Rhautsaw](https://github.com/PacificBiosciences/HiFi-somatic-WDL/pull/19)
+- v0.9.1
+  - Fixed calculation of N50 read length (previously calculating L50).
+  - Reduced memory usage of seqkit alignment summary.
 - v0.9:
   - Tumor-only workflow is now supported. See [here](docs/step-by-step.md) for instructions.
   - Updated Severus to 1.3.
