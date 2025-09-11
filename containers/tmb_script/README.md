@@ -197,13 +197,6 @@ Nonsynonymous Score: 6.50 mutations/Mbp
 - Nonsynonymous score: 0.08 mut/Mbp - much lower, as expected
 - Most variants are non-coding (intron/intergenic), with coding variants representing <1% of total
 
-## Interpretation
-
-TMB interpretation typically uses the **all variants** score:
-- **High TMB** (≥10 mut/Mbp): May benefit from immunotherapy
-- **Intermediate TMB** (5-10 mut/Mbp): Variable clinical significance  
-- **Low TMB** (<5 mut/Mbp): Less likely to respond to immunotherapy
-
 ## Output Format
 
 Results are saved as JSON:
