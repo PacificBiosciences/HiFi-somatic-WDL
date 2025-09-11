@@ -2,16 +2,13 @@ version 1.0
 
 import "structs.wdl"
 import "tasks/alignment.wdl" as alignment
-import "tasks/clairs.wdl" as clairs
-import "tasks/cnvkit.wdl" as cnvkit
 import "tasks/common.wdl" as common
 import "tasks/structural_variants.wdl" as structural_variants
 import "tasks/phasing.wdl" as phasing
-import "tasks/basemod.wdl" as basemod
 import "tasks/annotation.wdl" as annotation
 import "tasks/prioritization.wdl" as prioritization
-import "tasks/clonality.wdl" as clonality
 import "tasks/deepsomatic.wdl" as deepsomatic
+import "tasks/biomarker.wdl" as biomarker
 
 workflow hifisomatic {
   input {
@@ -32,6 +29,7 @@ workflow hifisomatic {
     # Int cnvkit_threads = 8
     Int pbmm2_threads = 24
     Int samtools_threads = 8
+    Int hiphase_threads = 24
     Int merge_bam_threads = 4
     Int tumor_pileup_mincov = 5
     Int cpg_pileup_threads = 8
@@ -50,8 +48,8 @@ workflow hifisomatic {
     Float mutsig_max_delta = 0.004
     # SV-related 
     File trf_bed
-    Int sv_threads = 8
-    Int wakhan_threads = 16
+    Int sv_threads = 24
+    Int wakhan_threads = 24
     File control_vcf
     File control_vcf_index
     File? severus_pon_tsv
@@ -82,10 +80,9 @@ workflow hifisomatic {
     # Amber, Cobalt and Purple
     # Higher value = smoother CNV, but lower resolution
     # Int pcf_gamma_value = 1000
-    File? ensembl_data_dir_tarball
     # Int hmftools_threads = 8
     # Visualization script
-    File? report_vis_script
+    File report_vis_script
   }
 
   scatter (individual in cohort.patients) {
@@ -198,7 +195,7 @@ workflow hifisomatic {
                   pname = patient,
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
-                  threads = samtools_threads
+                  threads = hiphase_threads
               }
             
             # Annotate somatic VCF
@@ -218,6 +215,14 @@ workflow hifisomatic {
                   ref_fasta_index = ref_fasta_index,
                   pname = patient,
                   threads = vep_threads
+              }
+
+              # Once annotated, calculate TMB
+              call biomarker.tmb_estimate as tmb_estimate {
+                input:
+                  vcf = annotateSomatic.vep_annotated_vcf,
+                  coverage = MosdepthTumor.output_bed,
+                  pname = patient
               }
 
               call prioritization.prioritize_small_variants as prioritizeSomatic {
@@ -241,7 +246,7 @@ workflow hifisomatic {
     call common.summarize_seqkit_alignment as summarize_tumor_RL {
       input:
         seqkit_alignment_stats = bamstatsTumor.seqkit_alignment_stats,
-        threads = def_threads
+        threads = 8
     }
 
 
@@ -304,7 +309,7 @@ workflow hifisomatic {
           tumor_bam_index = select_first([phaseTumorBam.hiphase_bam_index, align_tumor.bam_final_index]),
           ref_fasta = ref_fasta,
           ref_fasta_index = ref_fasta_index,
-          severus_sv_vcf = select_first([phased_severus.output_vcf]),
+          severus_sv_vcf = phased_severus.output_vcf,
           tumor_germline_vcf = select_first([phaseTumorBam.hiphase_vcf]),
           threads = wakhan_threads
       }
@@ -313,7 +318,7 @@ workflow hifisomatic {
       # call annotation.chord_hrd {
       #   input:
       #     small_variant_vcf = select_first([run_deepsomatic.deepsomatic_vcf]),
-      #     sv_vcf = select_first([phased_severus.output_vcf]),
+      #     sv_vcf = phased_severus.output_vcf,
       #     pname = patient
       # }
       
@@ -336,6 +341,15 @@ workflow hifisomatic {
       # }
     }
 
+    # owl MSI score
+
+    call biomarker.owl_msi as msi_score {
+      input:
+        bam_file = select_first([phaseTumorBam.hiphase_bam, align_tumor.bam_final]),
+        bam_index = select_first([phaseTumorBam.hiphase_bam_index, align_tumor.bam_final_index]),
+        sample_name = patient
+    }
+
     if(!call_small_variants){
       call structural_variants.Severus_sv as unphased_severus {
         input:
@@ -351,7 +365,7 @@ workflow hifisomatic {
 
     call common.tabix_vcf as tabixSeverus {
       input:
-        vcf = select_first([phased_severus.output_vcf, unphased_severus.output_vcf, phased_severus.output_all_vcf, unphased_severus.output_all_vcf]),
+        vcf = select_first([phased_severus.output_vcf, unphased_severus.output_vcf]),
         contig_bed = ref_bed,
         threads = samtools_threads
     }
@@ -367,7 +381,7 @@ workflow hifisomatic {
     # Recover missing mate
     call common.recover_mate_bnd {
       input:
-        sv_vcf_original = select_first([phased_severus.output_vcf, unphased_severus.output_vcf, phased_severus.output_all_vcf, unphased_severus.output_all_vcf]),
+        sv_vcf_original = select_first([phased_severus.output_vcf, unphased_severus.output_vcf]),
         sv_svpack_filtered = filter_Severus.output_vcf,
     }
 
@@ -402,19 +416,26 @@ workflow hifisomatic {
           intogen_small_var_tsv = select_first([prioritizeSomatic.vep_annotated_tsv_intogenCCG]),
           sv_intogen_tsv = select_first([prioritize_Severus.annotSV_intogen_tsv]),
           sv_vcf = filter_Severus.output_vcf,
-          cnv = select_first([wakhan.copynumbers_segments]),
+          cnv_hap1 = select_first([wakhan.copynumbers_segments_HP_1]),
+          cnv_hap2 = select_first([wakhan.copynumbers_segments_HP_2]),
           purity_ploidy = select_first([wakhan.wakhan_purity_ploidy]),
           mosdepth_tumor = MosdepthTumor.output_summary,
           mutsig_tsv = select_first([mutationalpattern.mutsig_tsv]),
           mut_reconstructed_sigs = select_first([mutationalpattern.recon_sig]),
           circos_png = circos_BND.circos_png,
           pname = patient,
-          vis_file = report_vis_script
+          vis_file = report_vis_script,
+          owl_score = msi_score.owl_score_output,
+          tmb_estimate_file = select_first([tmb_estimate.tmb_estimate_output]),
+          tmb_estimate_gencode_file = select_first([tmb_estimate.tmb_estimate_output_gencode]),
+          sv_pairs_file = circos_BND.known_genes_pairs
       }
     }
   }
 
   output {
+    Array[File?] small_variant_tmb_estimate = tmb_estimate.tmb_estimate_output
+    Array[File?] small_variant_tmb_estimate_gencode = tmb_estimate.tmb_estimate_output_gencode
     Array[File?] small_variant_vcf = phaseTumorBam.hiphase_somatic_small_variants_vcf
     Array[File?] small_variant_vcf_annotated = annotateSomatic.vep_annotated_vcf
     Array[File?] small_variant_tsv_annotated = prioritizeSomatic.vep_annotated_tsv
@@ -430,12 +451,17 @@ workflow hifisomatic {
     Array[File?] tumor_bams_phased_index = phaseTumorBam.hiphase_bam_index
     Array[Array[File]] pileup_tumor_bed = pileup_tumor.pileup_beds
     Array[Array[File]] pileup_tumor_bw = pileup_tumor.pileup_bigwigs
+    Array[File] owl_msi_profile = msi_score.owl_profile_output
+    Array[File] owl_msi_score = msi_score.owl_score_output
+    Array[File] owl_msi_motif_counts = msi_score.owl_motif_counts
     Array[File] Severus_vcf = tabixSeverus.output_vcf
     Array[File] Severus_filtered_vcf = recover_mate_bnd.output_vcf
     Array[File] Severus_filtered_vcf_index = recover_mate_bnd.output_vcf_index
     Array[Array[File]+?] wakhan_cnv = wakhan.wakhan_output
     Array[File?] Severus_cluster_plots = select_first([phased_severus.output_somatic_sv_plots, unphased_severus.output_somatic_sv_plots])
     Array[File] SV_circos = circos_BND.circos_plot
+    Array[File] SV_mitelman_fusions = circos_BND.mitelman_fusions
+    Array[File] SV_known_genes_pairs = circos_BND.known_genes_pairs
     Array[File?] AnnotatedSeverusSV = annotateSeverus.annotsv_annotated_tsv
     Array[File?] AnnotatedSeverusSV_intogen = prioritize_Severus.annotSV_intogen_tsv
     Array[File] mosdepth_tumor_bed = MosdepthTumor.output_bed

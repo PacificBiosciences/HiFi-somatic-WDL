@@ -62,7 +62,7 @@ task prioritize_dmr_intogen {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -87,6 +87,7 @@ task prioritize_sv_intogen {
     # Remove any quote from the file
     sed 's/"//g' ~{annotSV_tsv} > ~{basename(annotSV_tsv)}_noquote.tsv
 
+    # First do an inner join with the Compendium_Cancer_Genes.tsv
     csvtk join -t \
         ~{basename(annotSV_tsv)}_noquote.tsv \
         /app/Compendium_Cancer_Genes.tsv \
@@ -95,8 +96,35 @@ task prioritize_sv_intogen {
             csvtk summary -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
                 -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
                 sed 's/:collapse//g'  > ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
+    
+    # Then, look for mate pair IDs for all BND events
+    { \
+        csvtk cut -t -f INFO ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv | tail -n+2 | awk -F';' '{for (i=1;i<=NF;i++) if ($i ~ /^MATE_ID=/) {split($i,a,"="); print a[2]}}'; \
+    } | csvtk uniq -t | sort > BND_ids.txt
 
-    rm -f ~{basename(annotSV_tsv)}_noquote.tsv
+    # Compare the IDs in the intogen TSV with the IDs in the BND_ids.txt
+    {
+        echo -e "ID"; \
+        csvtk cut -t -f "ID" ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv | sort | uniq | comm -13 - BND_ids.txt; \
+    } > BND_ids_to_recover.txt
+
+    # Filter original rows to the retained IDs so both mates are kept
+    csvtk join -t \
+        ~{basename(annotSV_tsv)}_noquote.tsv \
+        BND_ids_to_recover.txt \
+        -f "ID;ID" |\
+        csvtk cut -t -f "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
+        > recovered_BNDs.tsv
+
+    # Concatenate the original TSV with the recovered BNDs
+    csvtk concat -t \
+        ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv \
+        recovered_BNDs.tsv \
+        > recovered_BNDs_intogenCCG.tsv
+
+    mv recovered_BNDs_intogenCCG.tsv ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
+
+    rm -f ~{basename(annotSV_tsv)}_noquote.tsv ~{basename(annotSV_tsv)}_ccg_id_info.tsv ~{basename(annotSV_tsv)}_retain_ids.tsv ~{basename(annotSV_tsv)}_noquote_retained.tsv BND_ids.txt BND_ids_to_recover.txt recovered_BNDs.tsv
     >>>
 
     output {
@@ -104,7 +132,7 @@ task prioritize_sv_intogen {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -147,7 +175,7 @@ task prioritize_small_variants {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -171,19 +199,22 @@ task report_sample {
         File dmr_intogen_tsv
         File chord_file
         File circos_png
+        File tmb_estimate_file
+        File tmb_estimate_gencode_file
         String pname
-        File? vis_file
+        File vis_file
         String cnv_tool
+        File owl_score
+        File sv_pairs_file
     }
 
-    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(cnv, "GB") + size(purity_ploidy, "GB") + size(mosdepth_tumor, "GB") + size(mosdepth_normal, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + size(dmr_intogen_tsv, "GB") + 10)
+    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(cnv, "GB") + size(purity_ploidy, "GB") + size(mosdepth_tumor, "GB") + size(mosdepth_normal, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + size(dmr_intogen_tsv, "GB") + size(tmb_estimate_file, "GB") + size(tmb_estimate_gencode_file, "GB") + 10)
 
     command <<<
     set -euxo pipefail
 
-    cp /app/visualize_hifisomatic.qmd visualize_hifisomatic.qmd
-    # If vis_file is provided, copy it to the current directory
-    ~{if defined(vis_file) then "cp '" + vis_file + "' visualize_hifisomatic.qmd || true" else ""}
+    # Copy vis_file to the current directory
+    cp ~{vis_file} visualize_hifisomatic.qmd
 
     cp ~{circos_png} circos.png
     
@@ -205,7 +236,11 @@ task report_sample {
             dmr_promoter_file = "~{dmr_intogen_tsv}",
             chord_file = "~{chord_file}",
             sample_name = "~{pname}",
-            cnv_tool = "~{cnv_tool}"
+            cnv_tool = "~{cnv_tool}",
+            owl_score = "~{owl_score}",
+            tmb_estimate_file = "~{tmb_estimate_file}",
+            tmb_estimate_gencode_file = "~{tmb_estimate_gencode_file}",
+            sv_pairs_file = "~{sv_pairs_file}"
         )
     )'
 
@@ -234,22 +269,26 @@ task report_sample_TO {
         File sv_vcf
         File mosdepth_tumor
         File purity_ploidy
-        File cnv
+        File cnv_hap1
+        File cnv_hap2
         File mutsig_tsv
         File mut_reconstructed_sigs
         File circos_png
+        File tmb_estimate_file
+        File tmb_estimate_gencode_file
         String pname
-        File? vis_file
+        File vis_file
+        File owl_score
+        File sv_pairs_file
     }
 
-    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(mosdepth_tumor, "GB") + size(cnv, "GB") + size(purity_ploidy, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + 10)
+    Float file_size = ceil(size(annotated_small_variant_tsv, "GB") + size(intogen_small_var_tsv, "GB") + size(sv_intogen_tsv, "GB") + size(sv_vcf, "GB") + size(mosdepth_tumor, "GB") + size(cnv_hap1, "GB") + size(cnv_hap2, "GB") + size(purity_ploidy, "GB") + size(mutsig_tsv, "GB") + size(mut_reconstructed_sigs, "GB") + size(tmb_estimate_file, "GB") + size(tmb_estimate_gencode_file, "GB") + 10)
 
     command <<<
     set -euxo pipefail
 
-    cp /app/visualize_hifisomatic_tumor_only.qmd visualize_hifisomatic.qmd
-    # If vis_file is provided, copy it to the current directory
-    ~{if defined(vis_file) then "cp '" + vis_file + "' visualize_hifisomatic.qmd || true" else ""}
+    # Copy vis_file to the current directory
+    cp ~{vis_file} visualize_hifisomatic.qmd
 
     cp ~{circos_png} circos.png
     
@@ -262,12 +301,17 @@ task report_sample_TO {
             intogen_smallvar = "~{intogen_small_var_tsv}",
             sv_file = "~{sv_intogen_tsv}",
             sv_vcf_file = "~{sv_vcf}",
-            cnv_file = "~{cnv}",
+            cnv_hap1_file = "~{cnv_hap1}",
+            cnv_hap2_file = "~{cnv_hap2}",
             purity_ploidy_file = "~{purity_ploidy}",
              mosdepth_tumor_file = "~{mosdepth_tumor}",
             mut_sig_file = "~{mutsig_tsv}",
             mut_context_file = "~{mut_reconstructed_sigs}",
-            sample_name = "~{pname}"
+            sample_name = "~{pname}",
+            owl_score = "~{owl_score}",
+            tmb_estimate_file = "~{tmb_estimate_file}",
+            tmb_estimate_gencode_file = "~{tmb_estimate_gencode_file}",
+            sv_pairs_file = "~{sv_pairs_file}"
         )
     )'
 

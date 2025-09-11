@@ -81,6 +81,7 @@ workflow align_all_bams {
 # Version 1.12 (minimap2 2.17) SHA: d16e5df5bfab75ff2defd2984ec6cb7665473e383045e2a075ea1261ae188861
 # Version 1.14.99 (minimap2 2.26) SHA: 19ca8f306b0c1c61aad0bf914c2a291b9ea9b8437e28dbdb5d76f93b81a0dbdf
 # Version 1.16.0 (minimap2 2.26) SHA: 4a01f9a3ede68cd018d8d2e79f8773f331f21b35c764ac48b8595709dbd417f7
+# Version 1.17.0 SHA: c1ec77296850cbdb02621bca1addcc25e510aacdabbad753ab3b0b8ba43ccd52
 task Align {
   input {
     File bam_file
@@ -123,7 +124,7 @@ task Align {
   }
 
   runtime {
-    docker: "quay.io/biocontainers/pbmm2@sha256:19ca8f306b0c1c61aad0bf914c2a291b9ea9b8437e28dbdb5d76f93b81a0dbdf"
+    docker: "quay.io/biocontainers/pbmm2@sha256:c1ec77296850cbdb02621bca1addcc25e510aacdabbad753ab3b0b8ba43ccd52"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

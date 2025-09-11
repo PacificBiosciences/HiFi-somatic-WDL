@@ -134,6 +134,7 @@ task call_DeepSomatic {
         --sample_name_tumor=~{pname + ".tumor"} \
         --sample_name_normal=~{pname + ".normal"} \
         --num_shards=~{threads} \
+        --postprocess_variants_extra_args="--cpus=~{threads / 2},--num_partitions=~{threads / 2}" \
         --logging_dir=deepvariant_~{pname}/logs \
         ~{"--regions=" + contig}
 

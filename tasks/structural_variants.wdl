@@ -40,20 +40,27 @@ task Severus_sv {
     # Compress SVs plots HTML inside somatic_SVs/plots directory
     # Check if the directory exists first
     if [[ -d ~{pname + "_severus/somatic_SVs/plots"} ]]
-      then tar -czvf ~{pname + "_severus/somatic_SVs/plots.tar.gz"} ~{pname + "_severus/somatic_SVs/plots"}
+      then tar -czvf ~{pname + "_severus/somatic_SVs/" + pname + ".plots.tar.gz"} ~{pname + "_severus/somatic_SVs/plots"}
     fi
+
+    # Rename output vcf
+    if [[ -f ~{pname + "_severus/somatic_SVs/severus_somatic.vcf"} ]]; then mv ~{pname + "_severus/somatic_SVs/severus_somatic.vcf"} ~{pname + "_severus/somatic_SVs/" + pname + ".severus_somatic.vcf"}; fi
+    if [[ -f ~{pname + "_severus/all_SVs/severus_all.vcf"} ]]; then mv ~{pname + "_severus/all_SVs/severus_all.vcf"} ~{pname + "_severus/all_SVs/" + pname + ".severus_all.vcf"}; fi
+    # Rename breakpoint clusters list
+    if [[ -f ~{pname + "_severus/somatic_SVs/breakpoint_clusters_list.tsv"} ]]; then mv ~{pname + "_severus/somatic_SVs/breakpoint_clusters_list.tsv"} ~{pname + "_severus/somatic_SVs/" + pname + ".somatic_breakpoint_clusters_list.tsv"}; fi
+    if [[ -f ~{pname + "_severus/all_SVs/breakpoint_clusters_list.tsv"} ]]; then mv ~{pname + "_severus/all_SVs/breakpoint_clusters_list.tsv"} ~{pname + "_severus/all_SVs/" + pname + ".all_breakpoint_clusters_list.tsv"}; fi
   >>>
 
   output {
-    File? output_vcf = pname + "_severus/somatic_SVs/severus_somatic" + ".vcf"
-    File? output_all_vcf = pname + "_severus/all_SVs/severus_all.vcf"
-    File? output_breakpoint_clusters = pname + "_severus/somatic_SVs/" + "breakpoint_clusters_list.tsv"
-    File? output_breakpoint_clusters_all = pname + "_severus/all_SVs/" + "breakpoint_clusters_list.tsv"
-    File? output_somatic_sv_plots = pname + "_severus/somatic_SVs/plots.tar.gz"
+    File output_vcf = pname + "_severus/somatic_SVs/" + pname + ".severus_somatic.vcf"
+    File? output_all_vcf = pname + "_severus/all_SVs/" + pname + ".severus_all.vcf"
+    File? output_breakpoint_clusters = pname + "_severus/somatic_SVs/" + pname + ".somatic_breakpoint_clusters_list.tsv"
+    File? output_breakpoint_clusters_all = pname + "_severus/all_SVs/" + pname + ".all_breakpoint_clusters_list.tsv"
+    File? output_somatic_sv_plots = pname + "_severus/somatic_SVs/" + pname + ".plots.tar.gz"
   }
 
   runtime {
-    docker: "quay.io/biocontainers/severus@sha256:9aaf81a02cc7f8be5dd9bb3bece00b9097f08368cebce297aba9aa7fc932b42e"
+    docker: "quay.io/biocontainers/severus@sha256:df04bec4a0ae9c55104ff91d6063d8c7c58b05145db04ad481f5d3d9527a9b7d"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
@@ -71,12 +78,11 @@ task SAVANA_sv {
     File normal_bam_index
     File ref_fasta
     File ref_fasta_index
-    File? phased_vcf
     String pname
     Int threads
     Int? min_supp_reads
-    Float? min_af
     Int svlength = 50
+    File? phased_vcf
   }
 
   command <<<
@@ -92,29 +98,32 @@ task SAVANA_sv {
       --threads ~{threads} \
       --outdir ~{pname + "_savana"} \
       --contigs contig.txt \
-      --pb \
       --single_bnd \
-      --no_blacklist \
       --sample ~{pname} \
       --length ~{svlength} \
-      ~{"--phased_vcf " + phased_vcf} \
-      ~{"--min_support " + min_supp_reads} \
-      ~{"--min_af " + min_af}
-
+      --pb \
+      ~{"--snp_vcf " + phased_vcf} \
+      ~{"--min_support " + min_supp_reads}
   >>>
 
   output {
-    File savana_vcf = pname + "_savana/" + pname + ".classified.somatic.vcf"
-    File cnv_segments = pname + "_savana/" + pname + "_read_counts_mnorm_log2r_segmented.tsv"
-    File cnv_absolute_cn = pname + "_savana/" + pname + "_segmented_absolute_copy_number.tsv"
-    File purity_ploidy = pname + "_savana/" + pname + "_fitted_purity_ploidy.tsv"
-    File purity_ploidy_solutions = pname + "_savana/" + pname + "_ranked_solutions.tsv"
-    Array[File] savana_output = [savana_vcf, cnv_segments, cnv_absolute_cn, purity_ploidy, purity_ploidy_solutions]
-
+    File savana_vcf = pname + "_savana/" + pname + ".sv_breakpoints.vcf"
+    File savana_classified_somatic_vcf = pname + "_savana/" + pname + ".classified.somatic.vcf"
+    File savana_classified_vcf = pname + "_savana/" + pname + ".classified.vcf"
+    File savana_sv_breakpoints_bedpe = pname + "_savana/" + pname + ".sv_breakpoints.bedpe"
+    File savana_sv_breakpoints_read_support = pname + "_savana/" + pname + ".sv_breakpoints_read_support.tsv"
+    File savana_10kbp_bin_ref_all = pname + "_savana/10kbp_bin_ref_all_" + pname + "_with_SV_breakpoints.bed"
+    File savana_allele_counts_hetSNPs = pname + "_savana/" + pname + "_allele_counts_hetSNPs.bed"
+    File savana_fitted_purity_ploidy = pname + "_savana/" + pname + "_fitted_purity_ploidy.tsv"
+    File savana_inserted_sequences = pname + "_savana/" + pname + ".inserted_sequences.fa"
+    File savana_ranked_solutions = pname + "_savana/" + pname + "_ranked_solutions.tsv"
+    File savana_raw_read_counts = pname + "_savana/" + pname + "_raw_read_counts.tsv"
+    File savana_read_counts_mnorm_log2r_segmented = pname + "_savana/" + pname + "_read_counts_mnorm_log2r_segmented.tsv"
+    File savana_segmented_absolute_copy_number = pname + "_savana/" + pname + "_segmented_absolute_copy_number.tsv"
   }
 
   runtime {
-    container: "quay.io/biocontainers/savana@sha256:e7560628f7bd3a212520fbd5005589b78e9d95f95255867b42d143dc67a0028b"
+    container: "quay.io/biocontainers/savana@sha256:adaf7806939fae6f656187a137e362b811780e8b420e83e4381657a6f3a40d66"
     cpu: threads
     memory: "~{threads * 4} GB"
   }
@@ -124,6 +133,7 @@ task SAVANA_sv {
 task circos_BND {
   input {
     File sv_vcf
+    Int max_gene_labels = 100
     String pname
 
     Int threads = 8
@@ -139,16 +149,19 @@ task circos_BND {
     python /app/plot_circos.py \
       ~{sv_vcf} \
       ~{pname + ".circos"} \
-      /app/MCGENE.TXT.DATA
+      /app/MCGENE.TXT.DATA \
+      --max-gene-labels ~{max_gene_labels}
   >>>
 
   output {
     File circos_plot = pname + ".circos.pdf"
     File circos_png = pname + ".circos.png"
+    File mitelman_fusions = pname + ".circos.mitelman_fusions.tsv"
+    File known_genes_pairs = pname + ".circos.known_gene_pairs.tsv"
   }
 
   runtime {
-      docker: "quay.io/pacbio/somatic_general_tools@sha256:a25a2e62b88c73fa3c18a0297654420a4675224eb0cf39fa4192f8a1e92b30d6"
+      docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
       cpu: threads
       memory: "~{threads * 4} GB"
       disk: file_size + " GB"
@@ -168,8 +181,8 @@ task wakhan {
     File? normal_germline_vcf
     File tumor_germline_vcf
     Int threads = 16
-    String purity_range = "0.2-1.0"
-    String ploidy_range = "1-6"
+    String purity_range = "0.2-0.99"
+    String ploidy_range = "1.0-6.0"
   }
 
   Float file_size = ceil(size(tumor_bam, "GB") + size(ref_fasta, "GB") + size(severus_sv_vcf, "GB") + size(normal_germline_vcf, "GB") + 10)
@@ -187,10 +200,11 @@ task wakhan {
       --out-dir ~{pname + "_wakhan"} \
       --breakpoints ~{severus_sv_vcf} \
       --loh-enable \
+      --use-sv-haplotypes \
       --ploidy-range ~{ploidy_range} \
       --purity-range ~{purity_range} \
-      --centromere /opt/wakhan/Wakhan/src/annotations/grch38.cen_coord.curated.bed \
-      ~{if (defined(normal_germline_vcf)) then " --normal-phased-vcf " + normal_germline_vcf else " --tumor-vcf " + tumor_germline_vcf + " --hets-ratio 0.25"}
+      --centromere /opt/wakhan/src/annotations/grch38.cen_coord.curated.bed \
+      ~{if (defined(normal_germline_vcf)) then " --normal-phased-vcf " + normal_germline_vcf else " --tumor-phased-vcf " + tumor_germline_vcf + " --hets-ratio 0.25"}
 
     # Save purity and ploidy
     cd ~{pname + "_wakhan"}
@@ -226,9 +240,23 @@ task wakhan {
     # Delete variation_plots folder (big!)
     rm -rf ~{pname + "_wakhan_best/variation_plots"}
     # Rename files
-    mv ~{pname + "_wakhan_best"}/bed_output/*copynumbers_segments.bed ~{pname + ".copynumbers_segments.bed"}
+    # if there's copy number segments ending with HP_1.bed, rename to HP_1.bed. Also means
+    # there must be HP_2.bed as well.
+    if [[ -n $(compgen -G "~{pname + "_wakhan_best"}/bed_output/*copynumbers_segments_HP_1.bed") ]]; then
+      mv ~{pname + "_wakhan_best"}/bed_output/*copynumbers_segments_HP_1.bed ~{pname + ".copynumbers_segments_HP_1.bed"}
+      mv ~{pname + "_wakhan_best"}/bed_output/*copynumbers_segments_HP_2.bed ~{pname + ".copynumbers_segments_HP_2.bed"}
+      # Move the subclonal segments
+      mv ~{pname + "_wakhan_best"}/bed_output/*subclonal_segments_HP_1.bed ~{pname + ".subclonal_segments_HP_1.bed"}
+      mv ~{pname + "_wakhan_best"}/bed_output/*subclonal_segments_HP_2.bed ~{pname + ".subclonal_segments_HP_2.bed"}
+    else
+      mv ~{pname + "_wakhan_best"}/bed_output/*copynumbers_segments.bed ~{pname + ".copynumbers_segments.bed"}
+      mv ~{pname + "_wakhan_best"}/bed_output/*subclonal_segments.bed ~{pname + ".subclonal_segments.bed"}
+    fi
     mv ~{pname + "_wakhan_best"}/bed_output/loh_regions.bed ~{pname + ".loh_regions.bed"}
-    mv ~{pname + "_wakhan_best"}/bed_output/cancer_genes_copynumber_states.bed ~{pname + ".cancer_genes_copynumber.bed"}
+    mv ~{pname + "_wakhan_best"}/bed_output/genes_copynumber_states.bed ~{pname + ".cancer_genes_copynumber.bed"}
+    # HTML plot
+    mv ~{pname + "_wakhan_best"}/*genome_copynumbers_breakpoints.html ~{pname + ".genome_copynumbers_breakpoints.html"}
+    mv ~{pname + "_wakhan_best"}/*genome_copynumbers_details.html ~{pname + ".genome_copynumbers_details.html"}
 
     rm -rf ~{pname + "_wakhan"}
   >>>
@@ -236,14 +264,21 @@ task wakhan {
   output {
     File wakhan_tar = pname + "_wakhan.tar.gz"
     File wakhan_purity_ploidy = "purity_ploidy.tsv"
-    File copynumbers_segments = pname + ".copynumbers_segments.bed"
+    File? copynumbers_segments = pname + ".copynumbers_segments.bed"
+    File? copynumbers_segments_HP_1 = pname + ".copynumbers_segments_HP_1.bed"
+    File? copynumbers_segments_HP_2 = pname + ".copynumbers_segments_HP_2.bed"
+    File? subclonal_segments_HP_1 = pname + ".subclonal_segments_HP_1.bed"
+    File? subclonal_segments_HP_2 = pname + ".subclonal_segments_HP_2.bed"
+    File? subclonal_segments = pname + ".subclonal_segments.bed"
     File loh_regions = pname + ".loh_regions.bed"
     File cancer_genes_copynumber = pname + ".cancer_genes_copynumber.bed"
-    Array[File] wakhan_output = [wakhan_tar, wakhan_purity_ploidy, copynumbers_segments, loh_regions, cancer_genes_copynumber]
+    File genome_copynumbers_breakpoints = pname + ".genome_copynumbers_breakpoints.html"
+    File genome_copynumbers_details = pname + ".genome_copynumbers_details.html"
+    Array[File] wakhan_output = select_all([wakhan_tar, wakhan_purity_ploidy, copynumbers_segments, copynumbers_segments_HP_1, copynumbers_segments_HP_2, subclonal_segments, subclonal_segments_HP_1, subclonal_segments_HP_2, loh_regions, cancer_genes_copynumber, genome_copynumbers_breakpoints, genome_copynumbers_details])
   }
 
   runtime {
-    docker: "mkolmogo/wakhan:dev_c717baa"
+    docker: "kpinpb/wakhan@sha256:bbd2eb84e203410c7e9efc476ad1940166fc7f0769d93a0d11fbd7338afda847"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

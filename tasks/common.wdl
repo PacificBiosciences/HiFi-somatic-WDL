@@ -186,8 +186,8 @@ task recover_mate_bnd {
   fi
 
   comm -13 \
-    <(bcftools query -f '%ID\t%MATE_ID\n' ~{basename(sv_svpack_filtered)} | rg -v '\.' | cut -f1 | sort) \
-    <(bcftools query -f '%ID\t%MATE_ID\n' ~{basename(sv_svpack_filtered)} | rg -v '\.' | cut -f2 | sort) \
+    <(bcftools query -f '%ID\t%MATE_ID\n' ~{basename(sv_svpack_filtered)} | grep -v '\.' | cut -f1 | sort) \
+    <(bcftools query -f '%ID\t%MATE_ID\n' ~{basename(sv_svpack_filtered)} | grep -v '\.' | cut -f2 | sort) \
     > missing_mate.txt
 
   # Extract the missing BNDs
@@ -196,8 +196,10 @@ task recover_mate_bnd {
     ~{basename(sv_vcf_original)} |\
       bcftools sort -Oz -o missing_mate.vcf.gz
 
+  tabix missing_mate.vcf.gz
+
   # Add the missing BNDs back to the filtered VCF
-  bcftools concat \
+  bcftools concat -a \
     ~{basename(sv_svpack_filtered)} \
     missing_mate.vcf.gz |\
       bcftools sort -Oz -o tmp.vcf.gz
@@ -449,43 +451,51 @@ task summarize_seqkit_alignment {
   Float file_size = ceil(size(seqkit_alignment_stats, "GB") + 10)
 
   command <<<
-  set -euo pipefail
+    set -euo pipefail
 
-  csvtk version
+    csvtk version
 
-  echo -e "mean\tmedian\tn50\tsum" > ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
-  csvtk cut -j ~{threads} -t -fRead,ReadLen ~{seqkit_alignment_stats} | csvtk uniq -t | csvtk sort -t -k ReadLen:n | awk '{
-      sum += $2;         # Sum the values
-      values[NR] = $2;  # Store the values in an array
-  } 
-  END {
-      n = length(values);   # Get the total number of values
-      # Note that below assume "values" are sorted (using csvtk before input)
-
-      # Calculate and print mean
-      mean = sum / n;
-
-      # Calculate and print median
-      if (n % 2 == 0) {
-          median = (values[n/2] + values[n/2 + 1]) / 2;
-      } else {
-          median = values[(n + 1) / 2];
-      }
-
-      # Calculate N50
-      half_sum = sum / 2;
-      cumulative_sum = 0;
-      for (i = 1; i <= n; i++) {
-          cumulative_sum += values[i];
-          if (cumulative_sum >= half_sum) {
-              n50=values[i];
-              break;
-          }
-      }
-
-      # Print all the values
-      print mean, median, n50, sum
-  }' OFS=$'\t' >> ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
+    echo -e "mean\tmedian\tn50\tsum" > ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
+    
+    # Extract and sort read lengths
+    csvtk cut -j ~{threads} -t -fRead,ReadLen ~{seqkit_alignment_stats} | \
+      tail -n+2 |
+      sort -u -S 4G | \
+      cut -f2 | \
+      sort -n -S 4G > sorted_lengths.txt
+    
+    # Calculate basic stats
+    total_reads=$(wc -l < sorted_lengths.txt)
+    sum=$(awk '{sum += $1} END {print sum}' sorted_lengths.txt)
+    mean=$(awk -v sum="$sum" -v count="$total_reads" 'BEGIN {print sum/count}')
+    
+    # Calculate median
+    if [ $((total_reads % 2)) -eq 0 ]; then
+      # Even number of reads
+      mid1=$((total_reads / 2))
+      mid2=$((mid1 + 1))
+      median=$(sed -n "${mid1}p;${mid2}p" sorted_lengths.txt | awk '{sum += $1} END {print sum/2}')
+    else
+      # Odd number of reads
+      mid=$(((total_reads + 1) / 2))
+      median=$(sed -n "${mid}p" sorted_lengths.txt)
+    fi
+    
+    # Calculate N50
+    half_sum=$((sum / 2))
+    cumsum=0
+    n50=0
+    while IFS= read -r length; do
+      cumsum=$((cumsum + length))
+      if [ $cumsum -ge $half_sum ] && [ $n50 -eq 0 ]; then
+        n50=$length
+        break
+      fi
+    done < sorted_lengths.txt
+    
+    echo -e "${mean}\t${median}\t${n50}\t${sum}" >> ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
+    
+    rm sorted_lengths.txt
   >>>
 
   output {

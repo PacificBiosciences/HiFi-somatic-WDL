@@ -8,7 +8,7 @@
 
 ---
 
-<h1 align="center"><img width="100%" src="figures/simple_workflow_diagram.png"/></h1>
+<h1 align="center"><img width="85%" src="figures/simple_workflow_diagram.png"/></h1>
 
 ## Table of contents
 
@@ -18,6 +18,7 @@
 - [Important outputs from workflow](#important-outputs-from-workflow)
   - [Small Variants (SNVs/INDELs)](#small-variants-snvsindels)
   - [Structural Variants and Copy Number](#structural-variants-and-copy-number)
+  - [Biomarkers](#biomarkers)
   - [Methylation](#methylation)
   - [Other Analyses](#other-analyses)
   - [QC and Alignment Stats](#qc-and-alignment-stats)
@@ -60,7 +61,18 @@ The workflow will generate the following results in the `$OUTDIR/_LAST/out` fold
 | Severus_cluster_plots | Clusters visualization (HTML) | Both |
 | cnvkit_cns_with_major_minor_CN | Copy number segments with purity/ploidy | Tumor/Normal |
 | Purple_outputs | Purity, ploidy and allele-specific CNVs | Tumor/Normal |
-| wakhan_cnv | Alternative CNV calls | Both |
+| wakhan_cnv | Alternative CNV calls from Wakhan | Both |
+| SV_known_genes_pairs | Breakpoint-pairs involving genes in Mitelman database | Both |
+| SV_mitelman_fusions | Breakpoint pairs involving known fusions from Mitelman database | Both |
+
+### Biomarkers
+| Folder | Description | Mode |
+|--------|-------------|------|
+| owl_msi_profile | `owl` output containing per-site micro-satellite repeats length and variability | Both |
+| owl_msi_motif_counts | `owl` output breaking down percentage unstable sites for different micro-satellite repeats motifs | Both |
+| owl_msi_score | `owl` scores output containing a simple stable/unstable sites count | Both |
+| small_variant_tmb_estimate | Tumor mutation burden (TMB) estimate based on small variants | Both |
+| small_variant_tmb_estimate_gencode | TMB, limited to Gencode CDS region | Both |
 
 ### Methylation
 | Folder | Description | Mode |
@@ -123,8 +135,6 @@ Following are the references for the tools used in the workflow, which should be
 17. Nguyen, L., W. M. Martens, J., Van Hoeck, A. & Cuppen, E. Pan-cancer landscape of homologous recombination deficiency. Nat Commun 11, 5584 (2020).
 18. Keskus, A. et al. Severus: accurate detection and characterization of somatic structural variation in tumor genomes using long reads. 2024.03.22.24304756 Preprint at https://doi.org/10.1101/2024.03.22.24304756 (2024).
 
-
-
 </details>
 
 ## Tools versions
@@ -134,10 +144,10 @@ Following are the references for the tools used in the workflow, which should be
 
 | Tool         | Version   | Purpose                                              | Container |
 | ------------ | --------- | ---------------------------------------------------- | --------- |
-| pbmm2        | 1.14.99    | Alignment of HiFi reads                              | [quay.io](https://quay.io/repository/biocontainers/pbmm2) |
+| pbmm2        | 1.17.0    | Alignment of HiFi reads                              | [quay.io](https://quay.io/repository/biocontainers/pbmm2) |
 | pbtk         | 3.1.0     | Merging HiFi reads                                   | [quay.io](https://quay.io/repository/biocontainers/pbtk) |
 | samtools     | 1.17      | Various tasks manipulating BAM files                 | [quay.io](https://quay.io/repository/biocontainers/samtools) |
-| VEP          | 110.1     | Annotation of small variants                         | [docker](ensemblorg/ensembl-vep) |
+| VEP          | 112     | Annotation of small variants                         | [docker](ensemblorg/ensembl-vep) |
 | AnnotSV     | 3.4.12    | Annotation of structural variants                    | [quay.io](https://quay.io/repository/biocontainers/annotsv) |
 | DSS          | 2.48.0    | Differential methylation                             | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
 | annotatr     | 1.26.0    | Annotation of differentially methylated region (DMR) | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
@@ -148,9 +158,9 @@ Following are the references for the tools used in the workflow, which should be
 | bedtools     | 2.31.0    | Splitting genome intervals for parallelization       | [quay.io](https://quay.io/repository/biocontainers/bedtools) |
 | mosdepth     | 0.3.4     | Calculating depth of coverage                        | [quay.io](https://quay.io/repository/biocontainers/mosdepth) |
 | pb-CpG-tools | 2.3.1     | Summarizing 5mC probability                          | [quay.io](https://quay.io/pacbio/pb-cpg-tools) |
-| HiPhase      | 1.4.5     | Diploid phasing using germline variants              | [quay.io](https://quay.io/repository/biocontainers/hiphase) |
+| HiPhase      | 1.5.0     | Diploid phasing using germline variants              | [quay.io](https://quay.io/repository/biocontainers/hiphase) |
 | slivar       | 0.3.0     | Selecting/filtering variants from VCF                | [quay.io](https://quay.io/repository/biocontainers/slivar) |
-| Severus      | 1.5       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
+| Severus      | 1.6.0       | Structural variants                                  | [quay.io](https://quay.io/repository/biocontainers/severus) |
 | seqkit       | 2.5.1     | Aligned BAM statistics                               | [quay.io](https://quay.io/repository/biocontainers/seqkit) |
 | csvtk        | 0.27.2    | Aligned BAM statistics summary and other CSV/TSV operation | [quay.io](https://quay.io/repository/biocontainers/csvtk) |
 | IntOGen      | Sep 30 2024 | Compendium of Cancer Genes for annotation          | [self-hosted on quay.io](https://quay.io/pacbio/somatic_r_tools) |
@@ -162,7 +172,10 @@ Following are the references for the tools used in the workflow, which should be
 | DeepSomatic  | v1.9.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
 | CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
 | SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
-| Wakhan | v0.1.0 | Copy number variants caller | [docker](https://hub.docker.com/mkolmogo/wakhan) |
+| Wakhan | commit 52d59c56be547bd93245a855c7aa5b6da35da691 | Copy number variants caller | [docker](https://hub.docker.com/kpinpb/wakhan) |
+| owl  | v0.1.3 | MSI profiling and scoring | [docker](https://hub.docker.com/kpinpb/owl) |
+| tmb-calculator | v0.1.1 | Estimate TMB based on VEP consequences | [docker](https://hub.docker.com/kpinpb/tmb-calculator) |
+| Gencode bed file | v46 | CDS region used for TMB estimation | [self-hosted on quay.io](https://hub.docker.com/kpinpb/owl) |
 </details>
 
 ## Change logs
@@ -170,14 +183,39 @@ Following are the references for the tools used in the workflow, which should be
 <details>
   <summary>Click to expand changelogs:</summary>
 
+- v0.9.3
+  - Updated pbmm2 to 1.17.0 ([Changelog](https://github.com/PacificBiosciences/pbmm2?tab=readme-ov-file#full-changelog)). This will now work with with Vega dataset.
+  - Added CPU arguments to `postprocess_variant` for DeepSomatic - This will fix the issue where in some
+    HPC DeepSomatic will detect too many threads by default and causes it to run OOM.
+  - Updated alignment stats summary logic so it will not run out of memory when there's a lot of reads. This 
+    does not change the results compared to before.
+  - Updated HiPhase to 1.5.0 which should reduce memory for phasing in some cases.
+  - Increased default CPU for Severus and Wakhan to 24 (Can be modified with `sv_threads` and `wakhan_threads`)
+  - Updated Severus to 1.6.0.
+  - Updated Wakhan to commit `52d59c56be547bd93245a855c7aa5b6da35da691`. Note this is still experimental.
+  - Added owl MSI caller and tumor mutational burden (TMB) estimate.
+    - Note that these have not been tested on a large cohort, and we welcome feedbacks on these.
+  - Decouple visualization script from reporting script.
+  - Updated HPRC control SV calls to include additional samples from new relsease (Total of 232) and uses Severus 1.6 to re-call the SVs.
+  - Fixed a bug in matepairs recovery after svpack filtering.
+  - Updated Mitelman fusion database to July 10, 2025 release.
+  - Improved circos plot for translocations breakpoints.
+  - Added TMB estimate using annotated small variants.
+  - Updated SV filtering so that when translocation involves one cancer gene and the other breakpoint doesn't,
+    it'll still output both breakpoints in the filtered TSV (and in the final report).
+  - Output breakpoints pairs involving genes in Mitelman fusions database.
+  - Fixed VAF bug reported by [ljh-9809](https://github.com/PacificBiosciences/HiFi-somatic-WDL/issues/17)
+
 - v0.9.2
   - Updated DeepSomatic to 1.9.0. This should fixed the empty region issue with demo BAM.
   - Updated Severus to v1.5.0.
   - Fixed HMFtools database URL.
   - Fixed reporting bug reported by [Rhett Rhautsaw](https://github.com/PacificBiosciences/HiFi-somatic-WDL/pull/19)
+
 - v0.9.1
   - Fixed calculation of N50 read length (previously calculating L50).
   - Reduced memory usage of seqkit alignment summary.
+
 - v0.9:
   - Tumor-only workflow is now supported. See [here](docs/step-by-step.md) for instructions.
   - Updated Severus to 1.3.
