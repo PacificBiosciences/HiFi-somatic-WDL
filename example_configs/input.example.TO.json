@@ -26,7 +26,6 @@
     "hifisomatic.call_small_variants": true,
     "hifisomatic.vep_cache": "/path/to/homo_sapiens_refseq_vep_112_GRCh38.tar.gz",
     "hifisomatic.annotsv_cache": "/path/to/annotsv.tar.gz",
-    "hifisomatic.ensembl_data_dir_tarball": "/path/to/hmf_pipeline_resources.38_v2.0.0--3.tar.gz",
     "hifisomatic.use_deepsomatic": true,
     "hifisomatic.severus_pon_tsv": "/path/to/PoN_1000G_hg38_extended.tsv.gz",
     "hifisomatic.report_vis_script": "/path/to/visualize_hifisomatic_tumor_only.qmd"
