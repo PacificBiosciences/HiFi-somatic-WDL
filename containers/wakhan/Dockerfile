@@ -27,32 +27,12 @@ USER mambauser
 # Clone Wakhan repository at specific commit
 RUN git clone --depth 1 https://github.com/KolmogorovLab/Wakhan.git /tmp/wakhan && \
     cd /tmp/wakhan && \
-    git fetch --depth 1 origin 2c909df59337f6c52c8437db5e934d2aee06ceec && \
-    git checkout 2c909df59337f6c52c8437db5e934d2aee06ceec && \
+    git fetch --depth 1 origin 55692a6fdc32fa628b9bcad9a5aaddb359e0c274 && \
+    git checkout 55692a6fdc32fa628b9bcad9a5aaddb359e0c274 && \
     cp -r /tmp/wakhan/* /opt/wakhan/
 
 # Create optimized environment with specific versions and install Wakhan
-RUN echo "name: wakhan" > /tmp/environment.yml && \
-    echo "channels:" >> /tmp/environment.yml && \
-    echo "  - conda-forge" >> /tmp/environment.yml && \
-    echo "  - bioconda" >> /tmp/environment.yml && \
-    echo "dependencies:" >> /tmp/environment.yml && \
-    echo "  - python=3.8" >> /tmp/environment.yml && \
-    echo "  - samtools>=1.14" >> /tmp/environment.yml && \
-    echo "  - bcftools>=1.14" >> /tmp/environment.yml && \
-    echo "  - pip" >> /tmp/environment.yml && \
-    echo "  - pip:" >> /tmp/environment.yml && \
-    echo "    - pysam" >> /tmp/environment.yml && \
-    echo "    - pyfaidx" >> /tmp/environment.yml && \
-    echo "    - numpy" >> /tmp/environment.yml && \
-    echo "    - pandas" >> /tmp/environment.yml && \
-    echo "    - plotly" >> /tmp/environment.yml && \
-    echo "    - scikit-learn==1.2.0" >> /tmp/environment.yml && \
-    echo "    - scipy==1.9.2" >> /tmp/environment.yml && \
-    echo "    - ruptures" >> /tmp/environment.yml && \
-    echo "    - vcf_parser" >> /tmp/environment.yml && \
-    echo "    - kaleido" >> /tmp/environment.yml && \
-    micromamba create -f /tmp/environment.yml -n $CONDA_ENV_NAME -y && \
+RUN micromamba create -f /opt/wakhan/environment.yml -n $CONDA_ENV_NAME -y && \
     micromamba clean --all --yes && \
     eval "$(micromamba shell hook --shell bash)" && \
     micromamba activate $CONDA_ENV_NAME && \
@@ -77,6 +57,6 @@ CMD ["--help"]
 
 # Add labels for metadata
 LABEL maintainer="Wakhan Docker Image"
-LABEL version="commit 2c909df59337f6c52c8437db5e934d2aee06ceec"
+LABEL version="commit 55692a6fdc32fa628b9bcad9a5aaddb359e0c274"
 LABEL description="Wakhan - A tool for analyzing haplotype-specific chromosome-scale somatic copy number aberrations"
 LABEL repository="https://github.com/KolmogorovLab/Wakhan"

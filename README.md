@@ -172,7 +172,7 @@ Following are the references for the tools used in the workflow, which should be
 | DeepSomatic  | v1.9.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
 | CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
 | SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
-| Wakhan | commit 52d59c56be547bd93245a855c7aa5b6da35da691 | Copy number variants caller | [docker](https://hub.docker.com/kpinpb/wakhan) |
+| Wakhan | commit 55692a6fdc32fa628b9bcad9a5aaddb359e0c274 | Copy number variants caller | [docker](https://hub.docker.com/kpinpb/wakhan) |
 | owl  | v0.1.3 | MSI profiling and scoring | [docker](https://hub.docker.com/kpinpb/owl) |
 | tmb-calculator | v0.1.1 | Estimate TMB based on VEP consequences | [docker](https://hub.docker.com/kpinpb/tmb-calculator) |
 | Gencode bed file | v46 | CDS region used for TMB estimation | [self-hosted on quay.io](https://hub.docker.com/kpinpb/owl) |
@@ -182,6 +182,10 @@ Following are the references for the tools used in the workflow, which should be
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.9.3a
+  - Updated Wakhan to commit `55692a6fdc32fa628b9bcad9a5aaddb359e0c274`.
+  - Removed unnecessary parameters in tumor-only example json.
 
 - v0.9.3
   - Updated pbmm2 to 1.17.0 ([Changelog](https://github.com/PacificBiosciences/pbmm2?tab=readme-ov-file#full-changelog)). This will now work with with Vega dataset.
