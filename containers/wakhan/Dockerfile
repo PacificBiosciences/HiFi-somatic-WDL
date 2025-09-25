@@ -27,8 +27,8 @@ USER mambauser
 # Clone Wakhan repository at specific commit
 RUN git clone --depth 1 https://github.com/KolmogorovLab/Wakhan.git /tmp/wakhan && \
     cd /tmp/wakhan && \
-    git fetch --depth 1 origin 55692a6fdc32fa628b9bcad9a5aaddb359e0c274 && \
-    git checkout 55692a6fdc32fa628b9bcad9a5aaddb359e0c274 && \
+    git fetch --depth 1 origin a2dad42536475b6058d13253b4da7dbc8e4c4377 && \
+    git checkout a2dad42536475b6058d13253b4da7dbc8e4c4377 && \
     cp -r /tmp/wakhan/* /opt/wakhan/
 
 # Create optimized environment with specific versions and install Wakhan
@@ -57,6 +57,6 @@ CMD ["--help"]
 
 # Add labels for metadata
 LABEL maintainer="Wakhan Docker Image"
-LABEL version="commit 55692a6fdc32fa628b9bcad9a5aaddb359e0c274"
+LABEL version="commit a2dad42536475b6058d13253b4da7dbc8e4c4377"
 LABEL description="Wakhan - A tool for analyzing haplotype-specific chromosome-scale somatic copy number aberrations"
 LABEL repository="https://github.com/KolmogorovLab/Wakhan"

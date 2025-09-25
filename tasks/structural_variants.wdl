@@ -278,7 +278,7 @@ task wakhan {
   }
 
   runtime {
-    docker: "kpinpb/wakhan@sha256:46fa90ec2a73bda711390c2f98d7b812f73ba1f8b48034d75b2b8d3aac5f35dc"
+    docker: "kpinpb/wakhan@sha256:latest"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

@@ -123,7 +123,7 @@ Lastly, we include [Wakhan](https://github.com/KolmogorovLab/Wakhan) as an alter
 
 We developed `owl` to profile microsatellite repeats in tumors (no normal required). Each site is scanned for per-read length, and the variability at each site is summarized in `owl_msi_profile`. A score is calculated based on the percentage of unstable sites (`owl_msi_score`). Based on internal data across MSI-high tumors and background populations, >10% unstable sites is a good indicator of MSI.
 
-We also provide a Python script to estimate tumor mutation burden (TMB). It takes the annotated small variants as input and categorizes mutations into synonymous and non-synonymous. If a region BED file is supplied, only mutations within those regions are counted. By default, the pipeline reports a whole-genome TMB and a non-synonymous TMB based on an estimated 35 Mbp of coding sequence in the human genome. It also reports an estimate using Gencode v46 coding regions.
+We also provide a Python script to estimate tumor mutation burden (TMB). It takes the annotated small variants as input and categorizes mutations into synonymous and non-synonymous. By default, mutations are used only if they are at least 10% in VAF, has at least 10X coverage, and are less than 1% in gnomadAD's maximum allele frequency. If a region BED file is supplied, only mutations within those regions are counted. By default, the pipeline reports a whole-genome TMB and a non-synonymous TMB based on an estimated 35 Mbp of coding sequence in the human genome. It also reports an estimate using Gencode v46 coding regions.
 
 ## Report HTML
 
