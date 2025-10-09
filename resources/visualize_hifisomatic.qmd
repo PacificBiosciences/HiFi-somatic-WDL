@@ -980,45 +980,29 @@ if (nrow(sv) == 1) {
     col_with_single_value_sv <- c()
 }
 
-table_to_disp <- sv %>%
-            select(!all_of(
-                    c(col_with_onlyNA_sv,
-                    col_with_single_value_sv)
-                )
-            ) %>%
-            select(!contains(
-                c(
-                    "_coord",
-                    "_source",
-                    "GenCC_pmid",
-                    "COHORT",
-                    "TRANSCRIPT",
-                    "DOMAINS",
-                    "2D_CLUSTERS",
-                    "3D_CLUSTERS",
-                    "Samples_ID",
-                    "MUTATIONS",
-                    "_phen"
-                ))
-            )
+columns2hide <- c(
+    col_with_onlyNA_sv,
+    col_with_single_value_sv,
+    colnames(sv)[str_detect(colnames(sv), "_coord|_source|GenCC_pmid|COHORT|TRANSCRIPT|DOMAINS|2D_CLUSTERS|3D_CLUSTERS|Samples_ID|MUTATIONS|_phen")]
+)
 
-# Find column where it's all empty
-empty_cols <- sapply(table_to_disp, function(x) all(is.na(x)))
+# Find column where it's all empty after removing columns2hide
+empty_cols <- sapply(sv %>% select(!all_of(columns2hide)), function(x) all(is.na(x)))
 
 # Also hide REF and ALT columns (if empty_cols is not empty)
 if (length(empty_cols) > 0) {
-    columns2hide <- c(which(empty_cols))
+    columns2hide <- c(which(empty_cols), columns2hide)
 } else {
-    columns2hide <- c()
+    columns2hide <- columns2hide
 }
 
-long_cols <- apply(table_to_disp, 2, function(x) any(nchar(x) > 60))
+long_cols <- apply(sv, 2, function(x) any(nchar(x) > 60))
 
-if(nrow(table_to_disp) == 0){
+if(nrow(sv) == 0){
     print("No SVs fitting the filter criteria found")
 } else {
     datatable(
-        table_to_disp,
+        sv,
         extensions = "Buttons",
         escape = FALSE,
         options = list(
