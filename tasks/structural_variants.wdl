@@ -192,12 +192,15 @@ task wakhan {
 
     echo "Running Wakhan"
 
+    TMPDIR=$(mktemp -d)
+    echo "TMP dir: ${TMPDIR}"
+
     wakhan \
       --threads ~{threads} \
       --target-bam ~{tumor_bam} \
       --reference ~{ref_fasta} \
       --genome-name ~{pname} \
-      --out-dir ~{pname + "_wakhan"} \
+      --out-dir ${TMPDIR}/~{pname + "_wakhan"} \
       --breakpoints ~{severus_sv_vcf} \
       --loh-enable \
       --use-sv-haplotypes \
@@ -206,8 +209,11 @@ task wakhan {
       --centromere /opt/wakhan/src/annotations/grch38.cen_coord.curated.bed \
       ~{if (defined(normal_germline_vcf)) then " --normal-phased-vcf " + normal_germline_vcf else " --tumor-phased-vcf " + tumor_germline_vcf + " --hets-ratio 0.25"}
 
+    # Save current dir
+    CURDIR=${PWD}
+
     # Save purity and ploidy
-    cd ~{pname + "_wakhan"}
+    cd ${TMPDIR}/~{pname + "_wakhan"}
     # Create TSV file with headers
     echo -e "folder_name\tploidy\tpurity\tconfidence" > folder_numbers.tsv
 
@@ -226,17 +232,17 @@ task wakhan {
     done | sort -t$'\t' -k4,4rn > temp.tsv
 
     # Combine header and sorted content
-    (head -n 1 folder_numbers.tsv; cat temp.tsv) > ../purity_ploidy.tsv
+    (head -n 1 folder_numbers.tsv; cat temp.tsv) > ${CURDIR}/purity_ploidy.tsv
     rm temp.tsv folder_numbers.tsv
 
-    cd ..
+    cd ${CURDIR}
 
     # Compress all output
-    tar -czvf ~{pname + "_wakhan.tar.gz"} ~{pname + "_wakhan"}
+    tar -czvf ~{pname + "_wakhan.tar.gz"} -C ${TMPDIR} ~{pname + "_wakhan"}
 
     # Keep the bed output of the best solution
     best_folder=$(head -n 2 purity_ploidy.tsv | tail -n 1 | cut -f1)
-    cp -r ~{pname + "_wakhan"}/${best_folder} ~{pname + "_wakhan_best"}
+    cp -r ${TMPDIR}/~{pname + "_wakhan"}/${best_folder} ~{pname + "_wakhan_best"}
     # Delete variation_plots folder (big!)
     rm -rf ~{pname + "_wakhan_best/variation_plots"}
     # Rename files
@@ -258,7 +264,7 @@ task wakhan {
     mv ~{pname + "_wakhan_best"}/*genome_copynumbers_breakpoints.html ~{pname + ".genome_copynumbers_breakpoints.html"}
     mv ~{pname + "_wakhan_best"}/*genome_copynumbers_details.html ~{pname + ".genome_copynumbers_details.html"}
 
-    rm -rf ~{pname + "_wakhan"}
+    rm -rf ${TMPDIR}/~{pname + "_wakhan"}
   >>>
 
   output {
@@ -278,7 +284,7 @@ task wakhan {
   }
 
   runtime {
-    docker: "kpinpb/wakhan:latest"
+    docker: "kpinpb/wakhan@sha256:971e58c46a8f95e02a1f8b62286932e2cb244b4315d51aa24aa980cb4685cbab"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
