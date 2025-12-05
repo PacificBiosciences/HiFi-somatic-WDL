@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy and extract source code
-COPY owl-0.2.0.tar.gz .
-RUN tar -xzf owl-0.2.0.tar.gz && mv owl-0.2.0/* . && rm -rf owl-0.2.0 owl-0.2.0.tar.gz
+COPY v0.4.0.tar.gz .
+RUN tar -xzf v0.4.0.tar.gz && mv owl-0.4.0/* . && rm -rf owl-0.4.0/ owl-0.4.0.tar.gz
 
 # Build the application in release mode with optimizations
 ENV RUSTFLAGS="-C target-cpu=x86-64 -C strip=symbols"
@@ -45,7 +45,7 @@ RUN useradd -m -u 1001 owl
 COPY --from=builder /build/target/x86_64-unknown-linux-gnu/release/owl /usr/local/bin/owl
 
 # Copy the data file
-COPY --from=builder /build/data/Simple-repeats-50k.filt.bed.gz /opt/owl/data/
+COPY --from=builder /build/data/GRCh38_owl_markers.bed.gz /opt/owl/data/
 
 # Set ownership and permissions
 RUN chown -R owl:owl /opt/owl && chmod +x /usr/local/bin/owl

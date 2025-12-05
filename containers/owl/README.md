@@ -56,7 +56,7 @@ docker run --rm owl:latest
 ## Included Data
 
 The image includes the default simple repeat catalog at:
-- `/opt/owl/data/Simple-repeats-50k.filt.bed.gz`
+- `/opt/owl/data/GRCh38_owl_markers.bed.gz`
 
 ## Image Contents
 
