@@ -70,7 +70,7 @@ task owl_profile {
     }
 
     runtime {
-        docker: "kpinpb/owl@sha256:ea9d86643a437774725b017b1a2b432783388888a9b9bd3a2ef28d569b1fd2f7"
+        docker: "quay.io/pacbio/owl@sha256:753b83abe1fb5d8c4f1e2e4ef200bfbecf1a342827ab4974a0d271911675461d"
         cpu: 2
         memory: "4 GB"
         disk: "2 GB"
@@ -104,7 +104,7 @@ task owl_score {
     }
 
     runtime {
-        docker: "kpinpb/owl@sha256:ea9d86643a437774725b017b1a2b432783388888a9b9bd3a2ef28d569b1fd2f7"
+        docker: "quay.io/pacbio/owl@sha256:753b83abe1fb5d8c4f1e2e4ef200bfbecf1a342827ab4974a0d271911675461d"
         cpu: 2
         memory: "4 GB"
         disk: "2 GB"
