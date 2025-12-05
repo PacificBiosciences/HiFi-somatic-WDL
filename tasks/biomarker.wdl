@@ -44,7 +44,7 @@ task owl_profile {
     }
 
     # If region bed not defined, use default regions
-    String region_bed_file = select_first([region_bed, "/opt/owl/data/Simple-repeats-50k.filt.bed.gz"])
+    String region_bed_file = select_first([region_bed, "/opt/owl/data/GRCh38_owl_markers.bed.gz"])
 
     command <<<
     set -euxo pipefail
