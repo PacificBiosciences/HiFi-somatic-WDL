@@ -91,7 +91,7 @@ def create_fusion_annotation(df):
 
 def save_empty_circos(output_file):
     circos_empty = Circos.initialize_from_bed("/app/hg38.bed", space = 3)
-    circos_empty.text("No SVs found", size=15)
+    circos_empty.text("No BNDs found", size=15)
     fig = circos_empty.plotfig(dpi = 300)
     fig.savefig(output_file, dpi = 300, bbox_inches = 'tight')
 
@@ -181,6 +181,7 @@ def main():
     # If df is empty, save a PDF that says "No SVs found"
     if df.empty:
         save_empty_circos(output_file)
+        save_empty_circos(output_png)
         return
 
     # Set column names
@@ -190,6 +191,7 @@ def main():
     # If bnd_only is empty, save empty fig
     if bnd_only.empty:
         save_empty_circos(output_file)
+        save_empty_circos(output_png)
         return
 
     bnd_only = create_fusion_annotation(bnd_only)
@@ -205,6 +207,7 @@ def main():
     # If empty, save empty fig
     if bnd_only.empty:
         save_empty_circos(output_file)
+        save_empty_circos(output_png)
         return
 
     # Only keep a single event for Saumya
@@ -255,6 +258,7 @@ def main():
     # If empty, save empty fig
     if bnd_only.empty:
         save_empty_circos(output_file)
+        save_empty_circos(output_png)
         return
 
     # Build canonical breakpoint strings per fusion, ensuring A-B and B-A collapse

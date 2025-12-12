@@ -105,7 +105,7 @@ cp example_configs/input.example.json input.json
 ```
 
 Modify the `input.json` file by using your favourite text editor and changing all
-`/path/to` to the path of your working directory. The cohort section should be self-explanatory where you can name the patient and modify the path to the tumor and normal BAM file. If you are only running on a single "patient", remove the entire "patient2" block. Remember to delete the comma after the first patient block!
+`/path/to` to the path of your working directory. The cohort section should be self-explanatory where you can name the sample and modify the path to the tumor and normal BAM file. If you are only running on a single "sample", remove the entire "sample2" block. Remember to delete the comma after the first sample block!
 
 ## Modify the miniwdl config file
 

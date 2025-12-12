@@ -1,8 +1,8 @@
 {
   "hifisomatic.cohort": {
-    "patients": [
+    "samples": [
       {
-        "patient_names": "patient1",
+        "sample_names": "sample1",
         "tumor_bams": [
           "/path/to/tumor.bam"
         ],
@@ -11,7 +11,7 @@
         ]
       },
       {
-        "patient_names": "patient2",
+        "sample_names": "sample2",
         "tumor_bams": [
           "/path/to/first_tumor.bam",
           "/path/to/second_tumor.bam"

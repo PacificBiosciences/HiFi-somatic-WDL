@@ -3,7 +3,7 @@ version 1.0
 workflow align_all_bams {
 
     input {
-        String patient
+        String sample
         String suffix = "tumor"
         Array[File] bam_files
         File ref_fasta
@@ -20,7 +20,7 @@ workflow align_all_bams {
       scatter (bam in bam_files) {
         call Align as align_multiple_bams {
           input:
-            sample_name = patient + "." + suffix,
+            sample_name = sample + "." + suffix,
             bam_file = bam,
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
@@ -32,7 +32,7 @@ workflow align_all_bams {
 
       call MergeBams as MergeAlignBams {
           input:
-            sample_name = patient + "." + suffix,
+            sample_name = sample + "." + suffix,
             bam_files = align_multiple_bams.aligned_bam,
             threads = merge_bam_threads
         }
@@ -42,7 +42,7 @@ workflow align_all_bams {
      if (!skip_align && length(bam_files) == 1) {
         call Align as align_single_bam {
           input:
-            sample_name = patient + "." + suffix,
+            sample_name = sample + "." + suffix,
             bam_file = bam_files[0],
             ref_fasta = ref_fasta,
             ref_fasta_index = ref_fasta_index,
@@ -56,7 +56,7 @@ workflow align_all_bams {
       if (skip_align && length(bam_files) > 1) {
         call MergeBams as MergeSkipAlignBams {
           input:
-            sample_name = patient + "." + suffix,
+            sample_name = sample + "." + suffix,
             bam_files = bam_files,
             threads = merge_bam_threads
         }

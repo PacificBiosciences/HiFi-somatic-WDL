@@ -20,7 +20,7 @@ task ClairS {
   command <<<
     set -euxo pipefail
 
-    echo "Running tumor normal variant calling for patient ~{pname} using ~{tumor_bam} and ~{normal_bam}"
+    echo "Running tumor normal variant calling for sample ~{pname} using ~{tumor_bam} and ~{normal_bam}"
 
     /opt/bin/run_clairs --version
     
@@ -57,7 +57,7 @@ task ClairS {
   }
 
   runtime {
-    docker: "hkubal/clairs@sha256:2f04f687ec7541fab427ca0b9d2a7ae40474eb89b272778d540af28257e91284"
+    docker: "hkubal/clairs@sha256:649dcdaa1adc92ba52da27af51215ac7690472627d2a79fd9f4b3622f89a3d20"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"

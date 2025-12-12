@@ -44,7 +44,7 @@ task owl_profile {
     }
 
     # If region bed not defined, use default regions
-    String region_bed_file = select_first([region_bed, "/opt/owl/data/Simple-repeats-50k.filt.bed.gz"])
+    String region_bed_file = select_first([region_bed, "/opt/owl/data/GRCh38_owl_markers.bed.gz"])
 
     command <<<
     set -euxo pipefail
@@ -70,7 +70,7 @@ task owl_profile {
     }
 
     runtime {
-        docker: "kpinpb/owl@sha256:ea9d86643a437774725b017b1a2b432783388888a9b9bd3a2ef28d569b1fd2f7"
+        docker: "quay.io/pacbio/owl@sha256:753b83abe1fb5d8c4f1e2e4ef200bfbecf1a342827ab4974a0d271911675461d"
         cpu: 2
         memory: "4 GB"
         disk: "2 GB"
@@ -104,7 +104,7 @@ task owl_score {
     }
 
     runtime {
-        docker: "kpinpb/owl@sha256:ea9d86643a437774725b017b1a2b432783388888a9b9bd3a2ef28d569b1fd2f7"
+        docker: "quay.io/pacbio/owl@sha256:753b83abe1fb5d8c4f1e2e4ef200bfbecf1a342827ab4974a0d271911675461d"
         cpu: 2
         memory: "4 GB"
         disk: "2 GB"
@@ -160,7 +160,7 @@ task tmb_estimate {
     }
 
     runtime {
-        docker: "kpinpb/tmb-calculator@sha256:2bfd33da4865ccce6b7705aebce13cc7126fe2fe65db95950275e05136a4cc07"
+        docker: "quay.io/pacbio/tmb_calculator@sha256:93f89b7f2777bb27fc7e8ba5fb0b54a56c132c7b5a5b3f01b95696b5b0b3b63b"
         cpu: 2
         memory: "4 GB"
         disk: "2 GB"

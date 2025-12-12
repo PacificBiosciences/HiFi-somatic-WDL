@@ -17,7 +17,7 @@ Owl analyzes microsatellite instability from PacBio HiFi sequencing data by prof
 ## Prerequisites
 
 - Docker with buildx support
-- `owl-0.1.2.tar.gz` source archive in this directory
+- `owl-0.3.0.tar.gz` source archive in this directory
 
 ## Building the Image
 
@@ -28,7 +28,7 @@ docker buildx build --platform linux/amd64 -t owl:latest .
 
 ### Build with Custom Tag
 ```bash
-docker buildx build --platform linux/amd64 -t your-registry/owl:0.1.2 .
+docker buildx build --platform linux/amd64 -t your-registry/owl:0.3.0 .
 ```
 
 ## Multi-Stage Build Process

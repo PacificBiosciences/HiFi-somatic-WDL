@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy and extract source code
-COPY owl-0.2.0.tar.gz .
-RUN tar -xzf owl-0.2.0.tar.gz && mv owl-0.2.0/* . && rm -rf owl-0.2.0 owl-0.2.0.tar.gz
+COPY owl-0.3.0.tar.gz .
+RUN tar -xzf owl-0.3.0.tar.gz && mv owl-0.3.0/* . && rm -rf owl-0.3.0 owl-0.3.0.tar.gz
 
 # Build the application in release mode with optimizations
 ENV RUSTFLAGS="-C target-cpu=x86-64 -C strip=symbols"

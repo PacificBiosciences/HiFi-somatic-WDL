@@ -56,7 +56,7 @@ SNVs, INDELs, and SVs are supplied to CHORD for HRD prediction. Results are in `
 
 CpG calls at each locus in the human genome are summarized using [pb-CpG-tools](https://github.com/PacificBiosciences/pb-CpG-tools). The BED file of CpG calls is then used to call DMRs with DSS. The pileup BED file is in `pileup_(normal\/tumor)_bed`.
 
-`DMR_annotated` contains five folders per patient. Each folder contains DMRs annotated to different genomic features. Annotation is done using [annotatr](https://bioconductor.org/packages/devel/bioc/vignettes/annotatr/inst/doc/annotatr-vignette.html).
+`DMR_annotated` contains five folders per sample. Each folder contains DMRs annotated to different genomic features. Annotation is done using [annotatr](https://bioconductor.org/packages/devel/bioc/vignettes/annotatr/inst/doc/annotatr-vignette.html).
 
 ``` markdown
 ├── 0

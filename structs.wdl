@@ -1,24 +1,24 @@
 version 1.0
 
-struct Patient {
-    String patient_names
+struct Sample {
+    String sample_names
     Array[File] normal_bams
     Array[File] tumor_bams
 
     String? sex
 }
 
-struct TumorOnlyPatient {
-    String patient_names
+struct TumorOnlySample {
+    String sample_names
     Array[File] tumor_bams
 }
 
 struct TumorOnlyCohort {
-    Array[TumorOnlyPatient] patients
+    Array[TumorOnlySample] samples
 }
 
 struct Cohort {
-    Array[Patient] patients
+    Array[Sample] samples
 }
 
 struct IndexData {

@@ -281,6 +281,36 @@ class TMBCalculator:
                     return True
         return False
 
+    def _detect_vaf_field(self, raw_header: str) -> str:
+        """Detect which VAF-related FORMAT field is present in the VCF (VAF, AF, or TAF).
+        Returns the field name to use.
+        Errors out if more than one field is found or if none are found.
+        """
+        vaf_fields = ['VAF', 'AF', 'TAF']
+        found_fields = []
+
+        # Parse FORMAT fields from header
+        for line in raw_header.splitlines():
+            if line.startswith('##FORMAT=<ID='):
+                # Extract the field ID
+                match = re.search(r'##FORMAT=<ID=([^,]+)', line)
+                if match:
+                    field_id = match.group(1)
+                    if field_id in vaf_fields:
+                        found_fields.append(field_id)
+
+        if len(found_fields) == 0:
+            console.print(f"[red]Error: No VAF-related field found in VCF. Expected one of: {', '.join(vaf_fields)}")
+            sys.exit(1)
+        elif len(found_fields) > 1:
+            console.print(f"[red]Error: Multiple VAF-related fields found in VCF: {', '.join(found_fields)}")
+            console.print(f"[red]Only one of {', '.join(vaf_fields)} should be present.")
+            sys.exit(1)
+
+        vaf_field = found_fields[0]
+        console.print(f"[green]Using VAF field: {vaf_field}")
+        return vaf_field
+
     def parse_vep_consequences(self, csq_string: str) -> List[str]:
         """Parse VEP CSQ field using header-defined indices and extract consequence types"""
         if not self.vep_parser:
@@ -368,6 +398,9 @@ class TMBCalculator:
             sys.exit(1)
         # Initialize VEP parser from VCF header (requires MAX_AF)
         self.vep_parser = VEPParser.from_vcf_header(vcf.raw_header)
+
+        # Detect which VAF field is present (VAF, AF, or TAF)
+        vaf_field = self._detect_vaf_field(vcf.raw_header)
         qualifying_all_variants = 0
         qualifying_coding_variants = 0
         qualifying_nonsynonymous_variants = 0
@@ -421,7 +454,7 @@ class TMBCalculator:
 
             # Apply depth and VAF filters to ALL variants
             dp_arr = variant.format('DP')
-            vaf_arr = variant.format('VAF')
+            vaf_arr = variant.format(vaf_field)
 
             depth_ok = True
             vaf_ok = True
