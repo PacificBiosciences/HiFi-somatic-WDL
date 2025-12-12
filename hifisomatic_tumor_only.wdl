@@ -49,10 +49,14 @@ workflow hifisomatic {
     # SV-related 
     File trf_bed
     Int sv_threads = 24
+    Boolean run_wakhan = true
     Int wakhan_threads = 24
+    Int wakhan_binsize = 50000
     File control_vcf
     File control_vcf_index
-    File? severus_pon_tsv
+    File? additional_control_vcf
+    File? additional_control_vcf_index
+    File severus_pon_tsv
     # Minimum reads support for Severus
     Int severus_min_reads = 3
     # AnnotSV cache can be downloaded using install script from https://lbgi.fr/AnnotSV/.
@@ -85,15 +89,15 @@ workflow hifisomatic {
     File report_vis_script
   }
 
-  scatter (individual in cohort.patients) {
-    String patient = individual.patient_names
-    Array[File] patient_tumor_bam_files = individual.tumor_bams
+  scatter (individual in cohort.samples) {
+    String sample = individual.sample_names
+    Array[File] sample_tumor_bam_files = individual.tumor_bams
     File ref_to_use = select_first([ref_fasta_mmi, ref_fasta])
 
     call alignment.align_all_bams as align_tumor {
       input:
-        patient = patient,
-        bam_files = patient_tumor_bam_files,
+        sample = sample,
+        bam_files = sample_tumor_bam_files,
         ref_fasta = ref_to_use,
         ref_fasta_index = ref_fasta_index,
         pbmm2_threads = pbmm2_threads,
@@ -105,7 +109,7 @@ workflow hifisomatic {
 
     call common.mosdepth as MosdepthTumor {
       input:
-        pname = patient + ".tumor",
+        pname = sample + ".tumor",
         bam = align_tumor.bam_final,
         bam_index = align_tumor.bam_final_index,
         threads = def_threads
@@ -116,7 +120,8 @@ workflow hifisomatic {
       input:
         ref_fasta_index = ref_fasta_index,
         chunk_size = chunk_size,
-        threads = def_threads
+        threads = def_threads,
+        pname = sample
     }
     
     if (call_small_variants) {
@@ -128,7 +133,7 @@ workflow hifisomatic {
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
                   threads = deepsomatic_threads,
-                  pname = patient,
+                  pname = sample,
                   contigs = split_contigs.contigs
                 }
           }
@@ -138,7 +143,7 @@ workflow hifisomatic {
           #   scatter (ctg in split_contigs.contigs) {
           #     call clairs.ClairS {
           #       input:
-          #         pname = patient,
+          #         pname = sample,
           #         tumor_bam = align_all_bams.tumor_bam_final,
           #         tumor_bam_index = align_all_bams.tumor_bam_final_index,
           #         normal_bam = align_all_bams.normal_bam_final,
@@ -158,7 +163,7 @@ workflow hifisomatic {
           #       snv_vcf_index = ClairS.output_snv_vcf_index,
           #       indel_vcf_index = ClairS.output_indel_vcf_index,
           #       ref_fasta_index = ref_fasta_index,
-          #       pname = patient,
+          #       pname = sample,
           #       threads = samtools_threads,
           #       snv_qual = clairs_snv_qual,
           #       indel_qual = clairs_indel_qual
@@ -168,7 +173,7 @@ workflow hifisomatic {
           #     input:
           #       tumor_vcf = ClairS.output_snv_vcf_germline_tumor,
           #       normal_vcf = ClairS.output_snv_vcf_germline_normal,
-          #       pname = patient,
+          #       pname = sample,
           #       threads = samtools_threads
           #   }
           # }
@@ -177,7 +182,7 @@ workflow hifisomatic {
           call common.mutationalpattern {
             input:
               vcf = select_first([run_deepsomatic.deepsomatic_vcf]),
-              pname = patient,
+              pname = sample,
               max_delta = mutsig_max_delta,
               threads = samtools_threads
           }
@@ -192,7 +197,7 @@ workflow hifisomatic {
                   vcf_index = select_first([run_deepsomatic.clair3_tumor_vcf_tbi]),
                   somatic_SNP_indel_vcf = select_first([run_deepsomatic.deepsomatic_vcf]),
                   somatic_SNP_indel_vcf_index = select_first([run_deepsomatic.deepsomatic_vcf_tbi]),
-                  pname = patient,
+                  pname = sample,
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
                   threads = hiphase_threads
@@ -213,7 +218,7 @@ workflow hifisomatic {
                   vep_cache = select_first([vep_cache]),
                   ref_fasta = ref_fasta,
                   ref_fasta_index = ref_fasta_index,
-                  pname = patient,
+                  pname = sample,
                   threads = vep_threads
               }
 
@@ -222,14 +227,14 @@ workflow hifisomatic {
                 input:
                   vcf = annotateSomatic.vep_annotated_vcf,
                   coverage = MosdepthTumor.output_bed,
-                  pname = patient
+                  pname = sample
               }
 
               call prioritization.prioritize_small_variants as prioritizeSomatic {
                 input:
                   vep_annotated_vcf = annotateSomatic.vep_annotated_vcf,
                   threads = samtools_threads,
-                  pname = patient
+                  pname = sample
               }
             }
 
@@ -253,7 +258,7 @@ workflow hifisomatic {
     # Pileup CPG
     call common.cpg_pileup as pileup_tumor {
       input:
-        pname = patient + ".tumor",
+        pname = sample + ".tumor",
         bam = align_tumor.bam_final,
         bam_index = align_tumor.bam_final_index,
         reference = ref_fasta,
@@ -268,14 +273,14 @@ workflow hifisomatic {
     #     input:
     #       tumor_bed = pileup_tumor.pileup_combined_beds,
     #       normal_bed = pileup_normal.pileup_combined_beds,
-    #       pname = patient,
+    #       pname = sample,
     #       threads = dss_threads
     #   }
 
     #   call basemod.annotate_DMR {
     #     input:
     #       DMR = DSS_DMR.output_DMR,
-    #       pname = patient,
+    #       pname = sample,
     #       threads = samtools_threads
     #   }
 
@@ -284,7 +289,7 @@ workflow hifisomatic {
     #       dmr_files = annotate_DMR.output_DMR_annotated,
     #       threads = samtools_threads,
     #       ncg_to_filter = ncg_to_filter,
-    #       pname = patient
+    #       pname = sample
     #   }
     # }
 
@@ -295,23 +300,26 @@ workflow hifisomatic {
           tumor_bam_index = align_tumor.bam_final_index,
           trf_bed = trf_bed,
           phased_vcf = phaseTumorBam.hiphase_vcf,
-          pname = patient,
+          pname = sample,
           threads = sv_threads,
           min_supp_reads = severus_min_reads,
           PON_tsv = severus_pon_tsv
       }
 
       # CNV with Wakhan
-      call structural_variants.wakhan {
-        input:
-          pname = patient,
-          tumor_bam = select_first([phaseTumorBam.hiphase_bam, align_tumor.bam_final]),
-          tumor_bam_index = select_first([phaseTumorBam.hiphase_bam_index, align_tumor.bam_final_index]),
-          ref_fasta = ref_fasta,
-          ref_fasta_index = ref_fasta_index,
-          severus_sv_vcf = phased_severus.output_vcf,
-          tumor_germline_vcf = select_first([phaseTumorBam.hiphase_vcf]),
-          threads = wakhan_threads
+      if (run_wakhan) {
+        call structural_variants.wakhan {
+          input:
+            pname = sample,
+            tumor_bam = select_first([phaseTumorBam.hiphase_bam, align_tumor.bam_final]),
+            tumor_bam_index = select_first([phaseTumorBam.hiphase_bam_index, align_tumor.bam_final_index]),
+            ref_fasta = ref_fasta,
+            ref_fasta_index = ref_fasta_index,
+            severus_sv_vcf = phased_severus.output_vcf,
+            tumor_germline_vcf = select_first([phaseTumorBam.hiphase_vcf]),
+            threads = wakhan_threads,
+            binsize = wakhan_binsize
+        }
       }
 
       # # TODO: Chord HRD prediction requires somatic VCF
@@ -319,14 +327,14 @@ workflow hifisomatic {
       #   input:
       #     small_variant_vcf = select_first([run_deepsomatic.deepsomatic_vcf]),
       #     sv_vcf = phased_severus.output_vcf,
-      #     pname = patient
+      #     pname = sample
       # }
       
       ## TODO SAVANA tumor-only?
       # if(run_savana){
       #   call structural_variants.SAVANA_sv {
       #     input:
-      #       pname = patient,
+      #       pname = sample,
       #       tumor_bam = align_tumor.bam_final,
       #       tumor_bam_index = align_tumor.bam_final_index,
       #       normal_bam = align_normal.bam_final,
@@ -347,7 +355,7 @@ workflow hifisomatic {
       input:
         bam_file = select_first([phaseTumorBam.hiphase_bam, align_tumor.bam_final]),
         bam_index = select_first([phaseTumorBam.hiphase_bam_index, align_tumor.bam_final_index]),
-        sample_name = patient
+        sample_name = sample
     }
 
     if(!call_small_variants){
@@ -356,7 +364,7 @@ workflow hifisomatic {
           tumor_bam = align_tumor.bam_final,
           tumor_bam_index = align_tumor.bam_final_index,
           trf_bed = trf_bed,
-          pname = patient,
+          pname = sample,
           threads = sv_threads,
           min_supp_reads = severus_min_reads,
           PON_tsv = severus_pon_tsv
@@ -370,11 +378,16 @@ workflow hifisomatic {
         threads = samtools_threads
     }
 
+    if (defined(additional_control_vcf)) {
+      Array[File] vcf_array = [control_vcf, select_first([additional_control_vcf])]
+      Array[File] vcf_index_array = [control_vcf_index, select_first([additional_control_vcf_index])]
+    }
+
     call common.svpack_filter_annotated as filter_Severus {
       input:
         sv_vcf = tabixSeverus.output_vcf,
-        population_vcfs = [control_vcf],
-        population_vcf_indices = [control_vcf_index],
+        population_vcfs = select_first([vcf_array, [control_vcf]]),
+        population_vcf_indices = select_first([vcf_index_array, [control_vcf_index]]),
         gff = ref_gff
     }
 
@@ -389,7 +402,7 @@ workflow hifisomatic {
     call structural_variants.circos_BND {
       input:
         sv_vcf = recover_mate_bnd.output_vcf,
-        pname = patient
+        pname = sample
     }
 
     if (defined(annotsv_cache)) {
@@ -398,7 +411,7 @@ workflow hifisomatic {
             sv_vcf = recover_mate_bnd.output_vcf,
             sv_vcf_index = recover_mate_bnd.output_vcf_index,
             annotsv_cache = select_first([annotsv_cache]),
-            pname = patient,
+            pname = sample,
             threads = annotsv_threads
       }
 
@@ -423,7 +436,7 @@ workflow hifisomatic {
           mutsig_tsv = select_first([mutationalpattern.mutsig_tsv]),
           mut_reconstructed_sigs = select_first([mutationalpattern.recon_sig]),
           circos_png = circos_BND.circos_png,
-          pname = patient,
+          pname = sample,
           vis_file = report_vis_script,
           owl_score = msi_score.owl_score_output,
           tmb_estimate_file = select_first([tmb_estimate.tmb_estimate_output]),

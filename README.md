@@ -173,15 +173,28 @@ Following are the references for the tools used in the workflow, which should be
 | CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
 | SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
 | Wakhan | commit a2dad42536475b6058d13253b4da7dbc8e4c4377 | Copy number variants caller | [docker](https://hub.docker.com/kpinpb/wakhan) |
-| owl  | v0.1.3 | MSI profiling and scoring | [docker](https://hub.docker.com/kpinpb/owl) |
-| tmb-calculator | v0.1.1 | Estimate TMB based on VEP consequences | [docker](https://hub.docker.com/kpinpb/tmb-calculator) |
-| Gencode bed file | v46 | CDS region used for TMB estimation | [self-hosted on quay.io](https://hub.docker.com/kpinpb/owl) |
+| owl  | v0.4.0 | MSI profiling and scoring | [quay.io](https://quay.io/repository/pacbio/owl) |
+| tmb-calculator | v0.1.1 | Estimate TMB based on VEP consequences | [docker](https://quay.io/pacbio/tmb_calculator) |
+| Gencode bed file | v46 | CDS region used for TMB estimation | [self-hosted on quay.io](https://quay.io/repository/pacbio/owl) |
 </details>
 
 ## Change logs
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.9.4
+  - Fixed a small report bug when only a single type of SVs exist.
+  - Fixed an usability issue: `split_contigs` would previously use cache from a different sample folder 
+  if the run folder has other miniwdl runs and this would cause the pipeline to rerun if the contigs 
+  folder from another sample was moved/deleted. Each sample should now has its own split-contigs cache.
+  - Fixed a minor issue with circos PNG plot when no BND is found.
+  - Bug fix: TMB estimate now works with ClairS. Note that this is experimental.
+  - Allow user to add their own control VCFs to filter SVs (`hifisomatic.additional_control_vcfs`). 
+  - Updated ClairS to 0.4.3 and Clair3 to 1.2.0.
+  - Updated owl to v0.4.0. This also comes with an expanded set of micro-satellite repeats, but results should
+    remain similar.
+  - BREAKING: Renamed "patient" to "sample" throughout the codebase and input json files.
 
 - v0.9.3a
   - Updated Wakhan to commit `a2dad42536475b6058d13253b4da7dbc8e4c4377`.
@@ -200,7 +213,8 @@ Following are the references for the tools used in the workflow, which should be
   - Added owl MSI caller and tumor mutational burden (TMB) estimate.
     - Note that these have not been tested on a large cohort, and we welcome feedbacks on these.
   - Decouple visualization script from reporting script.
-  - Updated HPRC control SV calls to include additional samples from new relsease (Total of 232) and uses Severus 1.6 to re-call the SVs.
+  - Updated HPRC control SV calls to include additional samples from new relsease (Total of 232) and uses 
+  Severus 1.6 to re-call the SVs.
   - Fixed a bug in matepairs recovery after svpack filtering.
   - Updated Mitelman fusion database to July 10, 2025 release.
   - Improved circos plot for translocations breakpoints.

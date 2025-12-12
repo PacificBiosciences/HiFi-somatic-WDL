@@ -231,6 +231,7 @@ task split_contigs {
     File ref_fasta_index
     Int chunk_size = 75000000
     Int threads
+    String pname
   }
 
   Float file_size = ceil(size(ref_fasta_index, "GB") + 10)
@@ -240,7 +241,7 @@ task split_contigs {
 
   bedtools --version
 
-  echo "Splitting contigs for ~{ref_fasta_index}"
+  echo "Splitting contigs for ~{ref_fasta_index} for ~{pname}"
   bedtools makewindows -g ~{ref_fasta_index} -w ~{chunk_size} > contigs.bed
   grep -v -E "random|chrUn|chrM|chrEBV" contigs.bed > noalt.bed
   # Split the contig bed files into one file for each line

@@ -62,7 +62,7 @@ task prioritize_dmr_intogen {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:a5390ab86b46b7ff0321765202094ff3147133ba4704fc34be9c41e782c80480"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -132,7 +132,7 @@ task prioritize_sv_intogen {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:a5390ab86b46b7ff0321765202094ff3147133ba4704fc34be9c41e782c80480"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"
@@ -175,7 +175,7 @@ task prioritize_small_variants {
     }
 
     runtime {
-        docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
+        docker: "quay.io/pacbio/somatic_general_tools@sha256:a5390ab86b46b7ff0321765202094ff3147133ba4704fc34be9c41e782c80480"
         cpu: threads
         memory: "~{threads * 4} GB"
         disk: file_size + " GB"

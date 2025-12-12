@@ -6,11 +6,11 @@ library(data.table)
 args <- commandArgs(trailingOnly = TRUE)
 # Fail if not enough arguments
 if (length(args) < 3) {
-    stop("Not enough arguments. Need DMR file, patient name and number of threads.")
+    stop("Not enough arguments. Need DMR file, sample name and number of threads.")
 }
 
 dmr_file <- args[1]
-patient_name <- args[2]
+sample_name <- args[2]
 threads <- as.integer(args[3])
 
 dmrs <- fread(dmr_file, nThread = threads)
@@ -40,7 +40,7 @@ colnames(dm_annsum) <- c("Annotation_Type", "Count")
 # Write a table of the annotation summary
 fwrite(
     dm_annsum,
-    paste0(patient_name, "_dmr_annotation_summary.tsv.gz"),
+    paste0(sample_name, "_dmr_annotation_summary.tsv.gz"),
     sep = "\t",
     quote = FALSE,
     na = "NA",
@@ -58,7 +58,7 @@ for (ann_type in ann_to_build) {
     # Write to a file
     fwrite(
         ann_type_dmrs,
-        paste0(patient_name, "_", ann_type, "_dmrs.tsv.gz"),
+        paste0(sample_name, "_", ann_type, "_dmrs.tsv.gz"),
         sep = "\t",
         quote = FALSE,
         na = "NA",

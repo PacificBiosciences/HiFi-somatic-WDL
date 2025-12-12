@@ -130,6 +130,7 @@ vcf_intogen <- read_tsv(params$intogen_smallvar) %>%
     select(SYMBOL, CANCER_TYPE, ROLE, CGC_CANCER_GENE) %>%
     unique()
 sv <- read_tsv(params$sv_file)
+sv_count <- count_sv(params$sv_vcf_file)
 cnv1 <- read_tsv(params$cnv_hap1_file, comment="#",
     col_names = c("chromosome", "start", "end", "coverage", "cn", "conf", "Severus_BP")) %>%
     mutate(chromosome = str_replace(chromosome, "chr", ""))
@@ -287,8 +288,8 @@ sv_pairs <- read_tsv(params$sv_pairs_file)
     - Total number of SNV: `r nrow(vcf %>% filter(VARIANT_CLASS == "SNV"))`
     - Total number of small deletion: `r nrow(vcf %>% filter(VARIANT_CLASS == "deletion"))`
     - Total number of small insertion: `r nrow(vcf %>% filter(VARIANT_CLASS == "insertion"))`
-- Total number of structural variants (SV): `r nrow(read_tsv(params$sv_vcf_file, comment = "#", col_names = FALSE))`
-`r count_sv(params$sv_vcf_file) %>% rename("SV Type" = 1, "Counts" = 2) %>% pivot_wider(names_from = "SV Type", values_from = Counts) %>% tt()`
+- Total number of structural variants (SV): `r sum(sv_count$n)`
+`r sv_count %>% rename("SV Type" = 1, "Counts" = 2) %>% pivot_wider(names_from = "SV Type", values_from = Counts) %>% tt()`
 :::
 
 ::: {.card title="Tumor purity and ploidy"}

@@ -161,7 +161,7 @@ task circos_BND {
   }
 
   runtime {
-      docker: "quay.io/pacbio/somatic_general_tools@sha256:99159e099d9044c52debabdc9491b168487aaa37534c1a748809bc69f169812a"
+      docker: "quay.io/pacbio/somatic_general_tools@sha256:a5390ab86b46b7ff0321765202094ff3147133ba4704fc34be9c41e782c80480"
       cpu: threads
       memory: "~{threads * 4} GB"
       disk: file_size + " GB"
@@ -181,8 +181,9 @@ task wakhan {
     File? normal_germline_vcf
     File tumor_germline_vcf
     Int threads = 16
-    String purity_range = "0.2-0.99"
+    String purity_range = "0.2-1.0"
     String ploidy_range = "1.0-6.0"
+    Int binsize = 50000
   }
 
   Float file_size = ceil(size(tumor_bam, "GB") + size(ref_fasta, "GB") + size(severus_sv_vcf, "GB") + size(normal_germline_vcf, "GB") + 10)
@@ -201,6 +202,7 @@ task wakhan {
       --breakpoints ~{severus_sv_vcf} \
       --loh-enable \
       --use-sv-haplotypes \
+      --bin-size ~{binsize} \
       --ploidy-range ~{ploidy_range} \
       --purity-range ~{purity_range} \
       --centromere /opt/wakhan/src/annotations/grch38.cen_coord.curated.bed \
