@@ -193,7 +193,7 @@ task wakhan {
 
     echo "Running Wakhan"
 
-    wakhan \
+    wakhan all \
       --threads ~{threads} \
       --target-bam ~{tumor_bam} \
       --reference ~{ref_fasta} \
@@ -280,7 +280,7 @@ task wakhan {
   }
 
   runtime {
-    docker: "kpinpb/wakhan:latest"
+    docker: "quay.io/pacbio/wakhan@sha256:b778677279fc8e02ae859aadb60b3ad62ed611ffe6247f5889d970885d5d9602"
     cpu: threads
     memory: "~{threads * 4} GB"
     disk: file_size + " GB"
