@@ -172,7 +172,7 @@ Following are the references for the tools used in the workflow, which should be
 | DeepSomatic  | v1.9.0    | Somatic SNV/INDELs caller                            | [docker](https://hub.docker.com/r/google/deepsomatic/) |
 | CHORD        | v2.0.0    | HRD prediction                                       | [docker](https://hub.docker.com/r/scwatts/hmftools-chord) |
 | SAVANA       | v1.2.3    | Structural variants and copy number variants caller  | [quay.io](https://quay.io/repository/biocontainers/savana) |
-| Wakhan | commit a2dad42536475b6058d13253b4da7dbc8e4c4377 | Copy number variants caller | [docker](https://hub.docker.com/kpinpb/wakhan) |
+| Wakhan | v0.4.2 (commit 5634e4e6d265949e5797669bf9dd77f536585e8b) | Copy number variants caller | [docker](https://hub.docker.com/kpinpb/wakhan) |
 | owl  | v0.4.0 | MSI profiling and scoring | [quay.io](https://quay.io/repository/pacbio/owl) |
 | tmb-calculator | v0.1.1 | Estimate TMB based on VEP consequences | [docker](https://quay.io/pacbio/tmb_calculator) |
 | Gencode bed file | v46 | CDS region used for TMB estimation | [self-hosted on quay.io](https://quay.io/repository/pacbio/owl) |
@@ -182,6 +182,9 @@ Following are the references for the tools used in the workflow, which should be
 
 <details>
   <summary>Click to expand changelogs:</summary>
+
+- v0.9.5
+  - Updated Wakhan to v0.4.2 (commit `5634e4e6d265949e5797669bf9dd77f536585e8b`).
 
 - v0.9.4
   - Fixed a small report bug when only a single type of SVs exist.
