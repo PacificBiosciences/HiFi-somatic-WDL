@@ -24,11 +24,12 @@ task Amber {
 
     command {
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
-        mkdir ensembl_data_dir 
+        mkdir ensembl_data_dir
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
-        
+
         java -Xmx~{javaXmx} -jar /app/amber.gamma1000.jar \
             -reference ~{referenceName} \
             -reference_bam ~{referenceBam} \
@@ -41,6 +42,16 @@ task Amber {
             -loci ensembl_data_dir/hmf*/dna/copy_number/AmberGermlineSites.*.tsv.gz
 
         rm -rf ensembl_data_dir
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tAmber" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     }
 
     output {
@@ -53,6 +64,7 @@ task Amber {
         File tumorQc = "~{outputDir}/~{tumorName}.amber.qc"
         Array[File] outputs = [version, tumorBafPcf, tumorBafTsv,
             tumorContaminationVcf, tumorContaminationVcfIndex, tumorContaminationTsv, tumorQc]
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -88,8 +100,9 @@ task Cobalt {
 
     command {
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
-        mkdir ensembl_data_dir 
+        mkdir ensembl_data_dir
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
 
@@ -104,8 +117,18 @@ task Cobalt {
             -pcf_gamma ~{pcf_gamma} \
             -validation_stringency SILENT \
             -gc_profile ensembl_data_dir/hmf*/dna/copy_number/GC_profile.*.cnp
-        
+
         rm -rf ensembl_data_dir
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tCobalt" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     }
 
     output {
@@ -118,6 +141,7 @@ task Cobalt {
         File tumorRatioTsv = "~{outputDir}/~{tumorName}.cobalt.ratio.tsv.gz"
         Array[File] outputs = [version, normalGcMedianTsv, normalRationMedianTsv,
             normalRationPcf, tumorGcMedianTsv, tumorRatioPcf, tumorRatioTsv]
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -162,6 +186,7 @@ task Purple {
 
     command {
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         mkdir ensembl_data_dir
 
@@ -226,6 +251,16 @@ task Purple {
         cut -f1,5 ~{outputDir}/~{tumorName}.purple.purity.tsv | tail -n+2 > purity_ploidy.tsv
 
         rm -rf ensembl_data_dir
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tPurple" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     }
 
     output {
@@ -278,6 +313,7 @@ task Purple {
         Array[File] circos = select_all([circosNormalRatio, circosConf, circosIndel, circosLink,
             circosTumorRatio, circosGaps, circosBaf, circosCnv, circosInputConf, circosMap,
             circosSnp])
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {

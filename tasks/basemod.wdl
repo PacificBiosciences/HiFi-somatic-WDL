@@ -12,6 +12,7 @@ task DSS_DMR {
 
     command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         # Extract methylation info from bed files for DSS
         gunzip -c ~{tumor_bed} | cut -f1,2,6,7 > ~{basename(tumor_bed) + ".tmp"}
@@ -25,10 +26,21 @@ task DSS_DMR {
             ~{threads}
 
         rm -f ~{basename(tumor_bed) + ".tmp"} ~{basename(normal_bed) + ".tmp"}
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tDSS_DMR" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         File output_DMR = pname + ".DMR.tsv"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -52,16 +64,28 @@ task annotate_DMR {
 
     command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         # Annotate DMRs
         Rscript --vanilla /app/annotatr_dmr.R \
             ~{DMR} \
             ~{pname} \
             ~{threads}
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tannotate_DMR" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         Array[File]+ output_DMR_annotated = glob(pname + "*.tsv.gz")
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {

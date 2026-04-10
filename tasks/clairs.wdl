@@ -16,17 +16,19 @@ task ClairS {
   }
 
   Float file_size = ceil(size(tumor_bam, "GB") * 2 + size(normal_bam, "GB") * 2 + size(ref_fasta, "GB") + size(contig, "GB") + 20)
-  
+
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running tumor normal variant calling for sample ~{pname} using ~{tumor_bam} and ~{normal_bam}"
 
     /opt/bin/run_clairs --version
-    
+
     # If using old version of Singularity (e.g. 2.6), the path for python doesn't work and ClairS
     # will fail with python not found error. In that case, uncomment this:
     # export PATH=/opt/conda/envs/clairs/bin:$PATH
+    /usr/bin/time -v -o _time_output.txt \
     /opt/bin/run_clairs \
       --normal_bam_fn ~{normal_bam} \
       --tumor_bam_fn ~{tumor_bam} \
@@ -37,13 +39,31 @@ task ClairS {
       --conda_prefix /opt/conda/envs/clairs \
       --enable_indel_calling \
       --bed_fn ~{contig} \
-      --enable_clair3_germline_output 
-    
+      --enable_clair3_germline_output
+
     # Instead of using ClairS remove intermediate flag,
     # we remove BAMs in tmp directory, but keep everything else in case
     # we need to troubleshoot
     if [ -d ~{pname + "_clairs/tmp/clair3_output/phased_output"} ]
-      then rm -f ~{pname + "_clairs/tmp/clair3_output/phased_output/*.bam"} 
+      then rm -f ~{pname + "_clairs/tmp/clair3_output/phased_output/*.bam"}
+    fi
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tClairS" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     fi
   >>>
 
@@ -54,6 +74,7 @@ task ClairS {
     File output_indel_vcf_index = pname + "_clairs/indel.vcf.gz.tbi"
     File output_snv_vcf_germline_tumor = pname + "_clairs/clair3_tumor_germline_output.vcf.gz"
     File output_snv_vcf_germline_normal = pname + "_clairs/clair3_normal_germline_output.vcf.gz"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -84,6 +105,7 @@ task gather_ClairS {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   echo "Merging somatic small variant for ~{pname}"
 
@@ -102,7 +124,7 @@ task gather_ClairS {
   # if snv_indel_vcf.txt is not empty, then index and concat
   if [[ -s ~{pname + ".snv_indel_vcf.txt"} ]];
     then
-      # Sometimes the indices failed to be localized properly. 
+      # Sometimes the indices failed to be localized properly.
       # Reindex here to make it more robust...
       count=0
       for file in $(cat ~{pname + ".snv_indel_vcf.txt"})
@@ -135,11 +157,24 @@ task gather_ClairS {
       touch ~{pname + ".somatic_small_variants.PASS.vcf.gz"}
       touch ~{pname + ".somatic_small_variants.PASS.vcf.gz.tbi"}
   fi
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tgather_ClairS" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -x /usr/bin/time ]; then
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+  fi
+  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
   >>>
 
   output {
     File output_vcf = pname + ".somatic_small_variants.PASS.vcf.gz"
     File output_vcf_index = pname + ".somatic_small_variants.PASS.vcf.gz.tbi"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -166,6 +201,7 @@ task gather_ClairS_germline {
 
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Merging germline small variant for ~{pname}"
 
@@ -190,7 +226,7 @@ task gather_ClairS_germline {
     # if snv_indel_vcf.txt is not empty, then index and concat
     if [[ -s ~{pname + ".tumor_germline_vcf.txt"} ]];
       then
-        # Sometimes the indices failed to be localized properly. 
+        # Sometimes the indices failed to be localized properly.
         # Reindex here to make it more robust...
         count=0
         for file in $(cat ~{pname + ".tumor_germline_vcf.txt"})
@@ -216,7 +252,7 @@ task gather_ClairS_germline {
 
     if [[ -s ~{pname + ".normal_germline_vcf.txt"} ]];
       then
-        # Sometimes the indices failed to be localized properly. 
+        # Sometimes the indices failed to be localized properly.
         # Reindex here to make it more robust...
         count=0
         for file in $(cat ~{pname + ".normal_germline_vcf.txt"})
@@ -239,6 +275,16 @@ task gather_ClairS_germline {
         touch ~{pname + ".normal.germline_small_variants.vcf.gz"}
         touch ~{pname + ".normal.germline_small_variants.vcf.gz.tbi"}
     fi
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tgather_ClairS_germline" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
   >>>
 
   output {
@@ -246,6 +292,7 @@ task gather_ClairS_germline {
     File output_tumor_germline_vcf_index = pname + ".tumor.germline_small_variants.vcf.gz.tbi"
     File output_normal_germline_vcf = pname + ".normal.germline_small_variants.vcf.gz"
     File output_normal_germline_vcf_index = pname + ".normal.germline_small_variants.vcf.gz.tbi"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {

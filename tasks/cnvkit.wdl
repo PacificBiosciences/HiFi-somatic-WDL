@@ -18,11 +18,13 @@ task cnvkit_tumor {
 
   command <<<
     set -euxo pipefail
-    
+    _PROF_START=$(date +%s)
+
     echo "Running cnvkit tumor for ~{pname}"
 
     cnvkit.py version
 
+    /usr/bin/time -v -o _time_output.txt \
     cnvkit.py batch \
         ~{tumor_bam} \
         --normal ~{normal_bam} \
@@ -33,11 +35,30 @@ task cnvkit_tumor {
         --diagram --scatter \
         --output-dir ~{pname + "_cnvkit"} \
         --segment-method cbs
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tcnvkit_tumor" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     Array[File]+ cnvkit_output = glob(pname + "_cnvkit/*")
     File cnvkit_output_cns = pname + "_cnvkit/" + sub(basename(tumor_bam), "\\.bam$", ".cns")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -67,6 +88,7 @@ task merge_germline {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   echo -e "~{normalname}\n~{tumorname}" > sample_names.txt
 
@@ -78,9 +100,9 @@ task merge_germline {
       bcftools reheader -s sample_names.txt -o ~{pname + ".merged_germline.vcf"}
 
   bgzip ~{pname + ".merged_germline.vcf"}
-  
+
   tabix -p vcf ~{pname + ".merged_germline.vcf.gz"}
-  
+
   bcftools filter ~{pname + ".merged_germline.vcf.gz"} \
     -i '(GT[0]=="0/1" || GT[0]=="1/0") && GT[1]!="./."' \
     -Oz -o ~{pname + ".merged_germline_heterozygous.vcf.gz"}
@@ -88,10 +110,10 @@ task merge_germline {
   tabix -p vcf ~{pname + ".merged_germline_heterozygous.vcf.gz"}
 
   bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%GT\t%GQ\t%DP\t%AF\t]\n' ~{pname + ".merged_germline_heterozygous.vcf.gz"} | \
-  awk -v OFS='\t' '{ 
+  awk -v OFS='\t' '{
       n_ref_1 = $7 * (1 - $8); n_alt_1 = $7 * $8;
       ad_1 = int(n_ref_1+0.5) "," int(n_alt_1+0.5);
-      
+
       print $1,$2,ad_1
   }' | bgzip -c > ad_1.txt.gz
 
@@ -101,7 +123,7 @@ task merge_germline {
   awk -v OFS='\t' '{
       n_ref_2 = $11 * (1 - $12); n_alt_2 = $11 * $12;
       ad_2 = int(n_ref_2+0.5) "," int(n_alt_2+0.5);
-      
+
       print $1,$2,ad_2
   }' | bgzip -c > ad_2.txt.gz
 
@@ -115,8 +137,18 @@ task merge_germline {
         -a ad_2.txt.gz \
         -c CHROM,POS,FORMAT/AD \
         -Oz -o ~{pname + ".merged_germline_heterozygous.withAD.vcf.gz"}
-  
+
   tabix -p vcf ~{pname + ".merged_germline_heterozygous.withAD.vcf.gz"}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tmerge_germline" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
 
   >>>
 
@@ -125,6 +157,7 @@ task merge_germline {
     File merged_germline_vcf_tbi = pname + ".merged_germline.vcf.gz.tbi"
     File merged_germline_heterozygous_vcf = pname + ".merged_germline_heterozygous.withAD.vcf.gz"
     File merged_germline_heterozygous_vcf_tbi = pname + ".merged_germline_heterozygous.withAD.vcf.gz.tbi"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -139,8 +172,8 @@ task merge_germline {
 
 # Recall with purity and ploidy + BAF from ClairS to obtain
 # major and minor copy number for each segment
-# Note that purity_ploidy is a headerless TSV file with two columns, 
-# first being purity and second being ploidy. 
+# Note that purity_ploidy is a headerless TSV file with two columns,
+# first being purity and second being ploidy.
 task cnvkit_recall {
   input {
     File cnvkit_cns
@@ -156,6 +189,7 @@ task cnvkit_recall {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   # Set integer ploidy
   ploidy=$(cut -f2 ~{purity_ploidy} | awk '{print int($1 + 0.5)}')
@@ -163,6 +197,7 @@ task cnvkit_recall {
 
   cnvkit.py version
 
+  /usr/bin/time -v -o _time_output.txt \
   cnvkit.py call \
     ~{cnvkit_cns} \
     -m clonal \
@@ -173,10 +208,29 @@ task cnvkit_recall {
     -i ~{pname + ".tumor"} \
     -n ~{pname + ".normal"} \
     ~{"--min-variant-depth " + min_var_depth}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tcnvkit_recall" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
     File cnvkit_cns_with_major_minor_CN = pname + ".CNVKit.with_major_minor_CN.cns"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -186,5 +240,5 @@ task cnvkit_recall {
     disk: file_size + " GB"
     maxRetries: 2
     preemptible: 1
-  } 
+  }
 }

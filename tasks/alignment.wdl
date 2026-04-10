@@ -96,14 +96,16 @@ task Align {
   String ofile_name = sub(basename(bam_file), "\\.bam$", ".aligned.bam")
   String ofile_name_index = sub(basename(bam_file), "\\.bam$", ".aligned.bam.bai")
   Float file_size = ceil(size(bam_file, "GB") * 2 + size(ref_fasta, "GB") + 20)
-  
+
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   echo "Aligning ~{bam_file} and ~{ref_fasta} for ~{sample_name} using pbmm2 into ~{ofile_name}"
-  
+
   pbmm2 --version
 
+  /usr/bin/time -v -o _time_output.txt \
   pbmm2 align \
     ~{ref_fasta} \
     ~{bam_file} \
@@ -115,12 +117,31 @@ task Align {
     --log-level INFO --log-file pbmm2.log \
     ~{if(strip_kinetics) then "--strip" else ""} \
     ~{additional_args}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tAlign" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
     File aligned_bam = ofile_name
     File aligned_bam_index = ofile_name_index
     File align_log = "pbmm2.log"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -142,23 +163,45 @@ task MergeBams {
   }
 
   Float file_size = ceil(size(bam_files, "GB") * 2 + 20)
-  
+
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
+
     echo "merging ~{sep=' ' bam_files} into ~{sample_name + ".aligned.bam"}"
-    
+
     samtools --version
 
+    /usr/bin/time -v -o _time_output.txt \
     samtools merge -@~{threads} \
       -o ~{sample_name + ".aligned.bam"} \
       ~{sep=' ' bam_files}
 
     samtools index -@~{threads} ~{sample_name + ".aligned.bam"}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tMergeBams" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     File merged_aligned_bam = sample_name + ".aligned.bam"
     File merged_aligned_bam_index = sample_name + ".aligned.bam.bai"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -178,20 +221,42 @@ task IndexBam {
   }
 
   Float file_size = ceil(size(bam, "GB") + 20)
-  
+
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
+
     echo "indexing ~{bam}"
-    
+
     samtools --version
 
+    /usr/bin/time -v -o _time_output.txt \
     samtools index -@~{threads} ~{bam} \
       -o ~{basename(bam) + ".bai"}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tIndexBam" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     File out_bam = bam
     File out_bam_index = basename(bam) + ".bai"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {

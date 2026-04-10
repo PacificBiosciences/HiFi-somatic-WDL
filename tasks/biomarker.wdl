@@ -48,6 +48,7 @@ task owl_profile {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running OWL-MSI profile on ~{bam_file}"
 
@@ -63,10 +64,21 @@ task owl_profile {
         --sample ~{sample_name} \
         ~{additional_args} \
         > ~{sample_name}.owl.txt
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\towl_profile" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         File owl_profile_output = "~{sample_name}.owl.txt"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -89,6 +101,7 @@ task owl_score {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Calculating MSI score from ~{owl_profile_output}"
 
@@ -96,11 +109,21 @@ task owl_score {
         --prefix ~{sample_name} \
         --min-depth ~{minimum_depth}
 
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\towl_score" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         File owl_score_output = "~{sample_name}.owl-scores.txt"
         File owl_motif_counts = "~{sample_name}.owl-motif-counts.txt"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -124,9 +147,10 @@ task tmb_estimate {
         Float min_vaf = 0.10
         Float gnomad_max_af_cutoff = 0.01
     }
-    
+
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Estimating TMB from ~{vcf} and ~{coverage}"
 
@@ -152,11 +176,22 @@ task tmb_estimate {
         --max-af-cutoff ~{gnomad_max_af_cutoff} \
         --debug-tsv ~{pname}.tmb_estimate.gencode_coding.tsv \
         --region-bed /opt/gencode_46_coding.bed.gz
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\ttmb_estimate" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
-    
+
     output {
         File tmb_estimate_output = "~{pname}.tmb_estimate.json"
         File tmb_estimate_output_gencode = "~{pname}.tmb_estimate.gencode_coding.json"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {

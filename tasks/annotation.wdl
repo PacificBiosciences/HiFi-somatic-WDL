@@ -12,9 +12,10 @@ task bcftools_norm {
 
     command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         bcftools index --threads ~{threads - 1} ~{input_vcf}
-        
+
         # sed below is to make sure bcftools decompose AD field properly
         bcftools view ~{input_vcf} |\
             sed -e 's/ID=AD,Number=\./ID=AD,Number=R/' |\
@@ -25,13 +26,24 @@ task bcftools_norm {
             --output-type b \
             --fasta-ref ~{ref_fasta} |\
             bcftools sort -Oz -o ~{sub(basename(input_vcf), "\\.vcf.gz$", "")}.norm.vcf.gz
-            
+
         bcftools index --threads ~{threads - 1} -t ~{sub(basename(input_vcf), "\\.vcf.gz$", "")}.norm.vcf.gz
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tbcftools_norm" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         File norm_vcf = sub(basename(input_vcf), "\\.vcf.gz$", "") + ".norm.vcf.gz"
         File norm_vcf_index = sub(basename(input_vcf), "\\.vcf.gz$", "") + ".norm.vcf.gz.tbi"
+        File resource_usage = "resource_usage.tsv"
     }
 
 	runtime {
@@ -57,6 +69,7 @@ task vep_annotate {
 
     command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         mkdir -p vep_data/
         # If vep_cache is not provided, fail
@@ -91,10 +104,21 @@ task vep_annotate {
 
         # Delete cache after annotation
         rm -rf vep_data/
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tvep_annotate" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         File vep_annotated_vcf = sub(basename(input_vcf), "\\.vcf.gz$", "") + ".vep.vcf.gz"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -120,6 +144,7 @@ task annotsv {
 
     command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         # Process VCF to move BND alt to INFO field
         # Check if it ends in gz. Unzip it if it's the case
@@ -128,7 +153,7 @@ task annotsv {
         else
             cp ~{sv_vcf} tmp.vcf
         fi
-        
+
         awk -F'\t' -v OFS='\t' '
         { if (NR==2) {
                 print "##INFO=<ID=SV_ALT,Number=1,Type=String,Description=\"Square bracketed notation for BND event\">"
@@ -157,6 +182,7 @@ task annotsv {
 
         tar -xzvf ~{annotsv_cache} -C annotsv_cache_dir/
 
+        /usr/bin/time -v -o _time_output.txt \
         AnnotSV \
             -annotationsDir annotsv_cache_dir/AnnotSV/ \
             -SVinputFile tmp_processed.vcf \
@@ -167,10 +193,29 @@ task annotsv {
 
         # Delete cache after annotation
         rm -rf annotsv_cache_dir/
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tannotsv" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        if [ -f _time_output.txt ]; then
+          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+        else
+          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+        fi
     >>>
 
     output {
         File annotsv_annotated_tsv = sub(basename(sv_vcf), "\\.vcf.gz$", "") + ".annotsv.tsv"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -195,6 +240,7 @@ task chord_hrd {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     # Docker image uses GRIDSS as default. Change to Manta
     sed 's/gridss/manta/g' \
@@ -203,12 +249,23 @@ task chord_hrd {
 
     ./extractSigPredictHRD.R . ~{pname} ~{small_variant_vcf} ~{sv_vcf} 38 2>&1 | tee chord_hrd.log
     rm -f ./extractSigPredictHRD.R
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tchord_hrd" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
         File chord_log = "chord_hrd.log"
         File chord_prediction = pname + "_chord_prediction.txt"
         File chord_signature = pname + "_chord_signatures.txt"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
