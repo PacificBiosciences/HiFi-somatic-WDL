@@ -18,6 +18,7 @@ task prioritize_dmr_intogen {
 
     # Join with intogen CCG genes and filter for at
     # least 100 CGs
+    /usr/bin/time -v -o _time_output.txt \
     for dmr_file in ~{sep=" " dmr_files}
     do
     # Annotate only if the file is not *_summary.tsv.gz
@@ -59,12 +60,20 @@ task prioritize_dmr_intogen {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tprioritize_dmr_intogen" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -101,6 +110,7 @@ task prioritize_sv_intogen {
     sed 's/"//g' ~{annotSV_tsv} > ~{basename(annotSV_tsv)}_noquote.tsv
 
     # First do an inner join with the Compendium_Cancer_Genes.tsv
+    /usr/bin/time -v -o _time_output.txt \
     csvtk join -t \
         ~{basename(annotSV_tsv)}_noquote.tsv \
         /app/Compendium_Cancer_Genes.tsv \
@@ -142,12 +152,20 @@ task prioritize_sv_intogen {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tprioritize_sv_intogen" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -182,6 +200,7 @@ task prioritize_small_variants {
 
     csvtk version
 
+    /usr/bin/time -v -o _time_output.txt \
     echo -e "CHROM\tPOS\tREF\tALT\tFORMAT\t~{pname}\t$(bcftools +split-vep ~{vep_annotated_vcf} -l | cut -f2 | tr '\n' '\t' | sed 's/\t$//g')" > ~{fname}
     bcftools +split-vep ~{vep_annotated_vcf} -A tab -f '%CHROM\t%POS\t%REF\t%ALT\t%FORMAT\t%CSQ\n' >> ~{fname}
 
@@ -196,12 +215,20 @@ task prioritize_small_variants {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tprioritize_small_variants" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -255,6 +282,7 @@ task report_sample {
 
     cp ~{circos_png} circos.png
 
+    /usr/bin/time -v -o _time_output.txt \
     Rscript -e \
     'quarto::quarto_render(
         "visualize_hifisomatic.qmd",
@@ -286,12 +314,20 @@ task report_sample {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\treport_sample" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -341,6 +377,7 @@ task report_sample_TO {
 
     cp ~{circos_png} circos.png
 
+    /usr/bin/time -v -o _time_output.txt \
     Rscript -e \
     'quarto::quarto_render(
         "visualize_hifisomatic.qmd",
@@ -369,12 +406,20 @@ task report_sample_TO {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\treport_sample_TO" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {

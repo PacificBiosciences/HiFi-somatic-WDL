@@ -22,6 +22,7 @@ task tabix_vcf {
     bcftools --version
 
     # sort first in case input is not sorted
+    /usr/bin/time -v -o _time_output.txt \
     bcftools sort \
       -Oz -o tmp.vcf.gz \
       ~{vcf}
@@ -40,12 +41,20 @@ task tabix_vcf {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\ttabix_vcf" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -153,6 +162,7 @@ task svpack_filter_annotated {
 		echo "svpack version:"
 		cat /opt/svpack/.git/HEAD
 
+		/usr/bin/time -v -o _time_output.txt \
 		svpack \
 			filter \
 			--pass-only \
@@ -179,12 +189,20 @@ task svpack_filter_annotated {
 		# --- Resource profiling output ---
 		_PROF_END=$(date +%s)
 		_PROF_WALL=$(( _PROF_END - _PROF_START ))
-		_VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
 		echo -e "metric\tvalue" > resource_usage.tsv
 		echo -e "task_name\tsvpack_filter_annotated" >> resource_usage.tsv
 		echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-		echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-		echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+		if [ -f _time_output.txt ]; then
+		  grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+		  grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+		  grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+		  grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+		  echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+		else
+		  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+		  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+		  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+		fi
 	>>>
 
 	output {
@@ -246,6 +264,7 @@ task recover_mate_bnd {
   tabix missing_mate.vcf.gz
 
   # Add the missing BNDs back to the filtered VCF
+  /usr/bin/time -v -o _time_output.txt \
   bcftools concat -a \
     ~{basename(sv_svpack_filtered)} \
     missing_mate.vcf.gz |\
@@ -259,12 +278,20 @@ task recover_mate_bnd {
   # --- Resource profiling output ---
   _PROF_END=$(date +%s)
   _PROF_WALL=$(( _PROF_END - _PROF_START ))
-  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\trecover_mate_bnd" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
@@ -432,6 +459,7 @@ task cpg_pileup {
 
   aligned_bam_to_cpg_scores --version
 
+  /usr/bin/time -v -o _time_output.txt \
   aligned_bam_to_cpg_scores \
     --threads ~{threads} \
     --bam ~{bam} \
@@ -454,12 +482,20 @@ task cpg_pileup {
   # --- Resource profiling output ---
   _PROF_END=$(date +%s)
   _PROF_WALL=$(( _PROF_END - _PROF_START ))
-  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\tcpg_pileup" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
@@ -551,6 +587,7 @@ task seqkit_bamstats {
 
   seqkit version
 
+  /usr/bin/time -v -o _time_output.txt \
   seqkit bam -j ~{threads} -s ~{bam} -Z 2> ~{sub(basename(bam), "\\.bam", ".overall.stats.tsv")}
   echo -e '
   Dump:
@@ -565,12 +602,20 @@ task seqkit_bamstats {
   # --- Resource profiling output ---
   _PROF_END=$(date +%s)
   _PROF_WALL=$(( _PROF_END - _PROF_START ))
-  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\tseqkit_bamstats" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
@@ -606,6 +651,7 @@ task summarize_seqkit_alignment {
     echo -e "mean\tmedian\tn50\tsum" > ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
 
     # Extract and sort read lengths
+    /usr/bin/time -v -o _time_output.txt \
     csvtk cut -j ~{threads} -t -fRead,ReadLen ~{seqkit_alignment_stats} | \
       tail -n+2 |
       sort -u -S 4G | \
@@ -648,12 +694,20 @@ task summarize_seqkit_alignment {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tsummarize_seqkit_alignment" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -685,6 +739,7 @@ task mutationalpattern {
   set -euxo pipefail
   _PROF_START=$(date +%s)
 
+  /usr/bin/time -v -o _time_output.txt \
   Rscript --vanilla /app/mutational_pattern.R \
     ~{vcf} \
     ~{pname} \
@@ -693,12 +748,20 @@ task mutationalpattern {
   # --- Resource profiling output ---
   _PROF_END=$(date +%s)
   _PROF_WALL=$(( _PROF_END - _PROF_START ))
-  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\tmutationalpattern" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {

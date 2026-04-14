@@ -94,6 +94,7 @@ task merge_germline {
 
   bcftools --version
 
+  /usr/bin/time -v -o _time_output.txt \
   bcftools merge --force-samples \
     ~{normal_germline_vcf} \
     ~{tumor_germline_vcf} |\
@@ -143,12 +144,20 @@ task merge_germline {
   # --- Resource profiling output ---
   _PROF_END=$(date +%s)
   _PROF_WALL=$(( _PROF_END - _PROF_START ))
-  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\tmerge_germline" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
 
   >>>
 

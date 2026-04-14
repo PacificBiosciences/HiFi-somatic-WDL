@@ -189,6 +189,7 @@ task circos_BND {
 
     echo "Running Circos for ~{pname}"
 
+    /usr/bin/time -v -o _time_output.txt \
     python /app/plot_circos.py \
       ~{sv_vcf} \
       ~{pname + ".circos"} \
@@ -198,12 +199,20 @@ task circos_BND {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tcircos_BND" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -248,6 +257,7 @@ task wakhan {
 
     echo "Running Wakhan"
 
+    /usr/bin/time -v -o _time_output.txt \
     wakhan all \
       --threads ~{threads} \
       --target-bam ~{tumor_bam} \
@@ -320,12 +330,20 @@ task wakhan {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\twakhan" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {

@@ -22,6 +22,7 @@ task hiphase {
 
     hiphase --version
 
+    /usr/bin/time -v -o _time_output.txt \
     hiphase --bam ~{bam} \
         -t ~{threads} \
         --output-bam ~{sub(basename(bam), "\\.bam$", ".hiphase.bam")} \
@@ -36,12 +37,20 @@ task hiphase {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\thiphase" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -89,6 +98,7 @@ task hiphase_with_somatic {
 
     hiphase --version
 
+    /usr/bin/time -v -o _time_output.txt \
     hiphase --bam ~{bam} \
         -t ~{threads} \
         --output-bam ~{sub(basename(bam), "\\.bam$", ".hiphase.bam")} \
@@ -105,12 +115,20 @@ task hiphase_with_somatic {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\thiphase_with_somatic" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -159,6 +177,7 @@ task longphase_with_somatic {
 
     bcftools concat -a ~{vcf} ~{somatic_SNP_indel_vcf} | bcftools sort -Oz -o merged.vcf.gz
 
+    /usr/bin/time -v -o _time_output.txt \
     longphase phase \
         -r ~{ref_fasta} \
         -s merged.vcf.gz \
@@ -191,12 +210,20 @@ task longphase_with_somatic {
     # --- Resource profiling output ---
     _PROF_END=$(date +%s)
     _PROF_WALL=$(( _PROF_END - _PROF_START ))
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tlongphase_with_somatic" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
