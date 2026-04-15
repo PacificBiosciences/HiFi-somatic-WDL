@@ -109,7 +109,7 @@ task call_DeepSomatic {
         File? normal_bam_index
         File ref_fasta
         File ref_fasta_index
-        File? contig 
+        File? contig
         String pname
         Int threads = 16
     }
@@ -118,11 +118,13 @@ task call_DeepSomatic {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     mkdir deepvariant_~{pname}
 
     /opt/deepvariant/bin/deepsomatic/run_deepsomatic --version
 
+    /usr/bin/time -v -o _time_output.txt \
     /opt/deepvariant/bin/deepsomatic/run_deepsomatic \
         --model_type=~{if (defined(normal_bam)) then "PACBIO" else "PACBIO_TUMOR_ONLY"} \
         ~{if defined(normal_bam) then "" else "--use_default_pon_filtering=true"} \
@@ -145,6 +147,24 @@ task call_DeepSomatic {
         -o deepvariant_~{pname}/~{pname + "_deepsomatic.PASS.vcf.gz"} \
         deepvariant_~{pname}/~{pname + "_deepsomatic.vcf.gz"}
     tabix -p vcf deepvariant_~{pname}/~{pname + "_deepsomatic.PASS.vcf.gz"}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tcall_DeepSomatic" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -152,6 +172,7 @@ task call_DeepSomatic {
         File deepsomatic_vcf_tbi = "deepvariant_" + pname + "/" + pname + "_deepsomatic.PASS.vcf.gz.tbi"
         File deepsomatic_gvcf = "deepvariant_" + pname + "/" + pname + "_deepsomatic.g.vcf.gz"
         File deepsomatic_gvcf_tbi = "deepvariant_" + pname + "/" + pname + "_deepsomatic.g.vcf.gz.tbi"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -176,6 +197,7 @@ task gather_deepsomatic {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Merging deepsomatic vcfs for ~{pname}"
 
@@ -184,7 +206,7 @@ task gather_deepsomatic {
     echo '~{sep="\n" deepsomatic_vcfs}' > vcf.list
     echo '~{sep="\n" deepsomatic_gvcfs}' > gvcf.list
 
-    # Sometimes the indices failed to be localized properly. 
+    # Sometimes the indices failed to be localized properly.
     # Reindex here to make it more robust...
     count=0
     for file in $(cat vcf.list)
@@ -208,6 +230,7 @@ task gather_deepsomatic {
     ls *.vcf.gz > vcf.list
     ls *.gvcf.gz > gvcf.list
 
+    /usr/bin/time -v -o _time_output.txt \
     bcftools concat -a -f vcf.list |\
         # Set GT to 0/1 for somatic variants as DeepSomatic set 1/1 which will not be phased by HiPhase
         bcftools +setGT -- -t q -n c:"0/1" -i 'FMT/GT="1/1"' |\
@@ -228,6 +251,24 @@ task gather_deepsomatic {
     do
         rm ${i}.gvcf.gz ${i}.gvcf.gz.tbi
     done
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tgather_deepsomatic" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -235,6 +276,7 @@ task gather_deepsomatic {
         File deepsomatic_vcf_tbi = pname + "_deepsomatic.vcf.gz.tbi"
         File deepsomatic_gvcf = pname + "_deepsomatic.g.vcf.gz"
         File deepsomatic_gvcf_tbi = pname + "_deepsomatic.g.vcf.gz.tbi"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -262,10 +304,12 @@ task call_clair3 {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     /opt/bin/run_clair3.sh --version
     mkdir clair3_~{pname}
 
+    /usr/bin/time -v -o _time_output.txt \
     /opt/bin/run_clair3.sh \
         --bam_fn=~{aligned_bam} \
         --ref_fn=~{ref_fasta} \
@@ -274,17 +318,36 @@ task call_clair3 {
         --model_path="/opt/models/~{clair_model}" \
         --output=clair3_~{pname} \
         --sample_name=~{pname}
-    
+
     # Filter for PASS only
     gunzip -c clair3_~{pname}/merge_output.vcf.gz |\
         awk '{if($7!="LowQual"){print $0}}' OFS=$'\t' |\
         bgzip -c > ~{pname}.clair3.small_variants.vcf.gz
     tabix -p vcf ~{pname}.clair3.small_variants.vcf.gz
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tcall_clair3" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File clair3_vcf = pname + ".clair3.small_variants.vcf.gz"
         File clair3_vcf_tbi = pname + ".clair3.small_variants.vcf.gz.tbi"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -308,12 +371,14 @@ task correct_vcf {
     }
 
     Float file_size = ceil(size(vcf, "GB") + 10)
-    
+
     command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         bcftools --version
 
+        /usr/bin/time -v -o _time_output.txt \
         bcftools +fill-from-fasta \
             ~{vcf} \
             -Oz \
@@ -321,11 +386,30 @@ task correct_vcf {
             --fasta ~{reference} > ~{basename(vcf, ".vcf.gz") + "correct_ref.vcf.gz"}
 
         tabix -p vcf ~{basename(vcf, ".vcf.gz") + "correct_ref.vcf.gz"}
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tcorrect_vcf" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        if [ -f _time_output.txt ]; then
+          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+        else
+          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+        fi
     >>>
 
     output {
         File output_vcf = basename(vcf, ".vcf.gz") + "correct_ref.vcf.gz"
         File output_vcf_index = basename(vcf, ".vcf.gz") + "correct_ref.vcf.gz.tbi"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {

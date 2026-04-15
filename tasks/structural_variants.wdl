@@ -19,11 +19,13 @@ task Severus_sv {
 
   command <<<
     set -euxo pipefail
-    
+    _PROF_START=$(date +%s)
+
     echo "Running Severus for ~{pname}"
 
     severus --version
 
+    /usr/bin/time -v -o _time_output.txt \
     severus \
       --target-bam ~{tumor_bam} \
       ~{"--control-bam " + normal_bam} \
@@ -49,6 +51,24 @@ task Severus_sv {
     # Rename breakpoint clusters list
     if [[ -f ~{pname + "_severus/somatic_SVs/breakpoint_clusters_list.tsv"} ]]; then mv ~{pname + "_severus/somatic_SVs/breakpoint_clusters_list.tsv"} ~{pname + "_severus/somatic_SVs/" + pname + ".somatic_breakpoint_clusters_list.tsv"}; fi
     if [[ -f ~{pname + "_severus/all_SVs/breakpoint_clusters_list.tsv"} ]]; then mv ~{pname + "_severus/all_SVs/breakpoint_clusters_list.tsv"} ~{pname + "_severus/all_SVs/" + pname + ".all_breakpoint_clusters_list.tsv"}; fi
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tSeverus_sv" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -57,6 +77,7 @@ task Severus_sv {
     File? output_breakpoint_clusters = pname + "_severus/somatic_SVs/" + pname + ".somatic_breakpoint_clusters_list.tsv"
     File? output_breakpoint_clusters_all = pname + "_severus/all_SVs/" + pname + ".all_breakpoint_clusters_list.tsv"
     File? output_somatic_sv_plots = pname + "_severus/somatic_SVs/" + pname + ".plots.tar.gz"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -87,10 +108,12 @@ task SAVANA_sv {
 
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo -e "chr1\nchr2\nchr3\nchr4\nchr5\nchr6\nchr7\nchr8\nchr9\nchr10\nchr11\nchr12\nchr13\nchr14\nchr15\nchr16\nchr17\nchr18\nchr19\nchr20\nchr21\nchr22\nchrX\nchrY" > contig.txt
-    
+
     echo "Running SAVANA for ~{pname}"
+    /usr/bin/time -v -o _time_output.txt \
     savana \
       --tumour ~{tumor_bam} \
       --normal ~{normal_bam} \
@@ -104,6 +127,24 @@ task SAVANA_sv {
       --pb \
       ~{"--snp_vcf " + phased_vcf} \
       ~{"--min_support " + min_supp_reads}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tSAVANA_sv" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -120,6 +161,7 @@ task SAVANA_sv {
     File savana_raw_read_counts = pname + "_savana/" + pname + "_raw_read_counts.tsv"
     File savana_read_counts_mnorm_log2r_segmented = pname + "_savana/" + pname + "_read_counts_mnorm_log2r_segmented.tsv"
     File savana_segmented_absolute_copy_number = pname + "_savana/" + pname + "_segmented_absolute_copy_number.tsv"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -143,14 +185,34 @@ task circos_BND {
 
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running Circos for ~{pname}"
 
+    /usr/bin/time -v -o _time_output.txt \
     python /app/plot_circos.py \
       ~{sv_vcf} \
       ~{pname + ".circos"} \
       /app/MCGENE.TXT.DATA \
       --max-gene-labels ~{max_gene_labels}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tcircos_BND" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -158,6 +220,7 @@ task circos_BND {
     File circos_png = pname + ".circos.png"
     File mitelman_fusions = pname + ".circos.mitelman_fusions.tsv"
     File known_genes_pairs = pname + ".circos.known_gene_pairs.tsv"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -190,9 +253,11 @@ task wakhan {
 
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running Wakhan"
 
+    /usr/bin/time -v -o _time_output.txt \
     wakhan all \
       --threads ~{threads} \
       --target-bam ~{tumor_bam} \
@@ -217,12 +282,12 @@ task wakhan {
     find . -type d -regex ".*/[0-9.]+_[0-9.]+_[0-9.]+$" | while read dir; do
         # Get just the folder name without the path
         folder_name=$(basename "$dir")
-        
+
         # Split the folder name into components
         ploidy=$(echo $folder_name | cut -d'_' -f1)
         purity=$(echo $folder_name | cut -d'_' -f2)
         confidence=$(echo $folder_name | cut -d'_' -f3)
-        
+
         # Append to a temporary file
         echo -e "$folder_name\t$ploidy\t$purity\t$confidence"
     done | sort -t$'\t' -k4,4rn > temp.tsv
@@ -261,6 +326,24 @@ task wakhan {
     mv ~{pname + "_wakhan_best"}/*genome_copynumbers_details.html ~{pname + ".genome_copynumbers_details.html"}
 
     rm -rf ~{pname + "_wakhan"}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\twakhan" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
@@ -277,6 +360,7 @@ task wakhan {
     File genome_copynumbers_breakpoints = pname + ".genome_copynumbers_breakpoints.html"
     File genome_copynumbers_details = pname + ".genome_copynumbers_details.html"
     Array[File] wakhan_output = select_all([wakhan_tar, wakhan_purity_ploidy, copynumbers_segments, copynumbers_segments_HP_1, copynumbers_segments_HP_2, subclonal_segments, subclonal_segments_HP_1, subclonal_segments_HP_2, loh_regions, cancer_genes_copynumber, genome_copynumbers_breakpoints, genome_copynumbers_details])
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {

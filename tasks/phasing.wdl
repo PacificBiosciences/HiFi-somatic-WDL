@@ -16,11 +16,13 @@ task hiphase {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running hiphase for ~{pname}"
 
     hiphase --version
-    
+
+    /usr/bin/time -v -o _time_output.txt \
     hiphase --bam ~{bam} \
         -t ~{threads} \
         --output-bam ~{sub(basename(bam), "\\.bam$", ".hiphase.bam")} \
@@ -31,6 +33,24 @@ task hiphase {
         --summary-file ~{sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")} \
         --blocks-file ~{sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")} \
         --ignore-read-groups
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\thiphase" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -41,6 +61,7 @@ task hiphase {
         File hiphase_summary = sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")
         File hiphase_blocks = sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")
         Array[File] hiphase_stats_summary = [hiphase_stats, hiphase_summary]
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -71,11 +92,13 @@ task hiphase_with_somatic {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running hiphase for ~{pname}"
 
     hiphase --version
-    
+
+    /usr/bin/time -v -o _time_output.txt \
     hiphase --bam ~{bam} \
         -t ~{threads} \
         --output-bam ~{sub(basename(bam), "\\.bam$", ".hiphase.bam")} \
@@ -88,6 +111,24 @@ task hiphase_with_somatic {
         --summary-file ~{sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")} \
         --blocks-file ~{sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")} \
         --ignore-read-groups
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\thiphase_with_somatic" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -99,6 +140,7 @@ task hiphase_with_somatic {
         File hiphase_blocks = sub(basename(bam), "\\.bam$", ".hiphase.blocks.tsv")
         File hiphase_summary = sub(basename(bam), "\\.bam$", ".hiphase.summary.tsv")
         Array[File] hiphase_stats_summary = [hiphase_stats, hiphase_summary]
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -129,11 +171,13 @@ task longphase_with_somatic {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running Longphase for ~{pname}"
 
     bcftools concat -a ~{vcf} ~{somatic_SNP_indel_vcf} | bcftools sort -Oz -o merged.vcf.gz
 
+    /usr/bin/time -v -o _time_output.txt \
     longphase phase \
         -r ~{ref_fasta} \
         -s merged.vcf.gz \
@@ -148,20 +192,38 @@ task longphase_with_somatic {
         -b ~{bam} \
         -t ~{threads} \
         -o ~{sub(basename(bam), "\\.bam$", ".longphase")}
-    
+
     # index bam file
     samtools index -@~{threads} ~{sub(basename(bam), "\\.bam$", ".longphase.bam")}
-    
+
     # Split into somatic and germline VCF
     bcftools view tmp.phased.vcf |\
         grep -v "NAF" > ~{sub(basename(vcf), "\\.vcf.gz$", ".longphase.vcf")}
     bcftools view tmp.phased.vcf |\
         grep -P "^#|NAF" > ~{sub(basename(somatic_SNP_indel_vcf), "\\.vcf.gz$", ".longphase.vcf")}
-    
+
     rm -f tmp.phased.vcf merged.vcf.gz
 
     bgzip -@4 ~{sub(basename(vcf), "\\.vcf.gz$", ".longphase.vcf")}
     bgzip -@4 ~{sub(basename(somatic_SNP_indel_vcf), "\\.vcf.gz$", ".longphase.vcf")}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tlongphase_with_somatic" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
@@ -169,6 +231,7 @@ task longphase_with_somatic {
         File longphase_bam_index = sub(basename(bam), "\\.bam$", ".longphase.bam.bai")
         File longphase_vcf = sub(basename(vcf), "\\.vcf.gz$", ".longphase.vcf.gz")
         File longphase_somatic_small_variants_vcf = sub(basename(somatic_SNP_indel_vcf), "\\.vcf.gz$", ".longphase.vcf.gz")
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -180,4 +243,3 @@ task longphase_with_somatic {
         preemptible: 1
     }
 }
-

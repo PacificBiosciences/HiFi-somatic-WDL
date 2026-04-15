@@ -8,9 +8,11 @@ task tabix_vcf {
   }
 
   Float file_size = ceil(size(vcf, "GB") + size(contig_bed, "GB") + 10)
-  
+
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
+
     echo "indexing ~{vcf}"
     # Get rid of SVLEN=0 and change <INS> to INS
     # to avoid Truvari error problem
@@ -20,6 +22,7 @@ task tabix_vcf {
     bcftools --version
 
     # sort first in case input is not sorted
+    /usr/bin/time -v -o _time_output.txt \
     bcftools sort \
       -Oz -o tmp.vcf.gz \
       ~{vcf}
@@ -34,11 +37,30 @@ task tabix_vcf {
 
     tabix -p vcf ~{basename(vcf) + ".gz"}
     rm -f tmp.vcf.gz tmp.vcf.gz.tbi
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\ttabix_vcf" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     File output_vcf = basename(vcf) + ".gz"
     File output_vcf_index = basename(vcf) + ".gz.tbi"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -67,9 +89,11 @@ task truvari_filter {
 
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     truvari version
 
+    /usr/bin/time -v -o _time_output.txt \
     truvari bench \
         -b ~{control_vcf} \
         -c ~{vcf} \
@@ -78,11 +102,30 @@ task truvari_filter {
 
     mv truvari_filter/fp.vcf.gz ~{sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz")}
     mv truvari_filter/fp.vcf.gz.tbi ~{sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz.tbi")}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\ttruvari_filter" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     File output_vcf = sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz")
     File output_vcf_index = sub(basename(vcf), "\\.vcf.gz", ".filtered.vcf.gz.tbi")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -114,10 +157,12 @@ task svpack_filter_annotated {
 
 	command <<<
 		set -euo pipefail
+		_PROF_START=$(date +%s)
 
 		echo "svpack version:"
 		cat /opt/svpack/.git/HEAD
 
+		/usr/bin/time -v -o _time_output.txt \
 		svpack \
 			filter \
 			--pass-only \
@@ -140,11 +185,30 @@ task svpack_filter_annotated {
 		tabix --version
 
 		tabix -p vcf ~{sv_vcf_basename}.svpack.vcf.gz
+
+		# --- Resource profiling output ---
+		_PROF_END=$(date +%s)
+		_PROF_WALL=$(( _PROF_END - _PROF_START ))
+		echo -e "metric\tvalue" > resource_usage.tsv
+		echo -e "task_name\tsvpack_filter_annotated" >> resource_usage.tsv
+		echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+		if [ -f _time_output.txt ]; then
+		  grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+		  grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+		  grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+		  grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+		  echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+		else
+		  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+		  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+		  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+		fi
 	>>>
 
 	output {
 		File output_vcf = "~{sv_vcf_basename}.svpack.vcf.gz"
 		File output_vcf_index = "~{sv_vcf_basename}.svpack.vcf.gz.tbi"
+		File resource_usage = "resource_usage.tsv"
 	}
 
 	runtime {
@@ -168,6 +232,7 @@ task recover_mate_bnd {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   bcftools --version
 
@@ -199,6 +264,7 @@ task recover_mate_bnd {
   tabix missing_mate.vcf.gz
 
   # Add the missing BNDs back to the filtered VCF
+  /usr/bin/time -v -o _time_output.txt \
   bcftools concat -a \
     ~{basename(sv_svpack_filtered)} \
     missing_mate.vcf.gz |\
@@ -208,11 +274,30 @@ task recover_mate_bnd {
   rm -f ~{basename(sv_svpack_filtered)}.tbi
 
   tabix -p vcf ~{basename(sv_svpack_filtered)}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\trecover_mate_bnd" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
     File output_vcf = basename(sv_svpack_filtered)
     File output_vcf_index = basename(sv_svpack_filtered) + ".tbi"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -238,20 +323,42 @@ task split_contigs {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   bedtools --version
 
   echo "Splitting contigs for ~{ref_fasta_index} for ~{pname}"
+  /usr/bin/time -v -o _time_output.txt \
   bedtools makewindows -g ~{ref_fasta_index} -w ~{chunk_size} > contigs.bed
+
   grep -v -E "random|chrUn|chrM|chrEBV" contigs.bed > noalt.bed
   # Split the contig bed files into one file for each line
   split -l 1 noalt.bed contigs_split.
   # Add .bed to all the contigs_split file
   for file in $(ls contigs_split.*); do mv $file $file.bed; done
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tsplit_contigs" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
     Array[File] contigs = glob("contigs_split.*.bed")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -276,6 +383,7 @@ task mosdepth {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   echo "Running mosdepth for ~{bam}"
 
@@ -285,18 +393,38 @@ task mosdepth {
   # Miniwdl v1.1 seems ok, but Cromwell with dev spec will need this
   # to be uncommented otherwise it fails saying it index is not found.
   # ln -s ~{bam_index} ~{bam}.bai
+  /usr/bin/time -v -o _time_output.txt \
   mosdepth -t ~{threads} \
     --by 500 \
     --no-per-base \
     --use-median \
      ~{pname} \
      ~{bam}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tmosdepth" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
     File output_bed = pname + ".regions.bed.gz"
     File output_bed_index = pname + ".regions.bed.gz.csi"
     File output_summary = pname + ".mosdepth.summary.txt"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -325,11 +453,13 @@ task cpg_pileup {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   echo "Running cpg pileup for ~{pname}"
-  
+
   aligned_bam_to_cpg_scores --version
 
+  /usr/bin/time -v -o _time_output.txt \
   aligned_bam_to_cpg_scores \
     --threads ~{threads} \
     --bam ~{bam} \
@@ -348,6 +478,24 @@ task cpg_pileup {
   if [ -f ~{output_prefix}.hap2.bed ]; then
     gzip ~{output_prefix}.hap2.bed
   fi
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tcpg_pileup" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
@@ -356,6 +504,7 @@ task cpg_pileup {
     File pileup_combined_beds = output_prefix + ".combined.bed.gz"
     File? pileup_hap1_bed = output_prefix + ".hap1.bed.gz"
     File? pileup_hap2_bed = output_prefix + ".hap2.bed.gz"
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -378,18 +527,39 @@ task strip_kinetics {
 
   command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     samtools --version
-    
+
+    /usr/bin/time -v -o _time_output.txt \
     samtools view \
       -@ ~{threads} \
       -bh \
       ~{bam} \
       -x fi,fp,ri,rp > ~{sub(basename(bam), "\\.bam", ".nokinetics.bam")}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tstrip_kinetics" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     File stripped_bam = sub(basename(bam), "\\.bam", ".nokinetics.bam")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -413,9 +583,11 @@ task seqkit_bamstats {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
   seqkit version
 
+  /usr/bin/time -v -o _time_output.txt \
   seqkit bam -j ~{threads} -s ~{bam} -Z 2> ~{sub(basename(bam), "\\.bam", ".overall.stats.tsv")}
   echo -e '
   Dump:
@@ -426,11 +598,30 @@ task seqkit_bamstats {
   seqkit bam -j ~{threads} -T '{Yaml: "seqkit.yaml"}' ~{bam}
   gzip ~{sub(basename(bam), "\\.bam", ".alignment.stats.tsv")}
   gzip ~{sub(basename(bam), "\\.bam", ".overall.stats.tsv")}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tseqkit_bamstats" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
     File seqkit_bam_stats = sub(basename(bam), "\\.bam", ".overall.stats.tsv.gz")
     File seqkit_alignment_stats = sub(basename(bam), "\\.bam", ".alignment.stats.tsv.gz")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -453,23 +644,25 @@ task summarize_seqkit_alignment {
 
   command <<<
     set -euo pipefail
+    _PROF_START=$(date +%s)
 
     csvtk version
 
     echo -e "mean\tmedian\tn50\tsum" > ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
-    
+
     # Extract and sort read lengths
+    /usr/bin/time -v -o _time_output.txt \
     csvtk cut -j ~{threads} -t -fRead,ReadLen ~{seqkit_alignment_stats} | \
       tail -n+2 |
       sort -u -S 4G | \
       cut -f2 | \
       sort -n -S 4G > sorted_lengths.txt
-    
+
     # Calculate basic stats
     total_reads=$(wc -l < sorted_lengths.txt)
     sum=$(awk '{sum += $1} END {print sum}' sorted_lengths.txt)
     mean=$(awk -v sum="$sum" -v count="$total_reads" 'BEGIN {print sum/count}')
-    
+
     # Calculate median
     if [ $((total_reads % 2)) -eq 0 ]; then
       # Even number of reads
@@ -481,7 +674,7 @@ task summarize_seqkit_alignment {
       mid=$(((total_reads + 1) / 2))
       median=$(sed -n "${mid}p" sorted_lengths.txt)
     fi
-    
+
     # Calculate N50
     half_sum=$((sum / 2))
     cumsum=0
@@ -493,14 +686,33 @@ task summarize_seqkit_alignment {
         break
       fi
     done < sorted_lengths.txt
-    
+
     echo -e "${mean}\t${median}\t${n50}\t${sum}" >> ~{sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")}
-    
+
     rm sorted_lengths.txt
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tsummarize_seqkit_alignment" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
   >>>
 
   output {
     File output_summary = sub(basename(seqkit_alignment_stats), "\\.tsv.gz", ".alignment.summary.tsv")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {
@@ -525,11 +737,31 @@ task mutationalpattern {
 
   command <<<
   set -euxo pipefail
+  _PROF_START=$(date +%s)
 
+  /usr/bin/time -v -o _time_output.txt \
   Rscript --vanilla /app/mutational_pattern.R \
     ~{vcf} \
     ~{pname} \
     ~{max_delta}
+
+  # --- Resource profiling output ---
+  _PROF_END=$(date +%s)
+  _PROF_WALL=$(( _PROF_END - _PROF_START ))
+  echo -e "metric\tvalue" > resource_usage.tsv
+  echo -e "task_name\tmutationalpattern" >> resource_usage.tsv
+  echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+  if [ -f _time_output.txt ]; then
+    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+  else
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+  fi
   >>>
 
   output {
@@ -539,6 +771,7 @@ task mutationalpattern {
     File mutsig_bootstrap = pname + ".mut_sigs_bootstrapped.tsv"
     File mut_profile = pname + ".mutation_profile.pdf"
     Array[File] mutsig_output = glob("*.tsv")
+    File resource_usage = "resource_usage.tsv"
   }
 
   runtime {

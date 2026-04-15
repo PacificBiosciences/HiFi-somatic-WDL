@@ -12,11 +12,13 @@ task prioritize_dmr_intogen {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     csvtk version
 
-    # Join with intogen CCG genes and filter for at 
+    # Join with intogen CCG genes and filter for at
     # least 100 CGs
+    /usr/bin/time -v -o _time_output.txt \
     for dmr_file in ~{sep=" " dmr_files}
     do
     # Annotate only if the file is not *_summary.tsv.gz
@@ -46,7 +48,7 @@ task prioritize_dmr_intogen {
             sed 's/:collapse//g' > ${intogen_file%%.tsv}_summary.tsv
     done
 
-    # Compress 
+    # Compress
     for summary_file in *_summary.tsv
     do
         gzip "${summary_file}"
@@ -54,11 +56,30 @@ task prioritize_dmr_intogen {
 
     # Clean up
     rm -f ./*_intogen.nCG~{ncg_to_filter}.tsv
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tprioritize_dmr_intogen" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         Array[File]+ DMR_nCGFilter_CCG = glob("*_intogen.nCG*_summary.tsv.gz")
         File promoter_file = pname + "_hg38_genes_promoters_dmrs_intogen.nCG50_summary.tsv.gz"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -81,13 +102,15 @@ task prioritize_sv_intogen {
 
     command <<<
     set -euxo pipefail
-    
+    _PROF_START=$(date +%s)
+
     csvtk version
 
     # Remove any quote from the file
     sed 's/"//g' ~{annotSV_tsv} > ~{basename(annotSV_tsv)}_noquote.tsv
 
     # First do an inner join with the Compendium_Cancer_Genes.tsv
+    /usr/bin/time -v -o _time_output.txt \
     csvtk join -t \
         ~{basename(annotSV_tsv)}_noquote.tsv \
         /app/Compendium_Cancer_Genes.tsv \
@@ -96,7 +119,7 @@ task prioritize_sv_intogen {
             csvtk summary -t -g "$(csvtk headers -t ~{annotSV_tsv} | tr '\n' ',' | sed 's/,$//g')" \
                 -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
                 sed 's/:collapse//g'  > ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
-    
+
     # Then, look for mate pair IDs for all BND events
     { \
         csvtk cut -t -f INFO ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv | tail -n+2 | awk -F';' '{for (i=1;i<=NF;i++) if ($i ~ /^MATE_ID=/) {split($i,a,"="); print a[2]}}'; \
@@ -125,10 +148,29 @@ task prioritize_sv_intogen {
     mv recovered_BNDs_intogenCCG.tsv ~{sub(basename(annotSV_tsv), "\\.tsv$", "")}_intogenCCG.tsv
 
     rm -f ~{basename(annotSV_tsv)}_noquote.tsv ~{basename(annotSV_tsv)}_ccg_id_info.tsv ~{basename(annotSV_tsv)}_retain_ids.tsv ~{basename(annotSV_tsv)}_noquote_retained.tsv BND_ids.txt BND_ids_to_recover.txt recovered_BNDs.tsv
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tprioritize_sv_intogen" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File annotSV_intogen_tsv = sub(basename(annotSV_tsv), "\\.tsv$", "") + "_intogenCCG.tsv"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -154,9 +196,11 @@ task prioritize_small_variants {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     csvtk version
 
+    /usr/bin/time -v -o _time_output.txt \
     echo -e "CHROM\tPOS\tREF\tALT\tFORMAT\t~{pname}\t$(bcftools +split-vep ~{vep_annotated_vcf} -l | cut -f2 | tr '\n' '\t' | sed 's/\t$//g')" > ~{fname}
     bcftools +split-vep ~{vep_annotated_vcf} -A tab -f '%CHROM\t%POS\t%REF\t%ALT\t%FORMAT\t%CSQ\n' >> ~{fname}
 
@@ -167,11 +211,30 @@ task prioritize_small_variants {
             csvtk summary -t -g "$(csvtk headers -t ~{fname} | tr '\n' ',' | sed 's/,$//g')" \
                 -f CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,CCG_DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse -s ";" |\
                 sed 's/:collapse//g' > ~{fname2}
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\tprioritize_small_variants" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File vep_annotated_tsv = fname
         File vep_annotated_tsv_intogenCCG = fname2
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -190,7 +253,7 @@ task report_sample {
         File intogen_small_var_tsv
         File sv_intogen_tsv
         File sv_vcf
-        File cnv 
+        File cnv
         File purity_ploidy
         File mosdepth_tumor
         File mosdepth_normal
@@ -212,12 +275,14 @@ task report_sample {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     # Copy vis_file to the current directory
     cp ~{vis_file} visualize_hifisomatic.qmd
 
     cp ~{circos_png} circos.png
-    
+
+    /usr/bin/time -v -o _time_output.txt \
     Rscript -e \
     'quarto::quarto_render(
         "visualize_hifisomatic.qmd",
@@ -245,10 +310,29 @@ task report_sample {
     )'
 
     mv visualize_hifisomatic.html ~{pname}_summary_report.html
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\treport_sample" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File summary_report = pname + "_summary_report.html"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -258,7 +342,7 @@ task report_sample {
         disk: file_size + " GB"
         maxRetries: 2
         preemptible: 1
-    } 
+    }
 }
 
 task report_sample_TO {
@@ -286,12 +370,14 @@ task report_sample_TO {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     # Copy vis_file to the current directory
     cp ~{vis_file} visualize_hifisomatic.qmd
 
     cp ~{circos_png} circos.png
-    
+
+    /usr/bin/time -v -o _time_output.txt \
     Rscript -e \
     'quarto::quarto_render(
         "visualize_hifisomatic.qmd",
@@ -316,10 +402,29 @@ task report_sample_TO {
     )'
 
     mv visualize_hifisomatic.html ~{pname}_summary_report.html
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\treport_sample_TO" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File summary_report = pname + "_summary_report.html"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -329,5 +434,5 @@ task report_sample_TO {
         disk: file_size + " GB"
         maxRetries: 2
         preemptible: 1
-    } 
+    }
 }
