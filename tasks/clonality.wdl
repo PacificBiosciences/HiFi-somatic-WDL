@@ -22,7 +22,7 @@ task Amber {
     String javaXmx = threads * 4 - 4 + "G"
     Float file_size = ceil(size(referenceBam, "GB") + size(tumorBam, "GB") + size(referenceFasta, "GB") + 20)
 
-    command {
+    command <<<
         set -euxo pipefail
         _PROF_START=$(date +%s)
 
@@ -61,7 +61,7 @@ task Amber {
           echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
           echo -e "profiling_method\tlightweight" >> resource_usage.tsv
         fi
-    }
+    >>>
 
     output {
         File version = "~{outputDir}/amber.version"
@@ -107,7 +107,7 @@ task Cobalt {
     String javaXmx = threads * 4 - 4 + "G"
     Float file_size = ceil(size(referenceBam, "GB") + size(tumorBam, "GB") + 20)
 
-    command {
+    command <<<
         set -euxo pipefail
         _PROF_START=$(date +%s)
 
@@ -147,7 +147,7 @@ task Cobalt {
           echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
           echo -e "profiling_method\tlightweight" >> resource_usage.tsv
         fi
-    }
+    >>>
 
     output {
         File version = "~{outputDir}/cobalt.version"
@@ -202,7 +202,7 @@ task Purple {
     String javaXmx = threads * 4 - 4 + "G"
     Float file_size = ceil(size(referenceFasta, "GB") + 20)
 
-    command {
+    command <<<
         set -euxo pipefail
         _PROF_START=$(date +%s)
 
@@ -289,7 +289,7 @@ task Purple {
           echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
           echo -e "profiling_method\tlightweight" >> resource_usage.tsv
         fi
-    }
+    >>>
 
     output {
         File? driverCatalogGermlineTsv = "~{outputDir}/~{tumorName}.driver.catalog.germline.tsv"
