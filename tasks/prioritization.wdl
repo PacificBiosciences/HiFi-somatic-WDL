@@ -18,18 +18,18 @@ task prioritize_dmr_intogen {
 
     # Join with intogen CCG genes and filter for at
     # least 100 CGs
-    /usr/bin/time -v -o _time_output.txt \
     for dmr_file in ~{sep=" " dmr_files}
     do
     # Annotate only if the file is not *_summary.tsv.gz
         if [[ ! ${dmr_file} == *"_summary.tsv.gz" ]]
         then
-            csvtk join -t \
+            /usr/bin/time -v -o _time_output.txt -a \
+            bash -c "csvtk join -t \
                 ${dmr_file} \
                 /app/Compendium_Cancer_Genes.tsv \
-                -f "annot.symbol;SYMBOL" |\
+                -f 'annot.symbol;SYMBOL' |\
             csvtk filter -t -f 'nCG>~{ncg_to_filter}' >\
-                $(basename ${dmr_file%%.tsv.gz})_intogen.nCG~{ncg_to_filter}.tsv
+                $(basename ${dmr_file%%.tsv.gz})_intogen.nCG~{ncg_to_filter}.tsv"
         fi
     done
 
@@ -38,14 +38,15 @@ task prioritize_dmr_intogen {
     # collapse the metadata for all promoters for each DMR.
     for intogen_file in *_intogen.nCG~{ncg_to_filter}.tsv
     do
-        csvtk mutate2 \
+        /usr/bin/time -v -o _time_output.txt -a \
+        bash -c "csvtk mutate2 \
             -t -s -n 'promoter_coord' \
-            -e '${annot.seqnames} + ":" + ${annot.start} + "-" + ${annot.end}' ${intogen_file} |\
+            -e '\${annot.seqnames} + \":\" + \${annot.start} + \"-\" + \${annot.end}' ${intogen_file} |\
             csvtk summary -t \
             -g 'seqnames,start,end,width,strand,length,nCG,meanMethy1,meanMethy2,diff.Methy,areaStat,annot.gene_id,annot.symbol,annot.type' \
             -f promoter_coord:collapse,CANCER_TYPE:collapse,COHORT:collapse,TRANSCRIPT:collapse,MUTATIONS:collapse,ROLE:collapse,CGC_GENE:collapse,CGC_CANCER_GENE:collapse,DOMAINS:collapse,2D_CLUSTERS:collapse,3D_CLUSTERS:collapse,annot.tx_id:collapse,annot.id:collapse \
-            -s ";" |\
-            sed 's/:collapse//g' > ${intogen_file%%.tsv}_summary.tsv
+            -s ';' |\
+            sed 's/:collapse//g' > ${intogen_file%%.tsv}_summary.tsv"
     done
 
     # Compress
