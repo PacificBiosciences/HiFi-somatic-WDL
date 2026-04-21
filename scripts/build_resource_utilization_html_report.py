@@ -1,15 +1,116 @@
 #!/usr/bin/env python3
-"""Build an HTML resource utilization report – stage-first layout with sortable tables."""
-import json, os
+"""Build an HTML resource utilization report – stage-first layout with sortable tables.
+
+Usage:
+    python3 build_html_report_run2.py <wdl_run_root_dir> [--out REPORT.html]
+
+Arguments:
+    wdl_run_root_dir   Root directory of a miniwdl/Cromwell run that contains
+                       call-*/out/resource_usage/resource_usage.tsv files and
+                       a workflow.log file.
+    --out              Output HTML path (default: <wdl_run_root_dir>/resource_utilization_report.html)
+"""
+import argparse, glob, json, os, sys
 from collections import defaultdict
 from datetime import datetime
 import re as _re
 import html as _html
 
-ROOT = "/Users/cmarkello/work/pacbio_workflows/hifisomatic_out/hifisomatic_tn_chr22_nogpu/20260415_180705_hifisomatic"
-OUT_HTML = os.path.join(ROOT, "resource_utilization_report.html")
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+parser = argparse.ArgumentParser(
+    description="Generate an HTML resource utilization report from a WDL run directory."
+)
+parser.add_argument(
+    "run_dir",
+    help="Root directory of the WDL run (contains call-* dirs and workflow.log)",
+)
+parser.add_argument(
+    "--out",
+    default=None,
+    help="Output HTML file path (default: <run_dir>/resource_utilization_report.html)",
+)
+args = parser.parse_args()
 
-recs = json.load(open("/tmp/resources_run2.json"))
+ROOT = os.path.abspath(args.run_dir)
+if not os.path.isdir(ROOT):
+    sys.exit(f"ERROR: '{ROOT}' is not a directory.")
+
+OUT_HTML = args.out if args.out else os.path.join(ROOT, "resource_utilization_report.html")
+
+# ---------------------------------------------------------------------------
+# Parse resource_usage.tsv files
+# ---------------------------------------------------------------------------
+def _parse_rsc(path):
+    out = defaultdict(list)
+    with open(path) as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line or line.startswith("metric\t"):
+                continue
+            parts = line.split("\t", 1)
+            if len(parts) == 2:
+                out[parts[0]].append(parts[1])
+    return out
+
+def _to_float(s):
+    if s is None:
+        return None
+    s = s.strip()
+    if ":" in s:
+        secs = 0.0
+        for p in s.split(":"):
+            secs = secs * 60 + float(p)
+        return secs
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+def _pct(s):
+    if s is None:
+        return None
+    try:
+        return float(s.strip().rstrip("%"))
+    except ValueError:
+        return None
+
+def _call_key(path):
+    rel = os.path.relpath(path, ROOT)
+    return rel.split("/out/")[0]
+
+tsv_files = sorted(glob.glob(
+    os.path.join(ROOT, "**/out/resource_usage/resource_usage.tsv"), recursive=True
+))
+if not tsv_files:
+    sys.exit(f"ERROR: No resource_usage.tsv files found under '{ROOT}'.\n"
+             "       Ensure the run directory contains call-*/out/resource_usage/ outputs.")
+
+recs = []
+for p in tsv_files:
+    d = _parse_rsc(p)
+    task_name = (d.get("task_name") or ["?"])[0]
+    wall      = _to_float((d.get("wall_clock_seconds") or [None])[0])
+    rss_vals  = [_to_float(v) for v in d.get("max_rss_kb",        []) if _to_float(v) is not None]
+    user_vals = [_to_float(v) for v in d.get("user_time_seconds",  []) if _to_float(v) is not None]
+    sys_vals  = [_to_float(v) for v in d.get("system_time_seconds",[]) if _to_float(v) is not None]
+    cpu_vals  = [_pct(v)      for v in d.get("cpu_percent",        []) if _pct(v)      is not None]
+    method    = (d.get("profiling_method") or ["?"])[0]
+    recs.append({
+        "call":          _call_key(p),
+        "task_name":     task_name,
+        "wall_s":        wall if wall is not None else 0.0,
+        "max_rss_kb":    max(rss_vals)              if rss_vals  else None,
+        "user_s_total":  sum(user_vals)             if user_vals else None,
+        "sys_s_total":   sum(sys_vals)              if sys_vals  else None,
+        "cpu_pct_avg":   sum(cpu_vals)/len(cpu_vals) if cpu_vals else None,
+        "cpu_pct_max":   max(cpu_vals)              if cpu_vals  else None,
+        "n_iters":       max(len(rss_vals), len(user_vals), len(sys_vals), 1),
+        "method":        method,
+    })
+
+print(f"Parsed {len(recs)} task records from {ROOT}")
 
 # ---------------------------------------------------------------------------
 # Stage / task classification
