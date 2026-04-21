@@ -2,7 +2,7 @@ FROM bioconductor/bioconductor_docker:RELEASE_3_14
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y default-jre python3 python3-pip wget maven git circos && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y default-jre python3 python3-pip wget maven git circos time && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN R -e 'BiocManager::install(c("tidyverse", "VariantAnnotation", "copynumber"))'
 RUN R -e 'BiocManager::install(c("cowplot"))'
 

@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install system dependencies and minimal tools
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends procps git libarchive-dev && \
+    apt-get install -y --no-install-recommends procps git libarchive-dev time && \
     rm -rf /var/lib/apt/lists/*
 
 # Install mamba and build the 'tools' environment

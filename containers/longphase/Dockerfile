@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3:23.10.0-1
 
 RUN apt-get update && \
-    apt-get install -y git g++ gcc autoconf make zlib1g-dev libbz2-dev liblzma-dev procps git libarchive-dev && \
+    apt-get install -y git g++ gcc autoconf make zlib1g-dev libbz2-dev liblzma-dev procps git libarchive-dev time && \
     rm -rf /var/lib/apt/lists/* 
 
 RUN conda install -n base -c conda-forge mamba libarchive
