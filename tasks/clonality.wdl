@@ -22,13 +22,15 @@ task Amber {
     String javaXmx = threads * 4 - 4 + "G"
     Float file_size = ceil(size(referenceBam, "GB") + size(tumorBam, "GB") + size(referenceFasta, "GB") + 20)
 
-    command {
+    command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
-        mkdir ensembl_data_dir 
+        mkdir ensembl_data_dir
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
-        
+
+        /usr/bin/time -v -o _time_output.txt \
         java -Xmx~{javaXmx} -jar /app/amber.gamma1000.jar \
             -reference ~{referenceName} \
             -reference_bam ~{referenceBam} \
@@ -41,7 +43,25 @@ task Amber {
             -loci ensembl_data_dir/hmf*/dna/copy_number/AmberGermlineSites.*.tsv.gz
 
         rm -rf ensembl_data_dir
-    }
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tAmber" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        if [ -f _time_output.txt ]; then
+          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+        else
+          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+        fi
+    >>>
 
     output {
         File version = "~{outputDir}/amber.version"
@@ -53,6 +73,7 @@ task Amber {
         File tumorQc = "~{outputDir}/~{tumorName}.amber.qc"
         Array[File] outputs = [version, tumorBafPcf, tumorBafTsv,
             tumorContaminationVcf, tumorContaminationVcfIndex, tumorContaminationTsv, tumorQc]
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -86,13 +107,15 @@ task Cobalt {
     String javaXmx = threads * 4 - 4 + "G"
     Float file_size = ceil(size(referenceBam, "GB") + size(tumorBam, "GB") + 20)
 
-    command {
+    command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
-        mkdir ensembl_data_dir 
+        mkdir ensembl_data_dir
 
         tar -xzf ~{ensembl_data_dir_tarball} -C ensembl_data_dir
 
+        /usr/bin/time -v -o _time_output.txt \
         java -Xmx~{javaXmx} -jar /app/cobalt.jar \
             -reference ~{referenceName} \
             -reference_bam ~{referenceBam} \
@@ -104,9 +127,27 @@ task Cobalt {
             -pcf_gamma ~{pcf_gamma} \
             -validation_stringency SILENT \
             -gc_profile ensembl_data_dir/hmf*/dna/copy_number/GC_profile.*.cnp
-        
+
         rm -rf ensembl_data_dir
-    }
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tCobalt" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        if [ -f _time_output.txt ]; then
+          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+        else
+          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+        fi
+    >>>
 
     output {
         File version = "~{outputDir}/cobalt.version"
@@ -118,6 +159,7 @@ task Cobalt {
         File tumorRatioTsv = "~{outputDir}/~{tumorName}.cobalt.ratio.tsv.gz"
         Array[File] outputs = [version, normalGcMedianTsv, normalRationMedianTsv,
             normalRationPcf, tumorGcMedianTsv, tumorRatioPcf, tumorRatioTsv]
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -160,8 +202,9 @@ task Purple {
     String javaXmx = threads * 4 - 4 + "G"
     Float file_size = ceil(size(referenceFasta, "GB") + 20)
 
-    command {
+    command <<<
         set -euxo pipefail
+        _PROF_START=$(date +%s)
 
         mkdir ensembl_data_dir
 
@@ -175,6 +218,7 @@ task Purple {
         if [[ ! -z $vcf_var ]]; then
             bash /app/process_clairS_VCF.sh ~{somaticVcf} ~{tumorName} ~{referenceName} tmp.vcf.gz
 
+            /usr/bin/time -v -o _time_output.txt \
             java -Xmx~{javaXmx} -jar /app/purple.jar \
                 -reference ~{referenceName} \
                 ~{"-germline_vcf " + germlineVcf} \
@@ -199,6 +243,7 @@ task Purple {
                 -min_ploidy ~{min_ploidy} \
                 -max_ploidy ~{max_ploidy}
         else
+            /usr/bin/time -v -o _time_output.txt \
             java -Xmx~{javaXmx} -jar /app/purple.jar \
                 -reference ~{referenceName} \
                 ~{"-germline_vcf " + germlineVcf} \
@@ -226,7 +271,25 @@ task Purple {
         cut -f1,5 ~{outputDir}/~{tumorName}.purple.purity.tsv | tail -n+2 > purity_ploidy.tsv
 
         rm -rf ensembl_data_dir
-    }
+
+        # --- Resource profiling output ---
+        _PROF_END=$(date +%s)
+        _PROF_WALL=$(( _PROF_END - _PROF_START ))
+        echo -e "metric\tvalue" > resource_usage.tsv
+        echo -e "task_name\tPurple" >> resource_usage.tsv
+        echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+        if [ -f _time_output.txt ]; then
+          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+        else
+          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+        fi
+    >>>
 
     output {
         File? driverCatalogGermlineTsv = "~{outputDir}/~{tumorName}.driver.catalog.germline.tsv"
@@ -278,6 +341,7 @@ task Purple {
         Array[File] circos = select_all([circosNormalRatio, circosConf, circosIndel, circosLink,
             circosTumorRatio, circosGaps, circosBaf, circosCnv, circosInputConf, circosMap,
             circosSnp])
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {

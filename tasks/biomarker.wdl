@@ -48,6 +48,7 @@ task owl_profile {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Running OWL-MSI profile on ~{bam_file}"
 
@@ -58,15 +59,35 @@ task owl_profile {
         cp ~{region_bed_file} region_to_profile.bed
     fi
 
+    /usr/bin/time -v -o _time_output.txt \
     owl profile --bam ~{bam_file} \
         --regions region_to_profile.bed \
         --sample ~{sample_name} \
         ~{additional_args} \
         > ~{sample_name}.owl.txt
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\towl_profile" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File owl_profile_output = "~{sample_name}.owl.txt"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -89,18 +110,38 @@ task owl_score {
 
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Calculating MSI score from ~{owl_profile_output}"
 
+    /usr/bin/time -v -o _time_output.txt \
     owl score --file ~{owl_profile_output} \
         --prefix ~{sample_name} \
         --min-depth ~{minimum_depth}
 
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\towl_score" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
 
     output {
         File owl_score_output = "~{sample_name}.owl-scores.txt"
         File owl_motif_counts = "~{sample_name}.owl-motif-counts.txt"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {
@@ -124,12 +165,14 @@ task tmb_estimate {
         Float min_vaf = 0.10
         Float gnomad_max_af_cutoff = 0.01
     }
-    
+
     command <<<
     set -euxo pipefail
+    _PROF_START=$(date +%s)
 
     echo "Estimating TMB from ~{vcf} and ~{coverage}"
 
+    /usr/bin/time -v -o _time_output.txt \
     python /opt/venv/bin/calculate_tmb.py \
         --vcf ~{vcf} \
         --coverage ~{coverage} \
@@ -152,11 +195,30 @@ task tmb_estimate {
         --max-af-cutoff ~{gnomad_max_af_cutoff} \
         --debug-tsv ~{pname}.tmb_estimate.gencode_coding.tsv \
         --region-bed /opt/gencode_46_coding.bed.gz
+
+    # --- Resource profiling output ---
+    _PROF_END=$(date +%s)
+    _PROF_WALL=$(( _PROF_END - _PROF_START ))
+    echo -e "metric\tvalue" > resource_usage.tsv
+    echo -e "task_name\ttmb_estimate" >> resource_usage.tsv
+    echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
+    if [ -f _time_output.txt ]; then
+      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
+      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
+      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
+      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
+    else
+      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
+    fi
     >>>
-    
+
     output {
         File tmb_estimate_output = "~{pname}.tmb_estimate.json"
         File tmb_estimate_output_gencode = "~{pname}.tmb_estimate.gencode_coding.json"
+        File resource_usage = "resource_usage.tsv"
     }
 
     runtime {

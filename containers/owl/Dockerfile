@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y \
     libbz2-1.0 \
     liblzma5 \
     zlib1g \
+    time \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
