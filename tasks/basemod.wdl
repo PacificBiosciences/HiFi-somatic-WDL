@@ -19,7 +19,6 @@ task DSS_DMR {
         gunzip -c ~{normal_bed} | cut -f1,2,6,7 > ~{basename(normal_bed) + ".tmp"}
 
         # Run DSS
-        /usr/bin/time -v -o _time_output.txt \
         Rscript --vanilla /app/DSS_tumor_normal.R \
             ~{basename(tumor_bed) + ".tmp"} \
             ~{basename(normal_bed) + ".tmp"} \
@@ -34,17 +33,9 @@ task DSS_DMR {
         echo -e "metric\tvalue" > resource_usage.tsv
         echo -e "task_name\tDSS_DMR" >> resource_usage.tsv
         echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-        if [ -f _time_output.txt ]; then
-          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-        else
-          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-        fi
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
@@ -76,7 +67,6 @@ task annotate_DMR {
         _PROF_START=$(date +%s)
 
         # Annotate DMRs
-        /usr/bin/time -v -o _time_output.txt \
         Rscript --vanilla /app/annotatr_dmr.R \
             ~{DMR} \
             ~{pname} \
@@ -88,17 +78,9 @@ task annotate_DMR {
         echo -e "metric\tvalue" > resource_usage.tsv
         echo -e "task_name\tannotate_DMR" >> resource_usage.tsv
         echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-        if [ -f _time_output.txt ]; then
-          grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-          grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-          grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-          grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-          echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-        else
-          _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-          echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-          echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-        fi
+        _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+        echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+        echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {

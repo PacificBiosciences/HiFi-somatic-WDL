@@ -59,7 +59,6 @@ task owl_profile {
         cp ~{region_bed_file} region_to_profile.bed
     fi
 
-    /usr/bin/time -v -o _time_output.txt \
     owl profile --bam ~{bam_file} \
         --regions region_to_profile.bed \
         --sample ~{sample_name} \
@@ -72,17 +71,9 @@ task owl_profile {
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\towl_profile" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    if [ -f _time_output.txt ]; then
-      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-    else
-      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-    fi
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
@@ -114,7 +105,6 @@ task owl_score {
 
     echo "Calculating MSI score from ~{owl_profile_output}"
 
-    /usr/bin/time -v -o _time_output.txt \
     owl score --file ~{owl_profile_output} \
         --prefix ~{sample_name} \
         --min-depth ~{minimum_depth}
@@ -125,17 +115,9 @@ task owl_score {
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\towl_score" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    if [ -f _time_output.txt ]; then
-      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-    else
-      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-    fi
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {
@@ -172,7 +154,6 @@ task tmb_estimate {
 
     echo "Estimating TMB from ~{vcf} and ~{coverage}"
 
-    /usr/bin/time -v -o _time_output.txt \
     python /opt/venv/bin/calculate_tmb.py \
         --vcf ~{vcf} \
         --coverage ~{coverage} \
@@ -202,17 +183,9 @@ task tmb_estimate {
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\ttmb_estimate" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    if [ -f _time_output.txt ]; then
-      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-    else
-      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-    fi
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
     >>>
 
     output {

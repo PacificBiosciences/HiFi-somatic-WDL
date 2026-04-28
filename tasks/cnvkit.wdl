@@ -24,7 +24,6 @@ task cnvkit_tumor {
 
     cnvkit.py version
 
-    /usr/bin/time -v -o _time_output.txt \
     cnvkit.py batch \
         ~{tumor_bam} \
         --normal ~{normal_bam} \
@@ -42,17 +41,9 @@ task cnvkit_tumor {
     echo -e "metric\tvalue" > resource_usage.tsv
     echo -e "task_name\tcnvkit_tumor" >> resource_usage.tsv
     echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-    if [ -f _time_output.txt ]; then
-      grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-      grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-      grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-      echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-    else
-      _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-      echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-      echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-    fi
+    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
   >>>
 
   output {
@@ -94,7 +85,6 @@ task merge_germline {
 
   bcftools --version
 
-  /usr/bin/time -v -o _time_output.txt \
   bcftools merge --force-samples \
     ~{normal_germline_vcf} \
     ~{tumor_germline_vcf} |\
@@ -147,17 +137,9 @@ task merge_germline {
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\tmerge_germline" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  if [ -f _time_output.txt ]; then
-    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-  else
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-  fi
+  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
 
   >>>
 
@@ -206,7 +188,6 @@ task cnvkit_recall {
 
   cnvkit.py version
 
-  /usr/bin/time -v -o _time_output.txt \
   cnvkit.py call \
     ~{cnvkit_cns} \
     -m clonal \
@@ -224,17 +205,9 @@ task cnvkit_recall {
   echo -e "metric\tvalue" > resource_usage.tsv
   echo -e "task_name\tcnvkit_recall" >> resource_usage.tsv
   echo -e "wall_clock_seconds\t${_PROF_WALL}" >> resource_usage.tsv
-  if [ -f _time_output.txt ]; then
-    grep "Maximum resident" _time_output.txt | awk -F': ' '{print "max_rss_kb\t"$2}' >> resource_usage.tsv
-    grep "User time" _time_output.txt | awk -F': ' '{print "user_time_seconds\t"$2}' >> resource_usage.tsv
-    grep "System time" _time_output.txt | awk -F': ' '{print "system_time_seconds\t"$2}' >> resource_usage.tsv
-    grep "Percent of CPU" _time_output.txt | awk -F': ' '{print "cpu_percent\t"$2}' >> resource_usage.tsv
-    echo -e "profiling_method\tgnu_time" >> resource_usage.tsv
-  else
-    _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
-    echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
-    echo -e "profiling_method\tlightweight" >> resource_usage.tsv
-  fi
+  _VM_PEAK=$(grep VmPeak /proc/self/status 2>/dev/null | awk '{print $2}' || echo "unavailable")
+  echo -e "vm_peak_kb\t${_VM_PEAK}" >> resource_usage.tsv
+  echo -e "profiling_method\tlightweight" >> resource_usage.tsv
   >>>
 
   output {
